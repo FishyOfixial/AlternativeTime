@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const links = [
   { to: "/dashboard", label: "Dashboard", sprint: "S3" },
@@ -11,6 +12,8 @@ const links = [
 ];
 
 export default function Sidebar() {
+  const { user } = useAuth();
+
   return (
     <aside className="hidden min-h-screen w-[260px] shrink-0 border-r border-[#3c3023] bg-[#211b16] lg:flex lg:flex-col">
       <div className="px-7 pb-6 pt-7">
@@ -47,8 +50,10 @@ export default function Sidebar() {
       </div>
 
       <div className="mt-auto px-7 py-7 text-sm text-[#8f7b63]">
-        <p className="font-semibold text-[#d8cab6]">Admin</p>
-        <p className="mt-1 text-xs">Sesion activa simulada</p>
+        <p className="font-semibold text-[#d8cab6]">
+          {user?.first_name || user?.username || "Admin"}
+        </p>
+        <p className="mt-1 text-xs">{user?.email || "Sesion activa"}</p>
       </div>
     </aside>
   );

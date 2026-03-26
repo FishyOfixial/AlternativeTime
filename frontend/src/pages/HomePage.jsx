@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
 import { getHealth } from "../services/health";
@@ -9,7 +10,7 @@ const initialHealth = {
   database: "unknown"
 };
 
-export default function HomePage({ footerSlot = null }) {
+export default function HomePage() {
   const [health, setHealth] = useState(initialHealth);
 
   useEffect(() => {
@@ -55,16 +56,27 @@ export default function HomePage({ footerSlot = null }) {
         </div>
 
         <div className="flex flex-col justify-center px-8 py-10 sm:px-12">
-          <p className="eyebrow">Sprint Frontend 1</p>
+          <p className="eyebrow">Sprint Frontend 2</p>
           <h2 className="mt-4 max-w-xl font-serif text-4xl tracking-tight text-[#2a221b] sm:text-5xl">
-            La web ya tiene una base visual alineada a los mockups.
+            La base visual ya esta lista para iniciar sesion de verdad.
           </h2>
           <p className="mt-5 max-w-xl text-base leading-7 text-[#736350] sm:text-lg">
-            Ya existen rutas reales, layouts compartidos y una capa de
-            servicios. El siguiente paso es poblar esta estructura con auth,
-            dashboard y modulos operativos.
+            Ahora el acceso se apoya en JWT del backend y las rutas privadas
+            quedan protegidas desde el router.
           </p>
-          <div className="mt-8">{footerSlot}</div>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <NavLink className="gold-button" to="/login">
+              Iniciar sesion
+            </NavLink>
+            <a
+              className="inline-flex items-center justify-center rounded-lg border border-[#ddcfba] bg-[#fcf8f2] px-5 py-3 text-sm font-semibold text-[#7d6751] transition hover:bg-[#f3ecde]"
+              href="http://127.0.0.1:8000/api/health/"
+              rel="noreferrer"
+              target="_blank"
+            >
+              Ver health endpoint
+            </a>
+          </div>
           <p className="mt-10 border-t border-[#ddcfba] pt-6 text-xs text-[#a18a6d]">
             ATCoPOS v1.0 · Django + React + Tailwind
           </p>

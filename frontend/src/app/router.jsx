@@ -1,4 +1,6 @@
-import { BrowserRouter, NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import ProtectedRoute from "../components/auth/ProtectedRoute";
+import PublicOnlyRoute from "../components/auth/PublicOnlyRoute";
 import AuthenticatedLayout from "../layouts/AuthenticatedLayout";
 import PublicLayout from "../layouts/PublicLayout";
 import DashboardPage from "../pages/DashboardPage";
@@ -51,46 +53,34 @@ const modulePages = [
   }
 ];
 
-function RouteIndex() {
-  return (
-    <div className="flex flex-wrap gap-3">
-      {[...modulePages, { path: "/dashboard", title: "Dashboard" }].map((item) => (
-        <NavLink
-          key={item.path}
-          to={item.path}
-          className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:border-cyan-300/40 hover:bg-cyan-300/10"
-        >
-          Abrir {item.title}
-        </NavLink>
-      ))}
-    </div>
-  );
-}
-
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<PublicLayout />}>
-          <Route index element={<HomePage footerSlot={<RouteIndex />} />} />
-          <Route path="/login" element={<LoginPage />} />
+        <Route element={<PublicOnlyRoute />}>
+          <Route element={<PublicLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+          </Route>
         </Route>
 
-        <Route element={<AuthenticatedLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          {modulePages.map((page) => (
-            <Route
-              key={page.path}
-              path={page.path}
-              element={
-                <ModulePage
-                  eyebrow={page.eyebrow}
-                  title={page.title}
-                  description={page.description}
-                />
-              }
-            />
-          ))}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AuthenticatedLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            {modulePages.map((page) => (
+              <Route
+                key={page.path}
+                path={page.path}
+                element={
+                  <ModulePage
+                    eyebrow={page.eyebrow}
+                    title={page.title}
+                    description={page.description}
+                  />
+                }
+              />
+            ))}
+          </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

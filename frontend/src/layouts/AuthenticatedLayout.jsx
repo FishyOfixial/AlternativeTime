@@ -1,8 +1,11 @@
 import { NavLink, Outlet } from "react-router-dom";
 import HeaderBar from "../components/navigation/HeaderBar";
 import Sidebar from "../components/navigation/Sidebar";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function AuthenticatedLayout() {
+  const { logout } = useAuth();
+
   return (
     <div className="page-shell">
       <div className="mx-auto flex min-h-screen w-full max-w-[1500px] gap-0">
@@ -17,12 +20,13 @@ export default function AuthenticatedLayout() {
               >
                 Ver landing
               </NavLink>
-              <NavLink
+              <button
                 className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-4 py-2 hover:bg-[#f3ecde]"
-                to="/login"
+                onClick={logout}
+                type="button"
               >
-                Ver login placeholder
-              </NavLink>
+                Cerrar sesion
+              </button>
             </div>
             <Outlet />
           </main>
