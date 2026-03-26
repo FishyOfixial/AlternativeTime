@@ -48,6 +48,49 @@ Aplicar migraciones y correr el servidor:
 .\.venv\Scripts\python.exe backend\manage.py runserver
 ```
 
+## Valores por defecto para desarrollo
+
+Si quieres dejar la base local con un usuario inicial para probar login del
+backend, puedes crearlo de dos formas.
+
+### Opcion recomendada: crear el usuario con Django
+
+```powershell
+cd backend
+..\.venv\Scripts\python.exe manage.py shell -c "from django.contrib.auth import get_user_model; User=get_user_model(); u, created = User.objects.get_or_create(username='devadmin', defaults={'email':'devadmin@example.com','first_name':'Dev','last_name':'Admin','is_staff':True,'is_superuser':True}); u.set_password('DevAdmin123!'); u.save(); print('created' if created else 'updated', u.username)"
+```
+
+Credenciales de desarrollo:
+
+- usuario: `devadmin`
+- password: `DevAdmin123!`
+
+### Opcion SQL directa para SQLite
+
+Tambien puedes usar el query guardado en:
+
+- `docs/db/query/insert_devadmin_sqlite.sql`
+
+Ese archivo inserta el mismo usuario de desarrollo directamente en la tabla
+`auth_user` de SQLite.
+
+### Login de prueba contra la API
+
+Una vez levantado el backend, puedes iniciar sesion contra:
+
+```text
+POST http://127.0.0.1:8000/api/auth/login/
+```
+
+Payload:
+
+```json
+{
+  "username": "devadmin",
+  "password": "DevAdmin123!"
+}
+```
+
 API de prueba:
 
 ```text

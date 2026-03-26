@@ -20,6 +20,7 @@ tomaron y cual es el orden recomendado para continuar la implementacion.
 - [backlog.md](backlog.md): tareas tecnicas iniciales listas para ejecutar.
 - [decisions.md](decisions.md): registro de decisiones tecnicas aceptadas.
 - `sprints/`: planes operativos por sprint para ejecutar desarrollo por etapas.
+- `db/query/`: queries SQL utiles para desarrollo y soporte local.
 
 ## Artefactos fuente existentes
 
