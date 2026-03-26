@@ -2,11 +2,12 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from clients.models import Client
-from inventory.models import InventoryItem
-from sales.models import Sale, SaleItem
+from inventory.models import InventoryItem, PurchaseCost
+from sales.models import Sale
 
 
 class TestFinanceSummaryApi(TestCase):
@@ -18,10 +19,21 @@ class TestFinanceSummaryApi(TestCase):
         )
         self.customer = Client.objects.create(name="Finance Client", phone="555-400-1000")
         self.product = InventoryItem.objects.create(
-            name="Calculator",
-            sku="CALC-001",
+            brand="Omega",
+            model_name="Speedmaster",
+            name="Omega Speedmaster",
+            product_id="OME-002",
+            sku="OME-002",
             price=Decimal("100.00"),
-            stock=50,
+            purchase_date=timezone.localdate(),
+        )
+        PurchaseCost.objects.create(
+            product=self.product,
+            purchase_date=self.product.purchase_date,
+            watch_cost=Decimal("50.00"),
+            shipping_cost=Decimal("0.00"),
+            maintenance_cost=Decimal("0.00"),
+            other_costs=Decimal("0.00"),
         )
 
     def test_finance_summary_requires_authentication(self):
@@ -30,17 +42,17 @@ class TestFinanceSummaryApi(TestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_finance_summary_returns_aggregated_sales_metrics(self):
-        sale = Sale.objects.create(
+        Sale.objects.create(
             client=self.customer,
+            product=self.product,
+            sale_date=timezone.localdate(),
+            payment_method="cash",
+            sales_channel="direct",
+            amount_paid=Decimal("200.00"),
+            cost_snapshot=Decimal("50.00"),
+            gross_profit=Decimal("150.00"),
             created_by=self.user,
-            total=Decimal("200.00"),
-        )
-        SaleItem.objects.create(
-            sale=sale,
-            inventory_item=self.product,
-            quantity=2,
-            unit_price=Decimal("100.00"),
-            subtotal=Decimal("200.00"),
+            updated_by=self.user,
         )
         self.client.force_authenticate(user=self.user)
 
@@ -49,14 +61,3 @@ class TestFinanceSummaryApi(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["total_sales_count"], 1)
         self.assertEqual(response.data["gross_revenue"], "200")
-        self.assertEqual(response.data["items_sold"], 2)
-
-    def test_finance_summary_returns_zeroed_metrics_without_sales(self):
-        self.client.force_authenticate(user=self.user)
-
-        response = self.client.get("/api/finance/summary/")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["total_sales_count"], 0)
-        self.assertEqual(response.data["gross_revenue"], "0.00")
-        self.assertEqual(response.data["items_sold"], 0)

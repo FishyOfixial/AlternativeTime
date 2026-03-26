@@ -1,4 +1,4 @@
-from django.db.models import Count, Max, Prefetch, Sum
+from django.db.models import Count, Max, Prefetch, Q, Sum
 from rest_framework.viewsets import ModelViewSet
 
 from sales.models import Sale
@@ -8,14 +8,19 @@ from .serializers import ClientDetailSerializer, ClientSerializer
 
 
 class ClientViewSet(ModelViewSet):
-    # Keep list and detail useful for frontend dashboards without adding a new endpoint.
-    queryset = Client.objects.annotate(
-        purchases_count=Count("sales", distinct=True),
-        total_spent=Sum("sales__total"),
-        last_purchase_at=Max("sales__created_at"),
-    ).prefetch_related(
-        Prefetch("sales", queryset=Sale.objects.prefetch_related("items__inventory_item"))
-    )
+    def get_queryset(self):
+        queryset = Client.objects.annotate(
+            purchases_count=Count("sales", distinct=True),
+            total_spent=Sum("sales__amount_paid"),
+            last_purchase_at=Max("sales__sale_date"),
+        ).prefetch_related(
+            Prefetch("sales", queryset=Sale.objects.select_related("product"))
+        )
+
+        search = self.request.query_params.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(phone__icontains=search))
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "retrieve":

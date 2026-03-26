@@ -2,12 +2,14 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from clients.models import Client
-from inventory.models import InventoryItem
+from finance.models import FinanceEntry
+from inventory.models import InventoryItem, PurchaseCost
 
-from .models import Sale, SaleItem
+from .models import Sale
 
 
 class TestSalesApi(TestCase):
@@ -22,17 +24,27 @@ class TestSalesApi(TestCase):
             name="Retail Customer",
             phone="555-200-3000",
         )
-        self.item_one = InventoryItem.objects.create(
-            name="Notebook",
-            sku="NOTE-001",
-            price=Decimal("25.00"),
-            stock=10,
+        self.item = InventoryItem.objects.create(
+            brand="Rolex",
+            model_name="Datejust",
+            name="Rolex Datejust",
+            product_id="ROL-001",
+            sku="ROL-001",
+            price=Decimal("25000.00"),
+            purchase_date=timezone.localdate() - timezone.timedelta(days=10),
+            status="available",
+            created_by=self.user,
+            updated_by=self.user,
         )
-        self.item_two = InventoryItem.objects.create(
-            name="Pencil",
-            sku="PEN-002",
-            price=Decimal("5.50"),
-            stock=20,
+        PurchaseCost.objects.create(
+            product=self.item,
+            purchase_date=self.item.purchase_date,
+            watch_cost=Decimal("18000.00"),
+            shipping_cost=Decimal("500.00"),
+            maintenance_cost=Decimal("500.00"),
+            other_costs=Decimal("0.00"),
+            payment_method="cash",
+            source_account="cash",
         )
 
     def test_sales_requires_authentication(self):
@@ -42,121 +54,69 @@ class TestSalesApi(TestCase):
 
         self.assertEqual(response.status_code, 401)
 
-    def test_create_sale_with_one_item(self):
+    def test_create_sale_updates_product_and_finance(self):
         response = self.client.post(
             "/api/sales/",
             {
-                "client": self.customer.id,
-                "items": [
-                    {"inventory_item": self.item_one.id},
-                ],
+                "customer": self.customer.id,
+                "product": self.item.id,
+                "sale_date": str(timezone.localdate()),
+                "payment_method": "transfer",
+                "sales_channel": "instagram",
+                "amount_paid": "25000.00",
+                "extras": "1000.00",
+                "sale_shipping_cost": "300.00",
+                "notes": "Cliente recurrente",
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, 201)
         sale = Sale.objects.get()
-        self.item_one.refresh_from_db()
-        self.assertEqual(sale.total, Decimal("25.00"))
-        self.assertEqual(self.item_one.stock, 9)
-        self.assertEqual(SaleItem.objects.count(), 1)
-        self.assertEqual(SaleItem.objects.get().quantity, 1)
+        self.item.refresh_from_db()
+        finance_entry = FinanceEntry.objects.get(sale=sale)
+        self.assertEqual(sale.client, self.customer)
+        self.assertEqual(sale.product, self.item)
+        self.assertEqual(str(sale.cost_snapshot), "19000.00")
+        self.assertEqual(str(sale.gross_profit), "4700.00")
+        self.assertEqual(self.item.status, InventoryItem.STATUS_SOLD)
+        self.assertEqual(self.item.days_to_sell, 10)
+        self.assertEqual(finance_entry.entry_type, FinanceEntry.TYPE_INCOME)
+        self.assertEqual(str(finance_entry.amount), "25000.00")
 
-    def test_reject_sale_with_multiple_items(self):
+    def test_reject_sale_for_sold_product(self):
+        self.item.status = InventoryItem.STATUS_SOLD
+        self.item.sold_date = timezone.localdate()
+        self.item.days_to_sell = 3
+        self.item.save()
+
         response = self.client.post(
             "/api/sales/",
             {
-                "client": self.customer.id,
-                "items": [
-                    {"inventory_item": self.item_one.id},
-                    {"inventory_item": self.item_two.id},
-                ],
+                "customer": self.customer.id,
+                "product": self.item.id,
+                "sale_date": str(timezone.localdate()),
+                "payment_method": "cash",
+                "sales_channel": "direct",
+                "amount_paid": "25000.00",
             },
             format="json",
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("items", response.data)
-        self.assertEqual(Sale.objects.count(), 0)
+        self.assertIn("product", response.data)
 
-    def test_reject_sale_with_insufficient_stock(self):
-        self.item_one.stock = 0
-        self.item_one.save(update_fields=["stock"])
-
+    def test_sale_can_be_created_with_free_text_customer(self):
         response = self.client.post(
             "/api/sales/",
             {
-                "client": self.customer.id,
-                "items": [
-                    {"inventory_item": self.item_one.id},
-                ],
-            },
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(Sale.objects.count(), 0)
-        self.item_one.refresh_from_db()
-        self.assertEqual(self.item_one.stock, 0)
-
-    def test_sale_failure_is_atomic_when_one_item_is_invalid(self):
-        response = self.client.post(
-            "/api/sales/",
-            {
-                "client": self.customer.id,
-                "items": [
-                    {"inventory_item": self.item_one.id},
-                    {"inventory_item": self.item_two.id},
-                ],
-            },
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(Sale.objects.count(), 0)
-        self.item_one.refresh_from_db()
-        self.item_two.refresh_from_db()
-        self.assertEqual(self.item_one.stock, 10)
-        self.assertEqual(self.item_two.stock, 20)
-
-    def test_list_sales(self):
-        sale = Sale.objects.create(client=self.customer, created_by=self.user, total=Decimal("10.00"))
-        SaleItem.objects.create(
-            sale=sale,
-            inventory_item=self.item_one,
-            quantity=1,
-            unit_price=Decimal("10.00"),
-            subtotal=Decimal("10.00"),
-        )
-
-        response = self.client.get("/api/sales/")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-
-    def test_retrieve_sale(self):
-        sale = Sale.objects.create(client=self.customer, created_by=self.user, total=Decimal("10.00"))
-        sale_item = SaleItem.objects.create(
-            sale=sale,
-            inventory_item=self.item_one,
-            quantity=1,
-            unit_price=Decimal("10.00"),
-            subtotal=Decimal("10.00"),
-        )
-
-        response = self.client.get(f"/api/sales/{sale.id}/")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["id"], sale.id)
-        self.assertEqual(response.data["items"][0]["id"], sale_item.id)
-
-    def test_sale_can_be_created_without_client(self):
-        response = self.client.post(
-            "/api/sales/",
-            {
-                "items": [
-                    {"inventory_item": self.item_one.id},
-                ],
+                "product": self.item.id,
+                "sale_date": str(timezone.localdate()),
+                "customer_name": "Cliente mostrador",
+                "customer_contact": "@walkin",
+                "payment_method": "cash",
+                "sales_channel": "direct",
+                "amount_paid": "24500.00",
             },
             format="json",
         )

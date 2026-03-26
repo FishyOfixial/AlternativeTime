@@ -1,48 +1,84 @@
-import { apiJson } from "./http";
+import { apiJson, apiRequest } from "./http";
 
-export function listInventory(accessToken) {
-  return apiJson("/api/inventory/", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
+function authHeaders(accessToken, extraHeaders = {}) {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    ...extraHeaders
+  };
+}
+
+function buildInventoryPayload(payload) {
+  const purchaseCost = payload.purchase_cost || {};
+
+  return {
+    brand: payload.brand?.trim() || "",
+    model_name: payload.model_name?.trim() || "",
+    year_label: payload.year_label?.trim() || "",
+    condition_score: payload.condition_score,
+    provider: payload.provider?.trim() || "",
+    description: payload.description?.trim() || "",
+    notes: payload.notes?.trim() || "",
+    price: payload.price,
+    purchase_date: payload.purchase_date || null,
+    status: payload.status,
+    sales_channel: payload.sales_channel,
+    image_url: payload.image_url?.trim() || "",
+    purchase_cost: {
+      watch_cost: purchaseCost.watch_cost,
+      shipping_cost: purchaseCost.shipping_cost,
+      maintenance_cost: purchaseCost.maintenance_cost,
+      other_costs: purchaseCost.other_costs,
+      payment_method: purchaseCost.payment_method,
+      source_account: purchaseCost.source_account,
+      notes: purchaseCost.notes?.trim() || ""
     }
+  };
+}
+
+export function listInventory(accessToken, filters = {}) {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "" && value !== "all") {
+      searchParams.set(key, value);
+    }
+  });
+
+  const query = searchParams.toString();
+  return apiJson(`/api/inventory/${query ? `?${query}` : ""}`, {
+    headers: authHeaders(accessToken)
   });
 }
 
 export function getInventoryItem(accessToken, itemId) {
   return apiJson(`/api/inventory/${itemId}/`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+    headers: authHeaders(accessToken)
   });
 }
 
 export function createInventoryItem(accessToken, payload) {
   return apiJson("/api/inventory/", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+    headers: authHeaders(accessToken, {
       "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
+    }),
+    body: JSON.stringify(buildInventoryPayload(payload))
   });
 }
 
 export function updateInventoryItem(accessToken, itemId, payload) {
   return apiJson(`/api/inventory/${itemId}/`, {
     method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+    headers: authHeaders(accessToken, {
       "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
+    }),
+    body: JSON.stringify(buildInventoryPayload(payload))
   });
 }
 
-export function deleteInventoryItem(accessToken, itemId) {
-  return apiJson(`/api/inventory/${itemId}/`, {
+export async function deleteInventoryItem(accessToken, itemId) {
+  await apiRequest(`/api/inventory/${itemId}/`, {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+    headers: authHeaders(accessToken)
   });
 }

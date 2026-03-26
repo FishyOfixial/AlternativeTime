@@ -45,6 +45,19 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function buildInitialSaleForm() {
+  return {
+    product: "",
+    sale_date: new Date().toISOString().slice(0, 10),
+    payment_method: "cash",
+    sales_channel: "instagram",
+    amount_paid: "",
+    extras: "0.00",
+    sale_shipping_cost: "0.00",
+    notes: ""
+  };
+}
+
 export default function ClientDetailPage() {
   const { accessToken } = useAuth();
   const navigate = useNavigate();
@@ -65,7 +78,7 @@ export default function ClientDetailPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSaleFormOpen, setIsSaleFormOpen] = useState(false);
   const [isCreatingSale, setIsCreatingSale] = useState(false);
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState("");
+  const [saleForm, setSaleForm] = useState(buildInitialSaleForm);
 
   async function loadClient() {
     try {
@@ -87,7 +100,7 @@ export default function ClientDetailPage() {
       const items = await listInventory(accessToken);
       setInventoryState({
         status: "success",
-        items: items.filter((item) => item.is_active && item.stock > 0)
+        items: items.filter((item) => item.is_active && item.status === "available")
       });
     } catch {
       setInventoryState({
@@ -103,6 +116,10 @@ export default function ClientDetailPage() {
   }, [accessToken, clientId]);
 
   const client = clientState.client;
+  const selectedItem = useMemo(
+    () => inventoryState.items.find((item) => String(item.id) === String(saleForm.product)),
+    [inventoryState.items, saleForm.product]
+  );
 
   const averageTicket = useMemo(() => {
     if (!client || !client.purchases_count) {
@@ -111,6 +128,23 @@ export default function ClientDetailPage() {
 
     return Number(client.total_spent || 0) / client.purchases_count;
   }, [client]);
+
+  function handleSaleFormChange(event) {
+    const { name, value } = event.target;
+    setSaleForm((current) => {
+      const next = {
+        ...current,
+        [name]: value
+      };
+
+      if (name === "product") {
+        const nextItem = inventoryState.items.find((item) => String(item.id) === value);
+        next.amount_paid = nextItem ? String(nextItem.price || "") : "";
+      }
+
+      return next;
+    });
+  }
 
   async function handleUpdate(payload) {
     setIsSaving(true);
@@ -150,19 +184,24 @@ export default function ClientDetailPage() {
     setSaleSuccess("");
 
     try {
-      const payload = {
-        client: Number(clientId),
-        items: [{ inventory_item: Number(selectedInventoryItem) }]
-      };
-
-      await createSale(accessToken, payload);
+      await createSale(accessToken, {
+        customer: Number(clientId),
+        product: Number(saleForm.product),
+        sale_date: saleForm.sale_date,
+        payment_method: saleForm.payment_method,
+        sales_channel: saleForm.sales_channel,
+        amount_paid: saleForm.amount_paid,
+        extras: saleForm.extras,
+        sale_shipping_cost: saleForm.sale_shipping_cost,
+        notes: saleForm.notes.trim()
+      });
       await loadClient();
       await loadInventory();
-      setSelectedInventoryItem("");
+      setSaleForm(buildInitialSaleForm());
       setSaleSuccess("Venta registrada correctamente para este cliente.");
       setIsSaleFormOpen(false);
     } catch {
-      setSaleError("No pudimos registrar la venta. Revisa el reloj seleccionado y su stock.");
+      setSaleError("No pudimos registrar la venta. Revisa los datos de la operacion.");
     } finally {
       setIsCreatingSale(false);
     }
@@ -297,8 +336,7 @@ export default function ClientDetailPage() {
                         {purchase.item_names.join(", ")}
                       </p>
                       <p className="mt-1 text-xs text-[#9b8974]">
-                        {formatDate(purchase.created_at)} ·{" "}
-                        {client.instagram_handle || "Sin IG"}
+                        {formatDate(purchase.created_at)} · {client.instagram_handle || "Sin IG"}
                       </p>
                     </div>
                     <p className="font-semibold text-[#6ca07e]">
@@ -359,22 +397,82 @@ export default function ClientDetailPage() {
                     </span>
                     <select
                       className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b] outline-none transition focus:border-[#b69556] focus:ring-2 focus:ring-[#ead9b4]"
-                      onChange={(event) => setSelectedInventoryItem(event.target.value)}
+                      name="product"
+                      onChange={handleSaleFormChange}
                       required
-                      value={selectedInventoryItem}
+                      value={saleForm.product}
                     >
                       <option value="">Selecciona un reloj</option>
                       {inventoryState.items.map((item) => (
                         <option key={item.id} value={item.id}>
-                          {item.name} · Stock {item.stock} · {formatCurrency(item.price)}
+                          {item.display_name} · {item.product_id} · {formatCurrency(item.price)}
                         </option>
                       ))}
                     </select>
                   </label>
 
-                  <div className="mt-4 rounded-lg border border-[#e4d7c3] bg-[#fffaf1] px-4 py-3 text-sm text-[#7d6751]">
-                    Esta venta registrara una sola pieza. La cantidad siempre es 1.
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
+                        Fecha de venta
+                      </span>
+                      <input className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]" name="sale_date" onChange={handleSaleFormChange} type="date" value={saleForm.sale_date} />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
+                        Metodo de pago
+                      </span>
+                      <select className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]" name="payment_method" onChange={handleSaleFormChange} value={saleForm.payment_method}>
+                        <option value="cash">Efectivo</option>
+                        <option value="transfer">Transferencia</option>
+                        <option value="card">Tarjeta</option>
+                        <option value="msi">MSI</option>
+                        <option value="consignment">Consigna</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
+                        Canal de venta
+                      </span>
+                      <select className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]" name="sales_channel" onChange={handleSaleFormChange} value={saleForm.sales_channel}>
+                        <option value="marketplace">Marketplace</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="direct">Directo</option>
+                        <option value="other">Otro</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
+                        Monto pagado
+                      </span>
+                      <input className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]" min="0" name="amount_paid" onChange={handleSaleFormChange} step="0.01" type="number" value={saleForm.amount_paid} />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
+                        Extras
+                      </span>
+                      <input className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]" min="0" name="extras" onChange={handleSaleFormChange} step="0.01" type="number" value={saleForm.extras} />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
+                        Costo de envio
+                      </span>
+                      <input className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]" min="0" name="sale_shipping_cost" onChange={handleSaleFormChange} step="0.01" type="number" value={saleForm.sale_shipping_cost} />
+                    </label>
+                    <label className="md:col-span-2 block">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
+                        Notas
+                      </span>
+                      <textarea className="mt-2 min-h-20 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]" name="notes" onChange={handleSaleFormChange} value={saleForm.notes} />
+                    </label>
                   </div>
+
+                  {selectedItem ? (
+                    <div className="mt-4 rounded-lg border border-[#e4d7c3] bg-[#fffaf1] px-4 py-3 text-sm text-[#7d6751]">
+                      {selectedItem.display_name} · {selectedItem.product_id} · precio lista {formatCurrency(selectedItem.price)}
+                    </div>
+                  ) : null}
                 </div>
 
                 <button
@@ -382,7 +480,9 @@ export default function ClientDetailPage() {
                   disabled={
                     isCreatingSale ||
                     inventoryState.status === "error" ||
-                    inventoryState.items.length === 0
+                    inventoryState.items.length === 0 ||
+                    !saleForm.product ||
+                    !saleForm.amount_paid
                   }
                   type="submit"
                 >

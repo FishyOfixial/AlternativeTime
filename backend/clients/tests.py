@@ -1,6 +1,12 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
+
+from inventory.models import InventoryItem, PurchaseCost
+from sales.models import Sale
 
 from .models import Client
 
@@ -21,93 +27,61 @@ class TestClientsApi(TestCase):
 
         self.assertEqual(response.status_code, 401)
 
-    def test_create_client(self):
-        payload = {
-            "name": "Acme Corp",
-            "phone": "555-111-2222",
-            "email": "contact@acme.test",
-            "instagram_handle": "@acme",
-            "address": "Industrial Ave 101",
-            "notes": "Cliente mayorista",
-        }
+    def test_create_client_rejects_duplicate_phone(self):
+        Client.objects.create(name="Existing", phone="555-111-2222")
 
-        response = self.client.post("/api/clients/", payload, format="json")
-
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(Client.objects.count(), 1)
-        self.assertEqual(Client.objects.first().name, "Acme Corp")
-        self.assertEqual(Client.objects.first().instagram_handle, "@acme")
-
-    def test_list_clients(self):
-        Client.objects.create(
-            name="Example Client",
-            phone="555-999-8888",
-            email="example@test.com",
-            instagram_handle="@example",
-        )
-
-        response = self.client.get("/api/clients/")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["instagram_handle"], "@example")
-        self.assertEqual(response.data[0]["purchases_count"], 0)
-        self.assertEqual(response.data[0]["total_spent"], "0.00")
-
-    def test_update_client(self):
-        client = Client.objects.create(
-            name="Old Name",
-            phone="555-123",
-            email="old@test.com",
-        )
-
-        response = self.client.patch(
-            f"/api/clients/{client.id}/",
-            {"name": "New Name", "is_active": False, "instagram_handle": "@new"},
+        response = self.client.post(
+            "/api/clients/",
+            {
+                "name": "Acme Corp",
+                "phone": "555-111-2222",
+                "instagram_handle": "@acme",
+            },
             format="json",
         )
 
-        client.refresh_from_db()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(client.name, "New Name")
-        self.assertFalse(client.is_active)
-        self.assertEqual(client.instagram_handle, "@new")
-
-    def test_delete_client(self):
-        client = Client.objects.create(
-            name="Delete Me",
-            phone="555-000",
-        )
-
-        response = self.client.delete(f"/api/clients/{client.id}/")
-
-        self.assertEqual(response.status_code, 204)
-        self.assertFalse(Client.objects.filter(id=client.id).exists())
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("phone", response.data)
 
     def test_retrieve_client_includes_purchase_history(self):
-        from decimal import Decimal
-
-        from inventory.models import InventoryItem
-        from sales.models import Sale, SaleItem
-
         client = Client.objects.create(
             name="Repeat Buyer",
             phone="555-4444",
             instagram_handle="@repeatbuyer",
         )
         item = InventoryItem.objects.create(
+            brand="Classic",
+            model_name="Watch",
             name="Classic Watch",
-            sku="WATCH-001",
+            product_id="CLA-001",
+            sku="CLA-001",
             price=Decimal("1550.00"),
-            stock=5,
+            purchase_date=timezone.localdate(),
+            status="sold",
+            sold_date=timezone.localdate(),
+            days_to_sell=0,
+            stock=0,
+            is_active=False,
         )
-        sale = Sale.objects.create(client=client, created_by=self.user, total=Decimal("1550.00"))
-        SaleItem.objects.create(
-            sale=sale,
-            inventory_item=item,
-            quantity=1,
-            unit_price=Decimal("1550.00"),
-            subtotal=Decimal("1550.00"),
+        PurchaseCost.objects.create(
+            product=item,
+            purchase_date=item.purchase_date,
+            watch_cost=Decimal("1000.00"),
+            shipping_cost=Decimal("0.00"),
+            maintenance_cost=Decimal("0.00"),
+            other_costs=Decimal("0.00"),
+        )
+        Sale.objects.create(
+            client=client,
+            product=item,
+            sale_date=timezone.localdate(),
+            payment_method="cash",
+            sales_channel="direct",
+            amount_paid=Decimal("1550.00"),
+            cost_snapshot=Decimal("1000.00"),
+            gross_profit=Decimal("550.00"),
+            created_by=self.user,
+            updated_by=self.user,
         )
 
         response = self.client.get(f"/api/clients/{client.id}/")

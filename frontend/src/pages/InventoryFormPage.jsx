@@ -8,7 +8,6 @@ import {
   createInventoryItem,
   deleteInventoryItem,
   getInventoryItem,
-  listInventory,
   updateInventoryItem
 } from "../services/inventory";
 
@@ -21,23 +20,9 @@ export default function InventoryFormPage() {
     status: isEdit ? "loading" : "ready",
     item: null
   });
-  const [existingItems, setExistingItems] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-
-  useEffect(() => {
-    async function loadBase() {
-      try {
-        const items = await listInventory(accessToken);
-        setExistingItems(items);
-      } catch {
-        setExistingItems([]);
-      }
-    }
-
-    loadBase();
-  }, [accessToken]);
 
   useEffect(() => {
     if (!isEdit) {
@@ -131,7 +116,6 @@ export default function InventoryFormPage() {
 
       <InventoryForm
         defaultValues={pageState.item || {}}
-        existingItems={existingItems.filter((item) => String(item.id) !== String(itemId))}
         isEdit={isEdit}
         isSubmitting={isSaving}
         onSubmit={handleSubmit}

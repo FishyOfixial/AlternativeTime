@@ -21,17 +21,17 @@ const statusLabels = {
 };
 
 const tagLabels = {
-  none: "—",
   new: "Nuevo",
+  promote: "Promover",
   discount: "Descuento",
-  promote: "Promover"
+  liquidate: "Liquidar"
 };
 
 const tagClasses = {
-  none: "bg-[#f3eee4] text-[#9d8b73]",
   new: "bg-[#edf7f1] text-[#82a88b]",
+  promote: "bg-[#fbf1d7] text-[#c4a053]",
   discount: "bg-[#fff0df] text-[#dc9b60]",
-  promote: "bg-[#fbf1d7] text-[#c4a053]"
+  liquidate: "bg-[#fde7e2] text-[#c06b5c]"
 };
 
 const statusClasses = {
@@ -94,7 +94,7 @@ export default function InventoryPage() {
     return inventoryState.items.filter((item) => {
       const normalizedTerm = searchTerm.trim().toLowerCase();
       const matchesTerm = normalizedTerm
-        ? [item.sku, item.brand, item.model_name, item.display_name]
+        ? [item.product_id, item.brand, item.model_name, item.display_name]
             .filter(Boolean)
             .some((value) => value.toLowerCase().includes(normalizedTerm))
         : true;
@@ -119,13 +119,7 @@ export default function InventoryPage() {
               ? days > 30 && days <= 90
               : days > 90;
 
-      return (
-        matchesTerm &&
-        matchesStatus &&
-        matchesBrand &&
-        matchesPrice &&
-        matchesDays
-      );
+      return matchesTerm && matchesStatus && matchesBrand && matchesPrice && matchesDays;
     });
   }, [inventoryState.items, searchTerm, selectedStatus, selectedBrand, selectedPrice, selectedDays]);
 
@@ -174,7 +168,7 @@ export default function InventoryPage() {
             onClick={() => setViewMode("table")}
             type="button"
           >
-            ☰ Tabla
+            Tabla
           </button>
           <button
             className={`rounded-md border px-4 py-2 text-sm ${
@@ -185,7 +179,7 @@ export default function InventoryPage() {
             onClick={() => setViewMode("cards")}
             type="button"
           >
-            ▣ Tarjetas
+            Tarjetas
           </button>
         </div>
       </section>
@@ -226,28 +220,28 @@ export default function InventoryPage() {
                   <th className="px-4 py-4">Marca / modelo</th>
                   <th className="px-4 py-4">Año</th>
                   <th className="px-4 py-4">Cond.</th>
-                  <th className="px-4 py-4">Costo</th>
+                  <th className="px-4 py-4">Costo compra</th>
                   <th className="px-4 py-4">Precio</th>
+                  <th className="px-4 py-4">Utilidad</th>
                   <th className="px-4 py-4">Estado</th>
                   <th className="px-4 py-4">Dias inv.</th>
                   <th className="px-4 py-4">Etiqueta</th>
-                  <th className="px-4 py-4">Canal</th>
                   <th className="px-4 py-4" />
                 </tr>
               </thead>
               <tbody>
                 {filteredItems.map((item) => (
                   <tr key={item.id} className="border-t border-[#eadfcd] text-sm text-[#5d5144]">
-                    <td className="px-4 py-4 font-semibold text-[#b2883e]">{item.sku}</td>
+                    <td className="px-4 py-4 font-semibold text-[#b2883e]">{item.product_id}</td>
                     <td className="px-4 py-4"><p className="font-medium text-[#2a221b]">{item.display_name}</p></td>
                     <td className="px-4 py-4">{item.year_label || "—"}</td>
                     <td className="px-4 py-4">{item.condition_score}</td>
                     <td className="px-4 py-4 font-medium">{formatCurrency(item.total_cost)}</td>
                     <td className="px-4 py-4 font-semibold text-[#2a221b]">{formatCurrency(item.price)}</td>
+                    <td className="px-4 py-4">{Number(item.utilidad || 0).toFixed(1)}%</td>
                     <td className="px-4 py-4"><span className={`rounded-md px-2 py-1 text-xs ${statusClasses[item.status] || statusClasses.available}`}>{statusLabels[item.status] || item.status}</span></td>
                     <td className="px-4 py-4">{item.days_in_inventory}</td>
-                    <td className="px-4 py-4"><span className={`rounded-md px-2 py-1 text-xs ${tagClasses[item.tag] || tagClasses.none}`}>{tagLabels[item.tag] || item.tag}</span></td>
-                    <td className="px-4 py-4">{item.sales_channel}</td>
+                    <td className="px-4 py-4"><span className={`rounded-md px-2 py-1 text-xs ${tagClasses[item.age_tag] || tagClasses.new}`}>{tagLabels[item.age_tag] || item.age_tag}</span></td>
                     <td className="px-4 py-4"><NavLink className="text-sm text-[#8f7444]" to={`/inventory/${item.id}`}>Editar</NavLink></td>
                   </tr>
                 ))}
@@ -270,13 +264,13 @@ export default function InventoryPage() {
               </div>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold text-[#b2883e]">{item.sku}</p>
-                  <span className={`rounded-md px-2 py-1 text-[10px] uppercase ${tagClasses[item.tag] || tagClasses.none}`}>{tagLabels[item.tag] || item.tag}</span>
+                  <p className="font-semibold text-[#b2883e]">{item.product_id}</p>
+                  <span className={`rounded-md px-2 py-1 text-[10px] uppercase ${tagClasses[item.age_tag] || tagClasses.new}`}>{tagLabels[item.age_tag] || item.age_tag}</span>
                 </div>
                 <p className="mt-2 font-medium text-[#2a221b]">{item.display_name}</p>
                 <p className="mt-1 text-xs text-[#8a775f]">{item.year_label || "Sin año"} · Cond. {item.condition_score} · {item.days_in_inventory} dias</p>
                 <p className="mt-3 font-serif text-3xl text-[#2a221b]">{formatCurrency(item.price)}</p>
-                <p className="mt-1 text-xs text-[#8a775f]">Costo {formatCurrency(item.total_cost)} · Margen {item.estimated_margin}%</p>
+                <p className="mt-1 text-xs text-[#8a775f]">Costo {formatCurrency(item.total_cost)} · Utilidad {Number(item.utilidad || 0).toFixed(1)}%</p>
                 <NavLink className="mt-4 flex w-full items-center justify-center rounded-md bg-[#201914] px-4 py-3 text-sm font-semibold text-[#ddb65f]" to={`/inventory/${item.id}`}>
                   Editar reloj
                 </NavLink>

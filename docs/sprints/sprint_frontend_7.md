@@ -2,114 +2,119 @@
 
 ## Resumen
 
-Este sprint implementa las pantallas de finanzas y reportes en frontend. El
-objetivo es llevar a la interfaz los endpoints agregados ya disponibles y
-conectar estos modulos con el dashboard y la navegacion principal.
+Este sprint implementa finanzas y reportes sobre la nueva base de dominio:
+`PurchaseCost`, `Sale`, `FinanceEntry` y dashboard agregado. El objetivo es
+pasar de resúmenes básicos a vistas administrativas alineadas a la spec.
 
 ## Objetivo del sprint
 
-- implementar finanzas y reportes en frontend
-- exponer informacion consolidada en pantallas administrativas
-- reutilizar componentes KPI y tablas agregadas
+- construir las pantallas de finanzas y reportes del sistema
+- conectar dashboard, finanzas y reportes con datos reales del backend
+- preparar el frontend para exportaciones y análisis por periodo
 
 ## Resultado esperado
 
 Al cerrar este sprint, el frontend debe:
 
-- mostrar un resumen financiero inicial
-- mostrar reportes agregados de ventas e inventario
-- navegar desde dashboard hacia finanzas y reportes
-- representar estados sin datos de forma clara
+- mostrar resumen financiero ligado a ingresos y egresos reales
+- mostrar reportes operativos de ventas, inventario y rentabilidad
+- ofrecer filtros temporales consistentes con dashboard
+- dejar lista la superficie de UI para exportar cuando backend lo complete
 
 ## Alcance
 
 ### Incluye
 
-- pantalla de finanzas
-- pantalla de reportes
-- integracion con endpoints agregados existentes
-- reutilizacion de tarjetas, paneles y tablas resumidas
+- pantalla `/finance`
+- pantalla `/reports`
+- integración con `finance/summary`
+- integración con reportes agregados actuales
+- componentes reutilizables para tablas, filtros y KPIs
 
 ### Excluye
 
-- motor avanzado de filtros
-- exportaciones complejas
-- construccion de reportes personalizados
-- analitica avanzada no soportada por backend
+- editor de movimientos financieros manuales
+- exportaciones funcionales si backend aún no las expone
+- BI avanzada o reportes personalizados de usuario
 
 ## Interfaces publicas del sprint
 
 - `GET /api/finance/summary/`
+- `GET /api/reports/dashboard-summary/`
 - `GET /api/reports/sales-summary/`
 - `GET /api/reports/inventory-summary/`
-- rutas `/finance` y `/reports`
+- futuros `GET /api/reports/{type}/export/?format=xlsx|csv`
 
 ## Contrato esperado de UI e integracion
 
-- el frontend consume los endpoints agregados existentes sin asumir nuevas
-  estructuras
-- si el backend agrega filtros por periodo, la UI puede incorporarlos; si no,
-  las pantallas deben mantenerse funcionales con el contrato actual
+- finanzas debe distinguir ingresos por venta y egresos por compra
+- reportes debe consumir agregados ya calculados por backend, no recalcularlos
+  de forma paralela en frontend
+- los filtros de tiempo deben ser coherentes con `month`, `quarter`, `half`,
+  `year` y `lifetime`
+- si los endpoints de exportacion no existen aun, la UI debe dejar botones o
+  affordances inactivos y documentados, no falsas promesas
 
 ## Plan de trabajo por pasos
 
-### Paso 1. Crear servicios de finanzas y reportes
+### Paso 1. Consolidar servicios de finanzas y reportes
 
-- centralizar el consumo de endpoints agregados
-- estandarizar manejo de errores y transformaciones minimas de datos
+- normalizar respuestas y filtros
+- compartir transformaciones minimas entre dashboard y modulos analiticos
 
 **Entregable**
 
-Servicios listos para alimentar dashboard y pantallas analiticas.
+Servicios estables para consumo analitico.
 
 ### Paso 2. Implementar pantalla de finanzas
 
-- mostrar resumen financiero inicial
-- presentar indicadores de manera administrativa y legible
+- mostrar ingresos, egresos, balance y cuentas
+- reflejar impacto de compras y ventas sobre el flujo base
 
 **Entregable**
 
-Vista de finanzas util para consulta operacional.
+Vista de finanzas alineada al nuevo backend.
 
 ### Paso 3. Implementar pantalla de reportes
 
-- mostrar reportes de ventas e inventario
-- reutilizar tablas o tarjetas para la informacion consolidada
+- mostrar ventas por periodo, inventario actual, marcas y rentabilidad
+- reutilizar tablas y KPIs del dashboard sin duplicar diseño
 
 **Entregable**
 
-Vista de reportes conectada a datos reales.
+Vista de reportes administrativa conectada a datos reales.
 
-### Paso 4. Conectar con dashboard y navegacion
+### Paso 4. Preparar exportaciones y navegación cruzada
 
-- agregar enlaces profundos desde el dashboard
-- asegurar coherencia de navegacion entre modulos
+- ubicar acciones de exportar donde la spec las exige
+- enlazar dashboard, finanzas y reportes como una sola experiencia
 
 **Entregable**
 
-Experiencia integrada entre analitica y operacion.
+Superficie analitica consistente y escalable.
 
 ## Criterios de aceptacion
 
-- finanzas muestra datos reales desde la API
-- reportes muestra agregados reales desde la API
-- el dashboard enlaza a estas vistas
-- las pantallas manejan estados de vacio y error de forma consistente
+- finanzas consume datos reales del backend alineados a compras y ventas
+- reportes muestra agregados reales y coherentes con dashboard
+- los filtros temporales son consistentes entre vistas
+- la UI queda preparada para exportes sin inventar contratos no existentes
 
 ## Dependencias del sprint
 
 - Sprint Frontend 6 implementado
-- endpoints agregados del backend ya disponibles
-- dashboard base ya implementado
+- backend con `FinanceEntry`, `AccountBalance` y reportes agregados
+- dashboard base ya conectado al dominio nuevo
 
 ## Riesgos y notas
 
-- no inventar filtros si el backend aun no los soporta
-- mantener expectativas de UI alineadas al estado real de `finance` y `reports`
-- evitar convertir este sprint en rediseño completo del dashboard
+- no volver a calcular costos de ventas a partir del costo vivo del reloj
+- mantener la coherencia visual con el dashboard actual
+- evitar acoplar la UI a exportes no disponibles todavía
 
 ## Suposiciones y defaults elegidos
 
-- el backend ya expone un resumen financiero y dos reportes agregados
-- la primera version de finanzas y reportes sera de consulta, no de edicion
-- cualquier filtro avanzado queda como evolucion posterior
+- finanzas seguirá siendo una vista de consulta en esta fase
+- reportes crecen desde el dashboard actual, no como modulo separado del resto
+- la exportacion completa puede materializarse en backend en una iteracion
+  posterior del mismo bloque funcional

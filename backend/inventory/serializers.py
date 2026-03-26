@@ -1,125 +1,204 @@
 from decimal import Decimal
 
+from django.db import transaction
 from rest_framework import serializers
-from django.utils import timezone
 
-from .models import InventoryItem
+from finance.models import FinanceEntry
+from finance.services import recalculate_account_balance
+
+from .models import InventoryItem, PurchaseCost
+
+
+class PurchaseCostSerializer(serializers.ModelSerializer):
+    total_pagado = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = PurchaseCost
+        fields = [
+            "watch_cost",
+            "shipping_cost",
+            "maintenance_cost",
+            "other_costs",
+            "payment_method",
+            "source_account",
+            "notes",
+            "total_pagado",
+        ]
 
 
 class InventoryItemSerializer(serializers.ModelSerializer):
-    days_in_inventory = serializers.SerializerMethodField()
+    purchase_cost = PurchaseCostSerializer(required=False)
+    display_name = serializers.CharField(read_only=True)
+    days_in_inventory = serializers.IntegerField(source="dias_en_inventario", read_only=True)
+    age_tag = serializers.CharField(source="etiqueta_antiguedad", read_only=True)
     total_cost = serializers.SerializerMethodField()
     estimated_profit = serializers.SerializerMethodField()
-    estimated_margin = serializers.SerializerMethodField()
-    display_name = serializers.SerializerMethodField()
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        instance = getattr(self, "instance", None)
-
-        name = attrs.get("name") or getattr(instance, "name", "")
-        brand = attrs.get("brand")
-        model_name = attrs.get("model_name") or getattr(instance, "model_name", "")
-        cost_price = attrs.get("cost_price")
-        shipping_cost = attrs.get("shipping_cost")
-        maintenance_cost = attrs.get("maintenance_cost")
-        status = attrs.get("status") or getattr(instance, "status", InventoryItem.STATUS_AVAILABLE)
-        stock = attrs.get("stock")
-
-        if brand is None or not str(brand).strip():
-            attrs["brand"] = (name or "").split(" ")[0].strip() or "Sin marca"
-
-        if not model_name:
-            attrs["model_name"] = name.replace(attrs["brand"], "", 1).strip() or name
-
-        attrs["name"] = " ".join(
-            part for part in [attrs.get("brand", brand), attrs.get("model_name", model_name)] if part
-        ).strip()
-
-        if cost_price is None and instance is None:
-            attrs["cost_price"] = attrs.get("price", Decimal("0.00"))
-
-        if shipping_cost is None and instance is None:
-            attrs["shipping_cost"] = Decimal("0.00")
-
-        if maintenance_cost is None and instance is None:
-            attrs["maintenance_cost"] = Decimal("0.00")
-
-        if stock is None and instance is None:
-            attrs["stock"] = 1
-
-        if status == InventoryItem.STATUS_SOLD:
-            attrs["stock"] = 0
-            attrs["is_active"] = False
-        else:
-            attrs["stock"] = 1
-            attrs["is_active"] = True
-
-        return attrs
-
-    def get_days_in_inventory(self, obj):
-        reference_date = obj.purchase_date or timezone.localdate(obj.created_at)
-        return max((timezone.localdate() - reference_date).days, 0)
-
-    def get_total_cost(self, obj):
-        return str((obj.cost_price or 0) + (obj.shipping_cost or 0) + (obj.maintenance_cost or 0))
-
-    def get_estimated_profit(self, obj):
-        total_cost = (obj.cost_price or 0) + (obj.shipping_cost or 0) + (obj.maintenance_cost or 0)
-        return str((obj.price or 0) - total_cost)
-
-    def get_estimated_margin(self, obj):
-        total_cost = (obj.cost_price or 0) + (obj.shipping_cost or 0) + (obj.maintenance_cost or 0)
-        if not obj.price:
-            return 0
-        return round(float(((obj.price - total_cost) / obj.price) * 100), 1)
-
-    def get_display_name(self, obj):
-        return " ".join(part for part in [obj.brand, obj.model_name] if part).strip() or obj.name
+    utilidad = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryItem
-        # Expose the full item payload while protecting generated fields.
         fields = [
             "id",
+            "product_id",
+            "sku",
             "name",
             "display_name",
             "brand",
             "model_name",
-            "sku",
             "year_label",
             "condition_score",
             "provider",
             "description",
+            "notes",
             "price",
-            "cost_price",
-            "shipping_cost",
-            "maintenance_cost",
-            "payment_method",
             "purchase_date",
             "status",
             "tag",
+            "age_tag",
             "sales_channel",
             "image_url",
+            "sold_at",
+            "sold_date",
+            "days_to_sell",
             "stock",
             "is_active",
             "days_in_inventory",
             "total_cost",
             "estimated_profit",
-            "estimated_margin",
+            "utilidad",
+            "purchase_cost",
             "created_at",
             "updated_at",
         ]
         read_only_fields = [
             "id",
+            "product_id",
+            "sku",
+            "name",
             "display_name",
+            "tag",
+            "age_tag",
+            "sold_at",
+            "sold_date",
+            "days_to_sell",
+            "stock",
+            "is_active",
             "days_in_inventory",
             "total_cost",
             "estimated_profit",
-            "estimated_margin",
+            "utilidad",
             "created_at",
             "updated_at",
         ]
-        extra_kwargs = {
-            "name": {"required": False},
+
+    def get_total_cost(self, obj):
+        return str(obj.total_purchase_cost)
+
+    def get_estimated_profit(self, obj):
+        return str(obj.estimated_profit)
+
+    def get_utilidad(self, obj):
+        return round(float(obj.utilidad), 1)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        instance = getattr(self, "instance", None)
+        if not attrs.get("brand"):
+            name = attrs.get("name") or getattr(instance, "name", "")
+            attrs["brand"] = (name.split(" ")[0].strip() if name else "") or "Sin marca"
+        if not attrs.get("model_name"):
+            name = attrs.get("name") or getattr(instance, "name", "")
+            attrs["model_name"] = name.replace(attrs["brand"], "", 1).strip() or name or attrs["brand"]
+        if not attrs.get("purchase_date"):
+            attrs["purchase_date"] = getattr(instance, "purchase_date", None)
+        price = attrs.get("price", getattr(self.instance, "price", Decimal("0.00")))
+        if price <= 0:
+            raise serializers.ValidationError({"price": "El precio de venta debe ser mayor a cero."})
+        return attrs
+
+    def _sync_purchase_cost(self, product, purchase_cost_data):
+        purchase_cost, _ = PurchaseCost.objects.get_or_create(
+            product=product,
+            defaults={
+                "purchase_date": product.purchase_date,
+            },
+        )
+        for field, value in purchase_cost_data.items():
+            setattr(purchase_cost, field, value)
+        purchase_cost.purchase_date = product.purchase_date
+        purchase_cost.save()
+
+        finance_entry, _ = FinanceEntry.all_objects.update_or_create(
+            product=product,
+            concept=FinanceEntry.CONCEPT_PURCHASE,
+            defaults={
+                "entry_type": FinanceEntry.TYPE_EXPENSE,
+                "amount": purchase_cost.total_pagado,
+                "account": purchase_cost.source_account,
+                "entry_date": purchase_cost.purchase_date,
+                "notes": purchase_cost.notes,
+                "is_automatic": True,
+                "created_by": product.created_by,
+                "updated_by": product.updated_by,
+                "is_deleted": False,
+            },
+        )
+        recalculate_account_balance(finance_entry.account)
+        return purchase_cost
+
+    @transaction.atomic
+    def create(self, validated_data):
+        purchase_cost_data = validated_data.pop("purchase_cost", None) or {
+            "watch_cost": validated_data.get("cost_price", Decimal("0.00")),
+            "shipping_cost": validated_data.get("shipping_cost", Decimal("0.00")),
+            "maintenance_cost": validated_data.get("maintenance_cost", Decimal("0.00")),
+            "other_costs": Decimal("0.00"),
+            "payment_method": validated_data.get("payment_method", "cash"),
+            "source_account": "cash",
+            "notes": validated_data.get("notes", ""),
         }
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        product = InventoryItem.objects.create(
+            **validated_data,
+            created_by=user if getattr(user, "is_authenticated", False) else None,
+            updated_by=user if getattr(user, "is_authenticated", False) else None,
+        )
+        self._sync_purchase_cost(product, purchase_cost_data)
+        return product
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        purchase_cost_data = validated_data.pop("purchase_cost", None)
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        if getattr(user, "is_authenticated", False):
+            instance.updated_by = user
+        instance.save()
+        if purchase_cost_data is None and any(
+            key in validated_data for key in ["cost_price", "shipping_cost", "maintenance_cost", "payment_method"]
+        ):
+            purchase_cost_data = {
+                "watch_cost": validated_data.get("cost_price", instance.cost_price),
+                "shipping_cost": validated_data.get("shipping_cost", instance.shipping_cost),
+                "maintenance_cost": validated_data.get("maintenance_cost", instance.maintenance_cost),
+                "other_costs": getattr(getattr(instance, "purchase_cost", None), "other_costs", Decimal("0.00")),
+                "payment_method": validated_data.get(
+                    "payment_method",
+                    getattr(getattr(instance, "purchase_cost", None), "payment_method", "cash"),
+                ),
+                "source_account": getattr(
+                    getattr(instance, "purchase_cost", None), "source_account", "cash"
+                ),
+                "notes": getattr(getattr(instance, "purchase_cost", None), "notes", ""),
+            }
+        if purchase_cost_data is not None:
+            self._sync_purchase_cost(instance, purchase_cost_data)
+        return instance
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["tag"] = data["age_tag"]
+        return data

@@ -4,7 +4,11 @@
 
 :root {
   color-scheme: light;
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family:
+    "Segoe UI",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   background-color: #f4efe5;
   color: #2a221b;
   --sidebar-width: clamp(280px, 19vw, 320px);
@@ -40,6 +44,12 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+.font-serif {
+  font-family: inherit !important;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 #root {

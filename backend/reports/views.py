@@ -1,19 +1,13 @@
 from calendar import month_abbr
 from decimal import Decimal
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Sum
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from inventory.models import InventoryItem
-from sales.models import SaleItem
-
-
-def infer_brand(item):
-    if getattr(item, "brand", ""):
-        return item.brand
-    return (item.name or "").split(" ")[0] or "Sin marca"
+from sales.models import Sale
 
 
 def shift_months(value, months):
@@ -22,122 +16,108 @@ def shift_months(value, months):
     return value.replace(year=year, month=month, day=1)
 
 
-def get_period_bounds(range_key, now):
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-
+def get_period_bounds(range_key, today):
+    month_start = today.replace(day=1)
     if range_key == "month":
-        start = month_start
-    elif range_key == "quarter":
-        start = shift_months(month_start, -2)
-    elif range_key == "half":
-        start = shift_months(month_start, -5)
-    elif range_key == "year":
-        start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-    else:
-        start = None
-
-    return start, now
+        return month_start, today
+    if range_key == "quarter":
+        return shift_months(month_start, -2), today
+    if range_key == "half":
+        return shift_months(month_start, -5), today
+    if range_key == "year":
+        return today.replace(month=1, day=1), today
+    return None, today
 
 
-def compute_summary(items, inventory_items):
-    revenue = Decimal("0.00")
-    cost_of_sales = Decimal("0.00")
-    units_sold = 0
-    unique_sales = set()
-    weighted_days_sum = Decimal("0.00")
-    weighted_days_units = 0
+def compute_summary(sales_queryset, inventory_queryset):
+    aggregates = sales_queryset.aggregate(
+        revenue=Sum("amount_paid"),
+        profit=Sum("gross_profit"),
+        cost_of_sales=Sum("cost_snapshot"),
+        total_sales_count=Count("id"),
+    )
+    revenue = aggregates["revenue"] or Decimal("0.00")
+    profit = aggregates["profit"] or Decimal("0.00")
+    cost_of_sales = aggregates["cost_of_sales"] or Decimal("0.00")
+
+    sold_products = [sale.product for sale in sales_queryset.select_related("product")]
+    avg_days_to_sell = (
+        sum((product.days_to_sell or 0) for product in sold_products) / len(sold_products)
+        if sold_products
+        else 0
+    )
+
     brands = {}
-
-    for item in items:
-        sale = item.sale
-        inventory_item = item.inventory_item
-        brand = infer_brand(inventory_item)
-        quantity = item.quantity
-        subtotal = item.subtotal
-        unit_cost = inventory_item.cost_price
-        sale_cost = unit_cost * quantity
-        days_to_sell = max(
-            Decimal("0.00"),
-            Decimal((sale.created_at - inventory_item.created_at).total_seconds() / 86400),
-        )
-
-        revenue += subtotal
-        cost_of_sales += sale_cost
-        units_sold += quantity
-        unique_sales.add(sale.id)
-        weighted_days_sum += days_to_sell * quantity
-        weighted_days_units += quantity
-
-        brand_entry = brands.setdefault(
-            brand,
+    for sale in sales_queryset.select_related("product"):
+        product = sale.product
+        if product is None:
+            continue
+        entry = brands.setdefault(
+            product.brand,
             {
-                "brand": brand,
+                "brand": product.brand,
                 "units_sold": 0,
                 "revenue": Decimal("0.00"),
                 "cost_of_sales": Decimal("0.00"),
-                "days_sum": Decimal("0.00"),
-                "days_units": 0,
+                "profit": Decimal("0.00"),
+                "avg_days_to_sell": [],
             },
         )
-        brand_entry["units_sold"] += quantity
-        brand_entry["revenue"] += subtotal
-        brand_entry["cost_of_sales"] += sale_cost
-        brand_entry["days_sum"] += days_to_sell * quantity
-        brand_entry["days_units"] += quantity
-
-    inventory_capital = Decimal("0.00")
-    stock_by_brand = {}
-    for item in inventory_items:
-        brand = infer_brand(item)
-        inventory_capital += item.cost_price * item.stock
-        stock_by_brand[brand] = stock_by_brand.get(brand, 0) + item.stock
-
-    profit = revenue - cost_of_sales
-    avg_days_to_sell = (
-        weighted_days_sum / weighted_days_units if weighted_days_units else Decimal("0.00")
-    )
-    inventory_sales_ratio = inventory_capital / revenue if revenue > 0 else Decimal("0.00")
+        entry["units_sold"] += 1
+        entry["revenue"] += sale.amount_paid
+        entry["cost_of_sales"] += sale.cost_snapshot
+        entry["profit"] += sale.gross_profit
+        entry["avg_days_to_sell"].append(product.days_to_sell or 0)
 
     brands_sold = []
     for brand_entry in brands.values():
         avg_days = (
-            brand_entry["days_sum"] / brand_entry["days_units"]
-            if brand_entry["days_units"]
-            else Decimal("0.00")
+            sum(brand_entry["avg_days_to_sell"]) / len(brand_entry["avg_days_to_sell"])
+            if brand_entry["avg_days_to_sell"]
+            else 0
         )
         brands_sold.append(
             {
                 "brand": brand_entry["brand"],
                 "units_sold": brand_entry["units_sold"],
-                "avg_days_to_sell": round(float(avg_days), 1),
+                "avg_days_to_sell": round(avg_days, 1),
                 "revenue": str(brand_entry["revenue"]),
                 "cost_of_sales": str(brand_entry["cost_of_sales"]),
-                "profit": str(brand_entry["revenue"] - brand_entry["cost_of_sales"]),
+                "profit": str(brand_entry["profit"]),
             }
         )
 
-    brands_sold.sort(key=lambda brand: (-brand["units_sold"], brand["brand"]))
+    brands_sold.sort(key=lambda row: (-row["units_sold"], row["brand"]))
     fastest_selling_brands = sorted(
         brands_sold,
-        key=lambda brand: (brand["avg_days_to_sell"], -brand["units_sold"], brand["brand"]),
+        key=lambda row: (row["avg_days_to_sell"], -row["units_sold"], row["brand"]),
     )[:5]
-    stock_rows = [
+
+    inventory_capital = Decimal("0.00")
+    stock_by_brand_map = {}
+    for item in inventory_queryset.select_related("purchase_cost"):
+        inventory_capital += item.total_purchase_cost
+        stock_by_brand_map[item.brand] = stock_by_brand_map.get(item.brand, 0) + 1
+
+    stock_by_brand = [
         {"brand": brand, "units": units}
-        for brand, units in sorted(stock_by_brand.items(), key=lambda item: (-item[1], item[0]))
+        for brand, units in sorted(stock_by_brand_map.items(), key=lambda pair: (-pair[1], pair[0]))
     ]
+
+    inventory_sales_ratio = inventory_capital / revenue if revenue > 0 else Decimal("0.00")
 
     return {
         "sales_revenue": str(revenue),
         "profit_total": str(profit),
         "cost_of_sales": str(cost_of_sales),
         "capital_in_inventory": str(inventory_capital),
-        "avg_days_to_sell": round(float(avg_days_to_sell), 1),
+        "avg_days_to_sell": round(avg_days_to_sell, 1),
         "inventory_sales_ratio": round(float(inventory_sales_ratio), 2),
-        "total_sales_count": len(unique_sales),
-        "units_sold": units_sold,
+        "total_sales_count": aggregates["total_sales_count"] or 0,
+        "units_sold": aggregates["total_sales_count"] or 0,
         "brands_sold": brands_sold[:5],
         "fastest_selling_brands": fastest_selling_brands,
-        "stock_by_brand": stock_rows[:8],
+        "stock_by_brand": stock_by_brand[:8],
     }
 
 
@@ -150,17 +130,15 @@ def parse_selected_year(raw_value, fallback_year):
 
 class SalesSummaryReportView(APIView):
     def get(self, request):
-        aggregates = SaleItem.objects.aggregate(
-            total_sales_count=Count("sale", distinct=True),
-            gross_revenue=Sum("subtotal"),
-            items_sold=Sum("quantity"),
+        aggregates = Sale.objects.aggregate(
+            total_sales_count=Count("id"),
+            gross_revenue=Sum("amount_paid"),
         )
-
         return Response(
             {
                 "total_sales_count": aggregates["total_sales_count"] or 0,
                 "gross_revenue": str(aggregates["gross_revenue"] or Decimal("0.00")),
-                "items_sold": aggregates["items_sold"] or 0,
+                "items_sold": aggregates["total_sales_count"] or 0,
             }
         )
 
@@ -169,22 +147,13 @@ class InventorySummaryReportView(APIView):
     LOW_STOCK_THRESHOLD = 5
 
     def get(self, request):
-        aggregates = InventoryItem.objects.aggregate(
-            active_products=Count("id", filter=Q(is_active=True)),
-            total_stock=Sum("stock"),
-            low_stock_products=Count(
-                "id",
-                filter=Q(is_active=True, stock__lte=self.LOW_STOCK_THRESHOLD),
-            ),
-            out_of_stock_products=Count("id", filter=Q(is_active=True, stock=0)),
-        )
-
+        queryset = InventoryItem.objects.all()
         return Response(
             {
-                "active_products": aggregates["active_products"] or 0,
-                "total_stock": aggregates["total_stock"] or 0,
-                "low_stock_products": aggregates["low_stock_products"] or 0,
-                "out_of_stock_products": aggregates["out_of_stock_products"] or 0,
+                "active_products": queryset.filter(is_active=True).count(),
+                "total_stock": queryset.filter(is_active=True).count(),
+                "low_stock_products": queryset.filter(is_active=True).count(),
+                "out_of_stock_products": queryset.filter(stock=0).count(),
             }
         )
 
@@ -193,47 +162,42 @@ class DashboardSummaryReportView(APIView):
     RANGE_VALUES = {"month", "quarter", "half", "year", "lifetime"}
 
     def get(self, request):
-        now = timezone.now()
+        today = timezone.localdate()
         range_key = request.query_params.get("range", "month")
         if range_key not in self.RANGE_VALUES:
             range_key = "month"
 
-        selected_year = parse_selected_year(request.query_params.get("year"), now.year)
-        current_start, current_end = get_period_bounds(range_key, now)
-
-        sale_items = SaleItem.objects.select_related("sale", "inventory_item")
-        inventory_items = InventoryItem.objects.filter(is_active=True)
+        selected_year = parse_selected_year(request.query_params.get("year"), today.year)
+        current_start, current_end = get_period_bounds(range_key, today)
+        sales_queryset = Sale.objects.select_related("product")
+        inventory_queryset = InventoryItem.objects.filter(status=InventoryItem.STATUS_AVAILABLE)
 
         if current_start:
-            current_items = sale_items.filter(
-                sale__created_at__gte=current_start,
-                sale__created_at__lte=current_end,
+            current_sales = sales_queryset.filter(
+                sale_date__gte=current_start,
+                sale_date__lte=current_end,
             )
             duration = current_end - current_start
             previous_end = current_start
             previous_start = current_start - duration
-            previous_items = sale_items.filter(
-                sale__created_at__gte=previous_start,
-                sale__created_at__lt=previous_end,
+            previous_sales = sales_queryset.filter(
+                sale_date__gte=previous_start,
+                sale_date__lt=previous_end,
             )
         else:
-            current_items = sale_items
-            previous_items = sale_items.none()
+            current_sales = sales_queryset
+            previous_sales = Sale.objects.none()
 
-        current_summary = compute_summary(current_items, inventory_items)
-        previous_summary = compute_summary(previous_items, inventory_items)
+        current_summary = compute_summary(current_sales, inventory_queryset)
+        previous_summary = compute_summary(previous_sales, inventory_queryset)
 
         def percentage_delta(current_value, previous_value):
             current_decimal = Decimal(str(current_value or 0))
             previous_decimal = Decimal(str(previous_value or 0))
             if previous_decimal == 0:
                 return 0.0
-            return round(
-                float(((current_decimal - previous_decimal) / previous_decimal) * 100),
-                1,
-            )
+            return round(float(((current_decimal - previous_decimal) / previous_decimal) * 100), 1)
 
-        monthly_items = sale_items.filter(sale__created_at__year=selected_year)
         month_map = {
             month_number: {
                 "month": month_abbr[month_number],
@@ -243,12 +207,11 @@ class DashboardSummaryReportView(APIView):
             }
             for month_number in range(1, 13)
         }
-
-        for item in monthly_items:
-            month_bucket = month_map[item.sale.created_at.month]
-            month_bucket["sales"] += item.subtotal
-            month_bucket["cost"] += item.inventory_item.cost_price * item.quantity
-            month_bucket["profit"] = month_bucket["sales"] - month_bucket["cost"]
+        for sale in sales_queryset.filter(sale_date__year=selected_year):
+            bucket = month_map[sale.sale_date.month]
+            bucket["sales"] += sale.amount_paid
+            bucket["profit"] += sale.gross_profit
+            bucket["cost"] += sale.cost_snapshot
 
         monthly_breakdown = [
             {
@@ -261,10 +224,7 @@ class DashboardSummaryReportView(APIView):
         ]
 
         available_years = sorted(
-            {
-                now.year,
-                *sale_items.values_list("sale__created_at__year", flat=True),
-            },
+            {today.year, *sales_queryset.values_list("sale_date__year", flat=True)},
             reverse=True,
         )
 

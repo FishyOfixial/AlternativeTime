@@ -2,120 +2,133 @@
 
 ## Resumen
 
-Este sprint implementa el flujo operativo principal del frontend: ventas. El
-foco esta en captura de transacciones, seleccion de cliente e items, resumen de
-venta y manejo de errores de negocio devueltos por backend.
+Este sprint implementa el modulo de ventas sobre el dominio final definido en
+`docs/spec.md`: un reloj por venta, costo snapshot congelado, ganancias reales,
+metodo de pago, canal de venta y captura desde una vista operativa completa.
 
 ## Objetivo del sprint
 
-- implementar la interfaz de ventas
-- registrar ventas de extremo a extremo desde la UI
-- conectar ventas con clientes e inventario ya visibles en frontend
+- implementar la vista completa de ventas con el contrato final del backend
+- unificar el flujo de venta principal con clientes e inventario
+- mostrar el impacto financiero y operativo de la venta sin abandonar el mockup
 
 ## Resultado esperado
 
 Al cerrar este sprint, el frontend debe:
 
-- listar ventas
-- ofrecer un formulario de captura de venta
-- permitir seleccionar cliente e items
-- mostrar subtotales y resumen antes de enviar
-- manejar errores de negocio del backend sin romper la experiencia
+- listar ventas reales con filtros base
+- registrar una venta desde una vista dedicada y no solo desde cliente
+- permitir venta con cliente existente o datos libres
+- mostrar snapshot de costo, ganancia bruta y porcentaje de ganancia
+- reflejar cambios de estado del reloj de forma inmediata en inventario y
+  cliente
 
 ## Alcance
 
 ### Incluye
 
-- vista de listado de ventas
-- formulario de nueva venta
-- resumen de venta previo a confirmacion
-- integracion con clientes e inventario para seleccion de datos
-- feedback de exito o error
+- ruta `/sales`
+- ruta `/sales/new`
+- listado de ventas con filtros por fecha, cliente, metodo, canal y marca
+- formulario de venta final
+- integracion con clientes e inventario
+- feedback claro de validaciones de negocio
 
 ### Excluye
 
 - devoluciones
-- cancelaciones complejas
-- descuentos avanzados
-- reglas de caja o cierres diarios
-- permisos por rol
+- cancelaciones de venta posteriores
+- edicion tardia de ventas
+- apartados y abonos
 
 ## Interfaces publicas del sprint
 
 - `GET /api/sales/`
 - `POST /api/sales/`
-- `GET /api/sales/{id}/` si el backend ya lo expone o se requiere para detalle
-- rutas `/sales` y `/sales/new`
+- `GET /api/sales/{id}/`
+- consumo auxiliar de `GET /api/clients/` y `GET /api/inventory/`
 
 ## Contrato esperado de UI e integracion
 
-- el formulario de ventas debe apoyarse en clientes e inventario ya existentes
-- la UI debe representar errores de stock, validacion o negocio emitidos por el
-  backend
-- el detalle de una venta puede ser basico si el contrato backend aun es simple
+- el formulario debe enviar:
+  - `product`
+  - `customer` opcional
+  - `customer_name` opcional
+  - `customer_contact` opcional
+  - `sale_date`
+  - `payment_method`
+  - `sales_channel`
+  - `amount_paid`
+  - `extras`
+  - `sale_shipping_cost`
+  - `notes`
+- la UI no debe pedir cantidad ni multiples items
+- la UI debe tratar cada reloj como pieza individual
+- si el backend rechaza una venta por reloj vendido o fecha invalida, el error
+  debe verse dentro del formulario
 
 ## Plan de trabajo por pasos
 
-### Paso 1. Crear el servicio de ventas
+### Paso 1. Construir servicio y estado del modulo de ventas
 
-- centralizar operaciones del modulo
-- alinear frontend con el contrato real de la API de ventas
-
-**Entregable**
-
-Servicio de ventas listo para captura y consulta.
-
-### Paso 2. Implementar listado de ventas
-
-- mostrar ventas registradas
-- enlazar a nueva venta o detalle si aplica
+- centralizar consultas, filtros y creacion de ventas
+- normalizar el contrato final del backend en frontend
 
 **Entregable**
 
-Vista principal del modulo de ventas.
+Base del modulo de ventas conectada a la API final.
 
-### Paso 3. Implementar formulario de captura
+### Paso 2. Implementar listado operativo
 
-- seleccionar cliente
-- agregar items de inventario
-- calcular resumen o subtotales del lado UI cuando sea util
-
-**Entregable**
-
-Flujo de captura de venta completo en frontend.
-
-### Paso 4. Integrar envio y respuesta del backend
-
-- enviar la venta a la API
-- mostrar confirmacion de exito
-- manejar errores de negocio de manera visible y comprensible
+- mostrar ventas recientes y filtros utiles
+- representar reloj, cliente, canal, metodo, monto y ganancia
 
 **Entregable**
 
-Registro de venta de extremo a extremo desde la UI.
+Pantalla de ventas util para operacion diaria.
+
+### Paso 3. Implementar formulario de captura final
+
+- seleccionar reloj disponible
+- seleccionar cliente o capturar venta libre
+- mostrar resumen economico antes de guardar
+
+**Entregable**
+
+Flujo completo de venta alineado al negocio real.
+
+### Paso 4. Conectar el modulo con clientes e inventario
+
+- refrescar pantallas relacionadas despues de vender
+- asegurar consistencia visual del estado `vendido`
+
+**Entregable**
+
+Experiencia integrada entre ventas, clientes e inventario.
 
 ## Criterios de aceptacion
 
-- el frontend permite registrar una venta real contra el backend
-- la venta relaciona cliente e items de inventario
-- el usuario recibe confirmacion o error claro segun el resultado
-- existe una vista de listado para consultar ventas registradas
+- el usuario puede registrar una venta real contra el backend final
+- la venta siempre corresponde a un solo reloj
+- el formulario muestra datos economicos coherentes con costo snapshot y
+  ganancia
+- el listado de ventas usa datos reales y filtros base
 
 ## Dependencias del sprint
 
 - Sprint Frontend 5 implementado
-- endpoints de `sales` disponibles en backend
+- alineacion pre-Sprint 6 aplicada en backend
 - clientes e inventario ya accesibles desde frontend
 
 ## Riesgos y notas
 
-- el contrato exacto de items debe seguir lo que backend ya exponga
-- no inventar reglas de negocio no confirmadas
-- si aparecen validaciones complejas, deben tratarse como dependencia del
-  backend y no forzarse en frontend
+- no reintroducir cantidad o multi-item en la UI
+- mantener el mockup consistente con la operacion real del negocio
+- evitar duplicar logica de calculo que ya existe en backend
 
 ## Suposiciones y defaults elegidos
 
-- el backend de ventas ya soporta el flujo base del MVP
-- este sprint prioriza captura y consulta basica, no operacion avanzada
-- la UI consumira solo contratos reales ya disponibles
+- la venta principal del negocio sigue siendo un reloj por transaccion
+- el backend ya expone el contrato final de ventas
+- el detalle de cliente puede seguir ofreciendo alta de venta rapida, pero la
+  vista oficial del modulo nace en este sprint
