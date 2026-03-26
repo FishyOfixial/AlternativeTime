@@ -153,12 +153,9 @@ Este endpoint sirve para:
 - estandarizar estructura de serializers y vistas
 - agregar pruebas de API por modulo
 
-## Siguiente paso operativo
+## Siguientes pasos operativos
 
-El siguiente sprint de backend queda orientado a:
+Los siguientes sprints de backend quedan orientados a:
 
-- `clients`
-- `inventory`
-
-El detalle operativo de esa etapa esta documentado en
-`docs/sprints/sprint_backend_2.md`.
+- `clients` e `inventory` en `docs/sprints/sprint_backend_2.md`
+- `sales` en `docs/sprints/sprint_backend_3.md`
