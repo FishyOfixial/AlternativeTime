@@ -32,6 +32,23 @@ function formatCurrency(value) {
   }).format(Number(value || 0));
 }
 
+function normalizeBrand(value) {
+  const trimmed = value.trim().replace(/\s+/g, " ");
+  if (!trimmed) {
+    return "";
+  }
+  return trimmed
+    .toLowerCase()
+    .split(" ")
+    .map((word) =>
+      word
+        .split("-")
+        .map((part) => (part ? `${part[0].toUpperCase()}${part.slice(1)}` : ""))
+        .join("-")
+    )
+    .join(" ");
+}
+
 function buildFormState(defaultValues = {}) {
   const purchaseCost = defaultValues.purchase_cost || {};
 
@@ -108,7 +125,7 @@ export default function InventoryForm({
     event.preventDefault();
 
     onSubmit({
-      brand: values.brand.trim(),
+      brand: normalizeBrand(values.brand),
       model_name: values.model_name.trim(),
       year_label: values.year_label.trim(),
       condition_score: values.condition_score,

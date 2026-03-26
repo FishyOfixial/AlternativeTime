@@ -11,24 +11,12 @@ import InventoryFormPage from "../pages/InventoryFormPage";
 import InventoryPage from "../pages/InventoryPage";
 import LoginPage from "../pages/LoginPage";
 import ModulePage from "../pages/ModulePage";
+import FinancePage from "../pages/FinancePage";
+import ReportsPage from "../pages/ReportsPage";
 import SalesFormPage from "../pages/SalesFormPage";
 import SalesPage from "../pages/SalesPage";
 
 const modulePages = [
-  {
-    path: "/finance",
-    title: "Finanzas",
-    eyebrow: "Sprint Frontend 7",
-    description:
-      "Espacio reservado para resumenes financieros y metricas consolidadas."
-  },
-  {
-    path: "/reports",
-    title: "Reportes",
-    eyebrow: "Sprint Frontend 7",
-    description:
-      "Vista base para reportes agregados y consultas administrativas."
-  },
   {
     path: "/users",
     title: "Usuarios",
@@ -59,6 +47,8 @@ export default function AppRouter() {
             <Route path="/inventory/:itemId" element={<InventoryFormPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/sales/new" element={<SalesFormPage />} />
+            <Route path="/finance" element={<FinancePage />} />
+            <Route path="/reports" element={<ReportsPage />} />
             {modulePages.map((page) => (
               <Route
                 key={page.path}
