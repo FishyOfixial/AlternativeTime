@@ -152,3 +152,13 @@ Este endpoint sirve para:
 - definir autenticacion y permisos
 - estandarizar estructura de serializers y vistas
 - agregar pruebas de API por modulo
+
+## Siguiente paso operativo
+
+El siguiente sprint de backend queda orientado a:
+
+- `clients`
+- `inventory`
+
+El detalle operativo de esa etapa esta documentado en
+`docs/sprints/sprint_backend_2.md`.
