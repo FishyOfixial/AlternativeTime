@@ -3,8 +3,8 @@
 ## Estado actual
 
 El backend esta construido con Django y Django REST Framework. En este momento
-existe una base minima funcional orientada a validar configuracion, estructura e
-integracion con el frontend.
+ya existe una base funcional del MVP backend con autenticacion, modulos
+operativos iniciales y primeros endpoints de consolidacion.
 
 ## Estructura base actual
 
@@ -23,6 +23,15 @@ backend/
    |- views.py
    `- migrations/
 ```
+
+Apps de dominio ya incorporadas:
+
+- `users`
+- `clients`
+- `inventory`
+- `sales`
+- `finance`
+- `reports`
 
 ## Rol de `config/`
 
@@ -100,7 +109,19 @@ El backend ya soporta dos modos:
 - motor: PostgreSQL
 - controlado por `DB_ENGINE=postgres`
 - configuracion a traves de `POSTGRES_DB`, `POSTGRES_USER`,
-  `POSTGRES_PASSWORD`, `POSTGRES_HOST` y `POSTGRES_PORT`
+  `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` y
+  `POSTGRES_CONN_MAX_AGE`
+
+## Hardening y operacion
+
+El backend ya contempla una primera capa de endurecimiento para produccion:
+
+- `APP_ENV=production` para separar defaults de desarrollo
+- cookies seguras configurables por entorno
+- redireccion SSL configurable
+- HSTS configurable
+- logging basico a consola
+- handler de excepciones DRF con `status_code` consistente en errores API
 
 ## CORS y configuracion de integracion
 
@@ -138,6 +159,18 @@ El backend expone:
 
 - `GET /api/health/`
 
+Y ya cuenta con endpoints iniciales de negocio y consolidacion:
+
+- `POST /api/auth/login/`
+- `POST /api/auth/refresh/`
+- `GET /api/auth/me/`
+- `/api/clients/`
+- `/api/inventory/`
+- `/api/sales/`
+- `GET /api/finance/summary/`
+- `GET /api/reports/sales-summary/`
+- `GET /api/reports/inventory-summary/`
+
 Este endpoint sirve para:
 
 - comprobar que Django esta corriendo
@@ -147,8 +180,17 @@ Este endpoint sirve para:
 
 ## Pendientes backend mas importantes
 
-- definir apps de dominio reales
-- disenar modelos del negocio
-- definir autenticacion y permisos
-- estandarizar estructura de serializers y vistas
-- agregar pruebas de API por modulo
+- definir permisos por rol
+- reforzar calidad y cobertura en flujos criticos
+- profundizar endurecimiento para produccion
+- ampliar observabilidad y manejo de errores
+- preparar despliegue con PostgreSQL
+
+## Siguientes pasos operativos
+
+Los siguientes sprints de backend quedan orientados a:
+
+- `clients` e `inventory` en `docs/sprints/sprint_backend_2.md`
+- `sales` en `docs/sprints/sprint_backend_3.md`
+- `finance` y `reports` en `docs/sprints/sprint_backend_4.md`
+- endurecimiento, despliegue y calidad en `docs/sprints/sprint_backend_5.md`
