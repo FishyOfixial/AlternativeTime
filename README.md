@@ -48,6 +48,14 @@ Aplicar migraciones y correr el servidor:
 .\.venv\Scripts\python.exe backend\manage.py runserver
 ```
 
+Validaciones recomendadas del backend:
+
+```powershell
+cd backend
+..\.venv\Scripts\python.exe manage.py check
+..\.venv\Scripts\python.exe manage.py test users api clients inventory sales finance reports
+```
+
 ## Valores por defecto para desarrollo
 
 Si quieres dejar la base local con un usuario inicial para probar login del
@@ -131,12 +139,22 @@ SQLITE_NAME=db.sqlite3
 Produccion con PostgreSQL:
 
 ```env
+APP_ENV=production
+DJANGO_DEBUG=False
 DB_ENGINE=postgres
 POSTGRES_DB=alternative_time
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
+POSTGRES_CONN_MAX_AGE=60
+DJANGO_SECURE_SSL_REDIRECT=True
+DJANGO_SESSION_COOKIE_SECURE=True
+DJANGO_CSRF_COOKIE_SECURE=True
+DJANGO_SECURE_HSTS_SECONDS=3600
+DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+DJANGO_SECURE_HSTS_PRELOAD=True
+DJANGO_LOG_LEVEL=INFO
 ```
 
 Usa `.env.example` como plantilla.

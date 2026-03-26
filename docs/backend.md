@@ -109,7 +109,19 @@ El backend ya soporta dos modos:
 - motor: PostgreSQL
 - controlado por `DB_ENGINE=postgres`
 - configuracion a traves de `POSTGRES_DB`, `POSTGRES_USER`,
-  `POSTGRES_PASSWORD`, `POSTGRES_HOST` y `POSTGRES_PORT`
+  `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` y
+  `POSTGRES_CONN_MAX_AGE`
+
+## Hardening y operacion
+
+El backend ya contempla una primera capa de endurecimiento para produccion:
+
+- `APP_ENV=production` para separar defaults de desarrollo
+- cookies seguras configurables por entorno
+- redireccion SSL configurable
+- HSTS configurable
+- logging basico a consola
+- handler de excepciones DRF con `status_code` consistente en errores API
 
 ## CORS y configuracion de integracion
 
@@ -170,8 +182,8 @@ Este endpoint sirve para:
 
 - definir permisos por rol
 - reforzar calidad y cobertura en flujos criticos
-- endurecer configuracion para produccion
-- mejorar observabilidad y manejo de errores
+- profundizar endurecimiento para produccion
+- ampliar observabilidad y manejo de errores
 - preparar despliegue con PostgreSQL
 
 ## Siguientes pasos operativos

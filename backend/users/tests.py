@@ -36,6 +36,7 @@ class TestAuthApi(TestCase):
         )
 
         self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["status_code"], 401)
 
     def test_refresh_returns_new_access_token(self):
         login_response = self.client.post(
@@ -73,6 +74,7 @@ class TestAuthApi(TestCase):
         response = self.client.get("/api/auth/me/")
 
         self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.data["status_code"], 401)
 
     def test_default_permission_is_authenticated_for_unannotated_view(self):
         class ProtectedProbeView(APIView):

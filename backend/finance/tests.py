@@ -50,3 +50,13 @@ class TestFinanceSummaryApi(TestCase):
         self.assertEqual(response.data["total_sales_count"], 1)
         self.assertEqual(response.data["gross_revenue"], "200")
         self.assertEqual(response.data["items_sold"], 2)
+
+    def test_finance_summary_returns_zeroed_metrics_without_sales(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get("/api/finance/summary/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["total_sales_count"], 0)
+        self.assertEqual(response.data["gross_revenue"], "0.00")
+        self.assertEqual(response.data["items_sold"], 0)
