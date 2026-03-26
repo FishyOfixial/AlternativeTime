@@ -11,15 +11,10 @@ import InventoryFormPage from "../pages/InventoryFormPage";
 import InventoryPage from "../pages/InventoryPage";
 import LoginPage from "../pages/LoginPage";
 import ModulePage from "../pages/ModulePage";
+import SalesFormPage from "../pages/SalesFormPage";
+import SalesPage from "../pages/SalesPage";
 
 const modulePages = [
-  {
-    path: "/sales",
-    title: "Ventas",
-    eyebrow: "Sprint Frontend 6",
-    description:
-      "Pantalla placeholder para capturar ventas e integrar clientes e inventario."
-  },
   {
     path: "/finance",
     title: "Finanzas",
@@ -62,6 +57,8 @@ export default function AppRouter() {
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/inventory/new" element={<InventoryFormPage />} />
             <Route path="/inventory/:itemId" element={<InventoryFormPage />} />
+            <Route path="/sales" element={<SalesPage />} />
+            <Route path="/sales/new" element={<SalesFormPage />} />
             {modulePages.map((page) => (
               <Route
                 key={page.path}
