@@ -115,3 +115,24 @@ pendientes abiertos.
 **Estado**
 
 Aprobada.
+
+## DEC-007 JWT con DRF como estrategia inicial de autenticacion backend
+
+**Decision**
+
+Usar JWT con Django REST Framework como estrategia inicial de autenticacion para
+el backend.
+
+**Contexto**
+
+El frontend consume la API desde una aplicacion React separada y el backend
+necesita una forma clara y moderna de autenticacion para el MVP.
+
+**Impacto**
+
+Deja un contrato de acceso consistente para frontend, simplifica la integracion
+API-first y prepara el terreno para permisos por rol en iteraciones futuras.
+
+**Estado**
+
+Aprobada.

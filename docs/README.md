@@ -19,6 +19,7 @@ tomaron y cual es el orden recomendado para continuar la implementacion.
   producto de forma incremental.
 - [backlog.md](backlog.md): tareas tecnicas iniciales listas para ejecutar.
 - [decisions.md](decisions.md): registro de decisiones tecnicas aceptadas.
+- `sprints/`: planes operativos por sprint para ejecutar desarrollo por etapas.
 
 ## Artefactos fuente existentes
 
@@ -39,6 +40,7 @@ con la implementacion real del repositorio.
 5. [roadmap.md](roadmap.md)
 6. [backlog.md](backlog.md)
 7. [decisions.md](decisions.md)
+8. `sprints/`
 
 ## Uso esperado de `docs/`
 

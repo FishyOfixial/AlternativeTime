@@ -113,16 +113,24 @@ Esto permite la integracion local con el frontend servido por Vite.
 
 ## Autenticacion
 
-La autenticacion es un pendiente abierto definido, pero todavia no resuelto.
+La autenticacion ya tiene una direccion de trabajo definida para el siguiente
+sprint del backend.
 
-Por ahora:
+Decision de trabajo actual:
 
-- no hay modelo de autenticacion final decidido
+- JWT con DRF como estrategia objetivo para el MVP backend
+- uso del usuario estandar de Django en la primera iteracion
+
+Pendientes aun abiertos:
+
 - no hay estrategia de permisos por rol implementada
-- no debe asumirse aun si se usaran sesiones, JWT u otra variante
+- no hay definicion final de roles y autorizacion granular
+- no debe asumirse todavia un modelo final de usuarios mas alla del `User`
+  estandar de Django
 
-Cuando se implemente, debe quedar alineada con las pantallas de login y usuarios
-que ya aparecen en los artefactos de diseno.
+La implementacion debe quedar alineada con las pantallas de login y usuarios que
+ya aparecen en los artefactos de diseno y esta planificada en
+`docs/sprints/sprint_backend_1.md`.
 
 ## Endpoint actual de referencia
 
