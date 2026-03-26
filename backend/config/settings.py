@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "users",
     "clients",
     "inventory",
+    "sales",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

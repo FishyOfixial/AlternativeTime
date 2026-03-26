@@ -159,3 +159,4 @@ Los siguientes sprints de backend quedan orientados a:
 
 - `clients` e `inventory` en `docs/sprints/sprint_backend_2.md`
 - `sales` en `docs/sprints/sprint_backend_3.md`
+- `finance` y `reports` en `docs/sprints/sprint_backend_4.md`
