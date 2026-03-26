@@ -20,7 +20,8 @@ tomaron y cual es el orden recomendado para continuar la implementacion.
 - [backlog.md](backlog.md): tareas tecnicas vigentes y siguientes pasos
   recomendados.
 - [decisions.md](decisions.md): registro de decisiones tecnicas aceptadas.
-- `sprints/`: planes operativos por sprint para ejecutar desarrollo por etapas.
+- `sprints/`: planes operativos por sprint para ejecutar desarrollo por etapas
+  en backend y frontend.
 - `db/query/`: queries SQL utiles para desarrollo y soporte local.
 
 ## Artefactos fuente existentes
@@ -45,7 +46,10 @@ con la implementacion real del repositorio.
 8. `sprints/`
 
 Los sprints de backend 1 al 5 ya estan documentados en `sprints/` y funcionan
-como historial operativo de la construccion realizada hasta ahora.
+como historial operativo de la construccion realizada hasta ahora. A partir de
+este punto, `sprints/` tambien concentra el plan operativo del frontend desde
+la base tecnica hasta release, mediante `sprint_frontend_1.md` a
+`sprint_frontend_9.md`.
 
 ## Uso esperado de `docs/`
 

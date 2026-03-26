@@ -86,6 +86,25 @@ Eso significa que login, dashboard, clientes, inventario, ventas, finanzas,
 reportes y usuarios siguen siendo parte del roadmap, no del estado actual del
 codigo.
 
+## Plan operativo por sprints
+
+El trabajo del frontend ya esta desglosado en sprints documentados dentro de
+`docs/sprints/`. El orden recomendado de implementacion es:
+
+- `sprint_frontend_1.md`: fundaciones de aplicacion
+- `sprint_frontend_2.md`: login y sesion
+- `sprint_frontend_3.md`: shell operativa y dashboard
+- `sprint_frontend_4.md`: clientes
+- `sprint_frontend_5.md`: inventario
+- `sprint_frontend_6.md`: ventas
+- `sprint_frontend_7.md`: finanzas y reportes
+- `sprint_frontend_8.md`: usuarios y control de acceso en UI
+- `sprint_frontend_9.md`: endurecimiento, calidad y release
+
+Estos sprints describen el estado esperado de cada etapa y no deben confundirse
+con el estado actual del codigo, que por ahora sigue siendo una base tecnica
+minima.
+
 ## Uso del endpoint de salud como ejemplo
 
 La consulta a `/api/health/` demuestra el flujo base esperado:
@@ -100,8 +119,10 @@ producto.
 
 ## Pendientes frontend mas importantes
 
-- definir estructura por pantallas reales
-- agregar router
-- decidir estrategia de estado compartido si llega a ser necesaria
-- crear componentes base para dashboard, formularios, tablas y modales
-- alinear la implementacion con los mockups de `docs/design/`
+- ejecutar Sprint Frontend 1 para salir de la base tecnica actual
+- integrar login real con JWT en Sprint Frontend 2
+- construir shell autenticada y dashboard en Sprint Frontend 3
+- implementar modulos operativos de clientes, inventario y ventas en Sprints
+  Frontend 4 a 6
+- implementar finanzas, reportes y endurecimiento final en Sprints Frontend 7
+  a 9

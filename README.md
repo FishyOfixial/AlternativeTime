@@ -145,6 +145,10 @@ Frontend local:
 http://localhost:5173
 ```
 
+Plan operativo del frontend:
+
+- `docs/sprints/sprint_frontend_1.md` a `docs/sprints/sprint_frontend_9.md`
+
 ## Variables de entorno
 
 El archivo `.env` en la raiz controla el backend.

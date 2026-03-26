@@ -25,6 +25,11 @@ Consolidar la base del proyecto y definir el acceso al sistema.
 El sistema permite iniciar sesion y navegar por una estructura base estable sin
 romper el contrato backend/frontend.
 
+**Desglose operativo frontend**
+
+- Sprint Frontend 1: fundaciones de aplicacion
+- Sprint Frontend 2: login y sesion
+
 ## Fase 2: clientes e inventario
 
 **Objetivo**
@@ -47,6 +52,12 @@ Implementar los modulos base de operacion y catalogo.
 
 El sistema permite crear, consultar y actualizar clientes e inventario desde la
 interfaz.
+
+**Desglose operativo frontend**
+
+- Sprint Frontend 3: shell operativa y dashboard
+- Sprint Frontend 4: clientes
+- Sprint Frontend 5: inventario
 
 ## Fase 3: ventas
 
@@ -71,6 +82,10 @@ Habilitar el flujo operativo principal del sistema.
 Una venta puede registrarse de extremo a extremo con persistencia y reflejo en
 la UI.
 
+**Desglose operativo frontend**
+
+- Sprint Frontend 6: ventas
+
 ## Fase 4: finanzas y reportes
 
 **Objetivo**
@@ -92,6 +107,10 @@ Construir la capa de consolidacion y consulta analitica.
 **Criterio de hecho**
 
 El sistema entrega informacion consolidada util para seguimiento administrativo.
+
+**Desglose operativo frontend**
+
+- Sprint Frontend 7: finanzas y reportes
 
 ## Fase 5: endurecimiento, despliegue y calidad
 
@@ -116,3 +135,8 @@ Preparar el sistema para uso continuo y despliegue controlado.
 
 El proyecto queda en condiciones razonables para despliegue y mantenimiento
 continuo.
+
+**Desglose operativo frontend**
+
+- Sprint Frontend 8: usuarios y control de acceso en UI
+- Sprint Frontend 9: endurecimiento, calidad y release
