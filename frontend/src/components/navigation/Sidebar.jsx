@@ -2,13 +2,13 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const links = [
-  { to: "/dashboard", label: "Dashboard", sprint: "S3" },
-  { to: "/clients", label: "Clientes", sprint: "S4" },
-  { to: "/inventory", label: "Inventario", sprint: "S5" },
-  { to: "/sales", label: "Ventas", sprint: "S6" },
-  { to: "/finance", label: "Finanzas", sprint: "S7" },
-  { to: "/reports", label: "Reportes", sprint: "S7" },
-  { to: "/users", label: "Usuarios", sprint: "S8" }
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/clients", label: "Clientes"},
+  { to: "/inventory", label: "Inventario"},
+  { to: "/sales", label: "Ventas"},
+  { to: "/finance", label: "Finanzas"},
+  { to: "/reports", label: "Reportes"},
+  { to: "/users", label: "Usuarios"}
 ];
 
 export default function Sidebar() {
@@ -41,9 +41,6 @@ export default function Sidebar() {
               }
             >
               <span>{link.label}</span>
-              <span className="rounded-full border border-[#4a3d2e] px-2 py-1 text-[11px] text-[#8f7b63]">
-                {link.sprint}
-              </span>
             </NavLink>
           ))}
         </nav>

@@ -7,17 +7,12 @@ import AuthenticatedLayout from "../layouts/AuthenticatedLayout";
 import PublicLayout from "../layouts/PublicLayout";
 import DashboardPage from "../pages/DashboardPage";
 import HomePage from "../pages/HomePage";
+import InventoryFormPage from "../pages/InventoryFormPage";
+import InventoryPage from "../pages/InventoryPage";
 import LoginPage from "../pages/LoginPage";
 import ModulePage from "../pages/ModulePage";
 
 const modulePages = [
-  {
-    path: "/inventory",
-    title: "Inventario",
-    eyebrow: "Sprint Frontend 5",
-    description:
-      "Base lista para crecer hacia catalogo, detalle y formularios del inventario."
-  },
   {
     path: "/sales",
     title: "Ventas",
@@ -64,6 +59,9 @@ export default function AppRouter() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:clientId" element={<ClientDetailPage />} />
+            <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/inventory/new" element={<InventoryFormPage />} />
+            <Route path="/inventory/:itemId" element={<InventoryFormPage />} />
             {modulePages.map((page) => (
               <Route
                 key={page.path}

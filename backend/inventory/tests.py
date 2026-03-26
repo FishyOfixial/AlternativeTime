@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from .models import InventoryItem
@@ -23,22 +24,36 @@ class TestInventoryApi(TestCase):
 
     def test_create_inventory_item(self):
         payload = {
-            "name": "Blue Pen",
-            "brand": "Pilot",
-            "sku": "PEN-001",
-            "description": "Standard pen",
-            "price": "9.99",
-            "cost_price": "4.50",
-            "stock": 12,
+            "brand": "Seiko",
+            "model_name": "Prospex Diver 200M",
+            "sku": "SEI-045",
+            "year_label": "2019, 70's, Vintage",
+            "condition_score": "9.5",
+            "provider": "Coleccionista local",
+            "description": "Reloj en excelente estado.",
+            "price": "9200.00",
+            "cost_price": "5500.00",
+            "shipping_cost": "250.00",
+            "maintenance_cost": "500.00",
+            "payment_method": "cash",
+            "purchase_date": "2026-03-01",
+            "status": "available",
+            "tag": "new",
+            "sales_channel": "instagram",
+            "stock": 1,
         }
 
         response = self.client.post("/api/inventory/", payload, format="json")
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(InventoryItem.objects.count(), 1)
-        self.assertEqual(InventoryItem.objects.first().sku, "PEN-001")
-        self.assertEqual(InventoryItem.objects.first().brand, "Pilot")
-        self.assertEqual(str(InventoryItem.objects.first().cost_price), "4.50")
+        item = InventoryItem.objects.first()
+        self.assertEqual(item.sku, "SEI-045")
+        self.assertEqual(item.brand, "Seiko")
+        self.assertEqual(item.model_name, "Prospex Diver 200M")
+        self.assertEqual(str(item.cost_price), "5500.00")
+        self.assertEqual(item.status, "available")
+        self.assertEqual(item.sales_channel, "instagram")
 
     def test_inventory_derives_brand_and_cost_when_omitted(self):
         response = self.client.post(
@@ -55,7 +70,9 @@ class TestInventoryApi(TestCase):
         self.assertEqual(response.status_code, 201)
         item = InventoryItem.objects.get()
         self.assertEqual(item.brand, "Rolex")
+        self.assertEqual(item.model_name, "Submariner")
         self.assertEqual(str(item.cost_price), "100.00")
+        self.assertEqual(item.stock, 1)
 
     def test_inventory_rejects_duplicate_sku(self):
         InventoryItem.objects.create(
@@ -111,25 +128,52 @@ class TestInventoryApi(TestCase):
 
     def test_update_inventory_item(self):
         item = InventoryItem.objects.create(
-            name="Marker",
-            brand="Sharpie",
-            sku="MRK-001",
-            price="15.00",
-            cost_price="7.50",
-            stock=10,
+            name="Omega Speedmaster",
+            brand="Omega",
+            model_name="Speedmaster",
+            sku="OME-001",
+            price="15000.00",
+            cost_price="7500.00",
+            stock=1,
         )
 
         response = self.client.patch(
             f"/api/inventory/{item.id}/",
-            {"price": "17.50", "cost_price": "8.00", "stock": 7},
+            {"price": "17500.00", "cost_price": "8000.00", "status": "reserved"},
             format="json",
         )
 
         item.refresh_from_db()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(str(item.price), "17.50")
-        self.assertEqual(str(item.cost_price), "8.00")
-        self.assertEqual(item.stock, 7)
+        self.assertEqual(str(item.price), "17500.00")
+        self.assertEqual(str(item.cost_price), "8000.00")
+        self.assertEqual(item.status, "reserved")
+
+    def test_inventory_exposes_mockup_metrics(self):
+        item = InventoryItem.objects.create(
+            name="Bulova Accutron",
+            brand="Bulova",
+            model_name="Accutron",
+            sku="BUL-031",
+            year_label="70's",
+            condition_score="8.0",
+            price="3200.00",
+            cost_price="1800.00",
+            shipping_cost="100.00",
+            maintenance_cost="150.00",
+            purchase_date=timezone.localdate() - timezone.timedelta(days=5),
+            tag="new",
+            sales_channel="whatsapp",
+            stock=1,
+        )
+
+        response = self.client.get(f"/api/inventory/{item.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["display_name"], "Bulova Accutron")
+        self.assertEqual(response.data["days_in_inventory"], 5)
+        self.assertEqual(response.data["total_cost"], "2050.00")
+        self.assertEqual(response.data["estimated_profit"], "1150.00")
 
     def test_delete_inventory_item(self):
         item = InventoryItem.objects.create(

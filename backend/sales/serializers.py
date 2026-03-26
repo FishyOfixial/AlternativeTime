@@ -105,7 +105,12 @@ class SaleCreateSerializer(serializers.Serializer):
         subtotal = unit_price * quantity
 
         inventory_item.stock -= quantity
-        inventory_item.save(update_fields=["stock", "updated_at"])
+        if inventory_item.stock == 0:
+            inventory_item.status = InventoryItem.STATUS_SOLD
+            inventory_item.is_active = False
+            inventory_item.save(update_fields=["stock", "status", "is_active", "updated_at"])
+        else:
+            inventory_item.save(update_fields=["stock", "updated_at"])
 
         SaleItem.objects.create(
             sale=sale,

@@ -117,10 +117,6 @@ export default function ClientsPage() {
   return (
     <div className="space-y-6">
       <section className="flex items-end justify-between gap-4">
-        <h1 className="font-serif text-4xl tracking-tight text-[#2a221b]">
-          Clientes
-        </h1>
-
         <button
           className="gold-button px-4 py-2 text-xs"
           onClick={() => setIsCreateOpen((current) => !current)}
