@@ -48,7 +48,7 @@ class TestSalesApi(TestCase):
             {
                 "client": self.customer.id,
                 "items": [
-                    {"inventory_item": self.item_one.id, "quantity": 2},
+                    {"inventory_item": self.item_one.id},
                 ],
             },
             format="json",
@@ -57,35 +57,38 @@ class TestSalesApi(TestCase):
         self.assertEqual(response.status_code, 201)
         sale = Sale.objects.get()
         self.item_one.refresh_from_db()
-        self.assertEqual(sale.total, Decimal("50.00"))
-        self.assertEqual(self.item_one.stock, 8)
+        self.assertEqual(sale.total, Decimal("25.00"))
+        self.assertEqual(self.item_one.stock, 9)
         self.assertEqual(SaleItem.objects.count(), 1)
+        self.assertEqual(SaleItem.objects.get().quantity, 1)
 
-    def test_create_sale_with_multiple_items(self):
+    def test_reject_sale_with_multiple_items(self):
         response = self.client.post(
             "/api/sales/",
             {
                 "client": self.customer.id,
                 "items": [
-                    {"inventory_item": self.item_one.id, "quantity": 1},
-                    {"inventory_item": self.item_two.id, "quantity": 3},
+                    {"inventory_item": self.item_one.id},
+                    {"inventory_item": self.item_two.id},
                 ],
             },
             format="json",
         )
 
-        self.assertEqual(response.status_code, 201)
-        sale = Sale.objects.get()
-        self.assertEqual(sale.total, Decimal("41.50"))
-        self.assertEqual(SaleItem.objects.count(), 2)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("items", response.data)
+        self.assertEqual(Sale.objects.count(), 0)
 
     def test_reject_sale_with_insufficient_stock(self):
+        self.item_one.stock = 0
+        self.item_one.save(update_fields=["stock"])
+
         response = self.client.post(
             "/api/sales/",
             {
                 "client": self.customer.id,
                 "items": [
-                    {"inventory_item": self.item_one.id, "quantity": 99},
+                    {"inventory_item": self.item_one.id},
                 ],
             },
             format="json",
@@ -94,7 +97,7 @@ class TestSalesApi(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(Sale.objects.count(), 0)
         self.item_one.refresh_from_db()
-        self.assertEqual(self.item_one.stock, 10)
+        self.assertEqual(self.item_one.stock, 0)
 
     def test_sale_failure_is_atomic_when_one_item_is_invalid(self):
         response = self.client.post(
@@ -102,8 +105,8 @@ class TestSalesApi(TestCase):
             {
                 "client": self.customer.id,
                 "items": [
-                    {"inventory_item": self.item_one.id, "quantity": 1},
-                    {"inventory_item": self.item_two.id, "quantity": 999},
+                    {"inventory_item": self.item_one.id},
+                    {"inventory_item": self.item_two.id},
                 ],
             },
             format="json",
@@ -152,7 +155,7 @@ class TestSalesApi(TestCase):
             "/api/sales/",
             {
                 "items": [
-                    {"inventory_item": self.item_one.id, "quantity": 1},
+                    {"inventory_item": self.item_one.id},
                 ],
             },
             format="json",

@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import PublicOnlyRoute from "../components/auth/PublicOnlyRoute";
+import ClientDetailPage from "../pages/ClientDetailPage";
+import ClientsPage from "../pages/ClientsPage";
 import AuthenticatedLayout from "../layouts/AuthenticatedLayout";
 import PublicLayout from "../layouts/PublicLayout";
 import DashboardPage from "../pages/DashboardPage";
@@ -9,13 +11,6 @@ import LoginPage from "../pages/LoginPage";
 import ModulePage from "../pages/ModulePage";
 
 const modulePages = [
-  {
-    path: "/clients",
-    title: "Clientes",
-    eyebrow: "Sprint Frontend 4",
-    description:
-      "Modulo preparado para incorporar listado, detalle y formularios CRUD de clientes."
-  },
   {
     path: "/inventory",
     title: "Inventario",
@@ -67,6 +62,8 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AuthenticatedLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/clients/:clientId" element={<ClientDetailPage />} />
             {modulePages.map((page) => (
               <Route
                 key={page.path}

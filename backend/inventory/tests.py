@@ -24,9 +24,11 @@ class TestInventoryApi(TestCase):
     def test_create_inventory_item(self):
         payload = {
             "name": "Blue Pen",
+            "brand": "Pilot",
             "sku": "PEN-001",
             "description": "Standard pen",
             "price": "9.99",
+            "cost_price": "4.50",
             "stock": 12,
         }
 
@@ -35,6 +37,25 @@ class TestInventoryApi(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(InventoryItem.objects.count(), 1)
         self.assertEqual(InventoryItem.objects.first().sku, "PEN-001")
+        self.assertEqual(InventoryItem.objects.first().brand, "Pilot")
+        self.assertEqual(str(InventoryItem.objects.first().cost_price), "4.50")
+
+    def test_inventory_derives_brand_and_cost_when_omitted(self):
+        response = self.client.post(
+            "/api/inventory/",
+            {
+                "name": "Rolex Submariner",
+                "sku": "RLX-001",
+                "price": "100.00",
+                "stock": 2,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        item = InventoryItem.objects.get()
+        self.assertEqual(item.brand, "Rolex")
+        self.assertEqual(str(item.cost_price), "100.00")
 
     def test_inventory_rejects_duplicate_sku(self):
         InventoryItem.objects.create(
@@ -91,20 +112,23 @@ class TestInventoryApi(TestCase):
     def test_update_inventory_item(self):
         item = InventoryItem.objects.create(
             name="Marker",
+            brand="Sharpie",
             sku="MRK-001",
             price="15.00",
+            cost_price="7.50",
             stock=10,
         )
 
         response = self.client.patch(
             f"/api/inventory/{item.id}/",
-            {"price": "17.50", "stock": 7},
+            {"price": "17.50", "cost_price": "8.00", "stock": 7},
             format="json",
         )
 
         item.refresh_from_db()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(str(item.price), "17.50")
+        self.assertEqual(str(item.cost_price), "8.00")
         self.assertEqual(item.stock, 7)
 
     def test_delete_inventory_item(self):

@@ -63,24 +63,47 @@ describe("App auth routing", () => {
       )
       .mockResolvedValueOnce(
         mockJsonResponse({
-          total_sales_count: 3,
-          gross_revenue: "1230.00",
-          items_sold: 8
-        })
-      )
-      .mockResolvedValueOnce(
-        mockJsonResponse({
-          total_sales_count: 3,
-          gross_revenue: "1230.00",
-          items_sold: 8
-        })
-      )
-      .mockResolvedValueOnce(
-        mockJsonResponse({
-          active_products: 12,
-          total_stock: 44,
-          low_stock_products: 2,
-          out_of_stock_products: 1
+          range: "month",
+          selected_year: 2026,
+          available_years: [2026],
+          kpis: {
+            sales_revenue: "1230.00",
+            sales_revenue_delta: 12.5,
+            profit_total: "430.00",
+            profit_total_delta: 8.4,
+            capital_in_inventory: "5400.00",
+            avg_days_to_sell: 18.5,
+            cost_of_sales: "800.00",
+            inventory_sales_ratio: 4.39,
+            units_sold: 8
+          },
+          brands_sold: [
+            {
+              brand: "Rolex",
+              units_sold: 4,
+              avg_days_to_sell: 15.4,
+              revenue: "900.00",
+              cost_of_sales: "600.00",
+              profit: "300.00"
+            }
+          ],
+          fastest_selling_brands: [
+            {
+              brand: "Omega",
+              units_sold: 2,
+              avg_days_to_sell: 10.2,
+              revenue: "330.00",
+              cost_of_sales: "200.00",
+              profit: "130.00"
+            }
+          ],
+          stock_by_brand: [{ brand: "Rolex", units: 6 }],
+          monthly_breakdown: Array.from({ length: 12 }, (_, index) => ({
+            month: `M${index + 1}`,
+            sales: index === 2 ? "1230.00" : "0.00",
+            profit: index === 2 ? "430.00" : "0.00",
+            cost: index === 2 ? "800.00" : "0.00"
+          }))
         })
       );
 
@@ -88,13 +111,52 @@ describe("App auth routing", () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText(/dashboard operativo inicial/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/dashboard de negocio/i)).toBeInTheDocument();
     });
 
-    expect(await screen.findByText(/revenue bruto/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/acceso rapido/i)).toHaveLength(4);
-    expect(screen.getByText(/estado de inventario/i)).toBeInTheDocument();
+    expect(await screen.findByText(/ventas totales/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/marcas mas vendidas/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/corte anual por meses/i)).toBeInTheDocument();
+  });
+
+  it("loads the clients module with list data", async () => {
+    window.localStorage.setItem("at.frontend.access", createToken());
+    window.localStorage.setItem("at.frontend.refresh", "refresh-token");
+
+    global.fetch
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          id: 1,
+          username: "devadmin",
+          email: "devadmin@example.com",
+          first_name: "Dev",
+          last_name: "Admin",
+          is_staff: true
+        })
+      )
+      .mockResolvedValueOnce(
+        mockJsonResponse([
+          {
+            id: 10,
+            name: "Ricardo Torres",
+            phone: "33 1155 8630",
+            email: "ricardo@example.com",
+            instagram_handle: "@ricardo",
+            address: "Centro 101",
+            notes: "",
+            is_active: true,
+            purchases_count: 2,
+            total_spent: "3100.00",
+            last_purchase_at: "2026-01-10T12:00:00Z"
+          }
+        ])
+      );
+
+    window.history.pushState({}, "", "/clients");
+    render(<App />);
+
+    expect(await screen.findByText(/ricardo torres/i)).toBeInTheDocument();
+    expect(screen.getByText(/clientes registrados/i)).toBeInTheDocument();
+    expect(screen.getByText(/ver perfil/i)).toBeInTheDocument();
   });
 });

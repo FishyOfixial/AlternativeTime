@@ -51,7 +51,6 @@ class SaleSerializer(serializers.ModelSerializer):
 
 class SaleItemCreateSerializer(serializers.Serializer):
     inventory_item = serializers.IntegerField()
-    quantity = serializers.IntegerField(min_value=1)
 
 
 class SaleCreateSerializer(serializers.Serializer):
@@ -65,6 +64,8 @@ class SaleCreateSerializer(serializers.Serializer):
     def validate_items(self, value):
         if not value:
             raise serializers.ValidationError("At least one sale item is required.")
+        if len(value) != 1:
+            raise serializers.ValidationError("A sale must contain exactly one watch.")
         return value
 
     @transaction.atomic
@@ -80,48 +81,41 @@ class SaleCreateSerializer(serializers.Serializer):
         }
 
         sale = Sale.objects.create(client=client, created_by=request.user, total=Decimal("0.00"))
-        total = Decimal("0.00")
-        sale_items = []
+        item_data = items_data[0]
+        inventory_item_id = item_data["inventory_item"]
+        quantity = 1
 
-        for item_data in items_data:
-            inventory_item_id = item_data["inventory_item"]
-            quantity = item_data["quantity"]
-
-            inventory_item = inventory_items.get(inventory_item_id)
-            if inventory_item is None:
-                raise serializers.ValidationError(
-                    {"items": [f"Inventory item {inventory_item_id} does not exist."]}
-                )
-
-            if not inventory_item.is_active:
-                raise serializers.ValidationError(
-                    {"items": [f"Inventory item {inventory_item.sku} is inactive."]}
-                )
-
-            if inventory_item.stock < quantity:
-                raise serializers.ValidationError(
-                    {"items": [f"Inventory item {inventory_item.sku} has insufficient stock."]}
-                )
-
-            unit_price = inventory_item.price
-            subtotal = unit_price * quantity
-            total += subtotal
-
-            inventory_item.stock -= quantity
-            inventory_item.save(update_fields=["stock", "updated_at"])
-
-            sale_items.append(
-                SaleItem(
-                    sale=sale,
-                    inventory_item=inventory_item,
-                    quantity=quantity,
-                    unit_price=unit_price,
-                    subtotal=subtotal,
-                )
+        inventory_item = inventory_items.get(inventory_item_id)
+        if inventory_item is None:
+            raise serializers.ValidationError(
+                {"items": [f"Inventory item {inventory_item_id} does not exist."]}
             )
 
-        SaleItem.objects.bulk_create(sale_items)
-        sale.total = total
+        if not inventory_item.is_active:
+            raise serializers.ValidationError(
+                {"items": [f"Inventory item {inventory_item.sku} is inactive."]}
+            )
+
+        if inventory_item.stock < quantity:
+            raise serializers.ValidationError(
+                {"items": [f"Inventory item {inventory_item.sku} has insufficient stock."]}
+            )
+
+        unit_price = inventory_item.price
+        subtotal = unit_price * quantity
+
+        inventory_item.stock -= quantity
+        inventory_item.save(update_fields=["stock", "updated_at"])
+
+        SaleItem.objects.create(
+            sale=sale,
+            inventory_item=inventory_item,
+            quantity=quantity,
+            unit_price=unit_price,
+            subtotal=subtotal,
+        )
+
+        sale.total = subtotal
         sale.save(update_fields=["total", "updated_at"])
         sale.refresh_from_db()
         return sale
