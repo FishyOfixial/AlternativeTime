@@ -26,7 +26,7 @@ Responsable de:
 - exponer endpoints HTTP bajo `/api/*`
 - centralizar reglas de negocio
 - gestionar acceso a datos
-- integrar autenticacion y permisos cuando se definan
+- integrar autenticacion, permisos y validaciones de negocio
 - servir como fuente de verdad del sistema
 
 ### Frontend
@@ -67,6 +67,7 @@ En desarrollo, Vite redirige las solicitudes `/api` al backend local en
 El proyecto usa el archivo `.env` en la raiz como fuente principal de
 configuracion para Django. Actualmente se contemplan variables como:
 
+- `APP_ENV`
 - `DJANGO_SECRET_KEY`
 - `DJANGO_DEBUG`
 - `DJANGO_ALLOWED_HOSTS`
@@ -78,6 +79,21 @@ configuracion para Django. Actualmente se contemplan variables como:
 
 El archivo `.env.example` documenta el contrato de configuracion sin exponer
 secretos reales.
+
+## Estado real actual del backend
+
+Actualmente el backend ya esta organizado en apps funcionales:
+
+- `api`: endpoints transversales o de sistema, como salud
+- `users`: autenticacion JWT y datos del usuario autenticado
+- `clients`: CRUD base de clientes
+- `inventory`: CRUD base de inventario y productos
+- `sales`: ventas y sus items con logica transaccional
+- `finance`: resumen financiero inicial
+- `reports`: reportes operativos agregados
+
+Esta base ya permite trabajar sobre autenticacion, clientes, inventario,
+ventas y primeras metricas sin rehacer la estructura principal del proyecto.
 
 ## Decisiones tecnicas iniciales y motivo
 
@@ -113,18 +129,26 @@ el onboarding, la version compartida y la documentacion unificada.
 Actualmente el sistema expone y consume estas interfaces concretas:
 
 - `GET /api/health/` desde el backend
-- consumo de `/api/health/` desde el frontend
+- `POST /api/auth/login/`
+- `POST /api/auth/refresh/`
+- `GET /api/auth/me/`
+- `/api/clients/`
+- `/api/inventory/`
+- `/api/sales/`
+- `GET /api/finance/summary/`
+- `GET /api/reports/sales-summary/`
+- `GET /api/reports/inventory-summary/`
+- consumo desde el frontend de `/api/health/` mediante proxy de Vite
 - configuracion del backend mediante variables `DJANGO_*`, `DB_ENGINE`,
   `SQLITE_NAME` y `POSTGRES_*`
 
 ## Limites actuales de la arquitectura
 
-Todavia no se han definido:
+Todavia no se han cerrado por completo:
 
-- autenticacion final
 - permisos por rol
-- modelo de dominio completo
-- esquema final de apps Django por modulo
+- reglas de negocio completas del dominio
+- decisiones finales de despliegue y operacion para produccion
 - router de frontend por pantallas reales
 
 Estos puntos deben evolucionar sobre esta base, sin asumir todavia una solucion

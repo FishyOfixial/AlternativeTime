@@ -15,7 +15,13 @@ AlternativeTime/
 |- .env
 |- backend/
 |  |- api/
+|  |- clients/
 |  |- config/
+|  |- finance/
+|  |- inventory/
+|  |- reports/
+|  |- sales/
+|  |- users/
 |  |- manage.py
 |  `- requirements.txt
 |- frontend/
@@ -103,6 +109,20 @@ API de prueba:
 
 ```text
 http://127.0.0.1:8000/api/health/
+```
+
+Endpoints backend disponibles:
+
+```text
+POST /api/auth/login/
+POST /api/auth/refresh/
+GET  /api/auth/me/
+GET|POST /api/clients/
+GET|POST /api/inventory/
+GET|POST /api/sales/
+GET /api/finance/summary/
+GET /api/reports/sales-summary/
+GET /api/reports/inventory-summary/
 ```
 
 ## Frontend

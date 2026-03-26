@@ -17,7 +17,8 @@ tomaron y cual es el orden recomendado para continuar la implementacion.
   y patron recomendado para la integracion con la API.
 - [roadmap.md](roadmap.md): fases de implementacion propuestas para construir el
   producto de forma incremental.
-- [backlog.md](backlog.md): tareas tecnicas iniciales listas para ejecutar.
+- [backlog.md](backlog.md): tareas tecnicas vigentes y siguientes pasos
+  recomendados.
 - [decisions.md](decisions.md): registro de decisiones tecnicas aceptadas.
 - `sprints/`: planes operativos por sprint para ejecutar desarrollo por etapas.
 - `db/query/`: queries SQL utiles para desarrollo y soporte local.
@@ -42,6 +43,9 @@ con la implementacion real del repositorio.
 6. [backlog.md](backlog.md)
 7. [decisions.md](decisions.md)
 8. `sprints/`
+
+Los sprints de backend 1 al 5 ya estan documentados en `sprints/` y funcionan
+como historial operativo de la construccion realizada hasta ahora.
 
 ## Uso esperado de `docs/`
 

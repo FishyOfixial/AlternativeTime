@@ -103,8 +103,7 @@ modulos operativos y se alimenta de ventas, inventario, clientes y finanzas.
 Aunque ya existe una vision general del producto, todavia no estan definidas en
 el repositorio las reglas concretas para:
 
-- autenticacion final
-- permisos por rol
+- permisos por rol sobre la autenticacion JWT ya implementada
 - modelo de dominio detallado
 - reglas de negocio especificas por modulo
 - reportes finales y sus indicadores exactos
