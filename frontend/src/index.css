@@ -3,24 +3,26 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-  background-color: #07111f;
-  color: #eff7ff;
+  background-color: #f4efe5;
+  color: #2a221b;
 }
 
 html {
   min-height: 100%;
   background:
-    radial-gradient(circle at top, rgba(34, 211, 238, 0.14), transparent 36%),
-    linear-gradient(180deg, #07111f 0%, #081a2f 45%, #0b1220 100%);
+    linear-gradient(180deg, rgba(179, 143, 73, 0.08), rgba(179, 143, 73, 0.02)),
+    #f4efe5;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: transparent;
+  background:
+    radial-gradient(circle at top left, rgba(178, 136, 62, 0.08), transparent 25%),
+    linear-gradient(180deg, #f7f2e9 0%, #f2ecdf 100%);
 }
 
 * {
@@ -45,26 +47,34 @@ select {
 
 @layer components {
   .panel-surface {
-    @apply rounded-[28px] border border-white/10 bg-slate-950/65 shadow-2xl shadow-slate-950/40 backdrop-blur;
+    @apply rounded-[18px] border border-[#ddcfba] bg-[#fbf7f0] shadow-[0_12px_34px_rgba(53,38,24,0.08)];
   }
 
   .panel-soft {
-    @apply rounded-3xl border border-white/10 bg-white/5 backdrop-blur;
+    @apply rounded-2xl border border-[#dfd1bb] bg-[#fcf8f2];
   }
 
   .page-shell {
-    @apply min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_28%),linear-gradient(180deg,_#07111f_0%,_#081a2f_45%,_#0b1220_100%)] text-slate-100;
+    @apply min-h-screen bg-[#f4efe5] text-[#2a221b];
   }
 
   .eyebrow {
-    @apply text-xs uppercase tracking-[0.34em] text-cyan-300;
+    @apply text-xs uppercase tracking-[0.34em] text-[#b39463];
   }
 
   .nav-link {
-    @apply flex items-center justify-between rounded-2xl border border-transparent px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-white;
+    @apply flex items-center justify-between rounded-xl border border-transparent px-4 py-3 text-sm font-medium text-[#dfd4c4] transition hover:bg-[#2f271f] hover:text-[#f8f1e7];
   }
 
   .nav-link-active {
-    @apply border-cyan-300/30 bg-cyan-300/10 text-white shadow-lg shadow-cyan-950/20;
+    @apply bg-[#3a2f21] text-[#e2ba63];
+  }
+
+  .stat-card {
+    @apply rounded-2xl border border-[#ddcfba] bg-[#fcf8f2] p-5;
+  }
+
+  .gold-button {
+    @apply inline-flex items-center justify-center rounded-lg bg-[#1f1a15] px-5 py-3 text-sm font-semibold text-[#ddb65f] transition hover:bg-[#2d241c];
   }
 }

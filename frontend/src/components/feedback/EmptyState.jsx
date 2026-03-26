@@ -4,8 +4,8 @@ export default function EmptyState({
 }) {
   return (
     <div className="panel-soft border-dashed p-5">
-      <p className="text-base font-semibold text-white">{title}</p>
-      <p className="mt-2 text-sm leading-6 text-slate-300">{message}</p>
+      <p className="font-serif text-lg text-[#2a221b]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[#736350]">{message}</p>
     </div>
   );
 }

@@ -38,18 +38,37 @@ export default function HomePage({ footerSlot = null }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="panel-surface p-8 sm:p-10">
-        <p className="eyebrow">React + Vite + Tailwind</p>
-        <h2 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          El frontend ya tiene rutas reales, layouts compartidos y una capa de
-          servicios preparada para crecer.
-        </h2>
-        <p className="mt-5 max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">
-          Este sprint no implementa modulos de negocio todavia. Deja la base de
-          aplicacion lista para Sprint 2 y Sprint 3 sin seguir cargando toda la
-          UI en un solo archivo.
-        </p>
-        <div className="mt-8">{footerSlot}</div>
+      <section className="grid overflow-hidden rounded-[22px] border border-[#d9ccb8] bg-[#fbf7f0] lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="flex min-h-[520px] flex-col items-center justify-center bg-[#211b16] px-8 py-12 text-center">
+          <p className="font-serif text-5xl font-semibold leading-tight text-[#d7ae57]">
+            Alternative
+            <br />
+            Time Co.
+          </p>
+          <p className="mt-5 text-[11px] uppercase tracking-[0.38em] text-[#7d6a53]">
+            Vintage · Classic · Timeless
+          </p>
+          <div className="mt-10 h-px w-44 bg-[#6a5431]" />
+          <p className="mt-6 text-sm italic text-[#82715d]">
+            Sistema de Punto de Venta
+          </p>
+        </div>
+
+        <div className="flex flex-col justify-center px-8 py-10 sm:px-12">
+          <p className="eyebrow">Sprint Frontend 1</p>
+          <h2 className="mt-4 max-w-xl font-serif text-4xl tracking-tight text-[#2a221b] sm:text-5xl">
+            La web ya tiene una base visual alineada a los mockups.
+          </h2>
+          <p className="mt-5 max-w-xl text-base leading-7 text-[#736350] sm:text-lg">
+            Ya existen rutas reales, layouts compartidos y una capa de
+            servicios. El siguiente paso es poblar esta estructura con auth,
+            dashboard y modulos operativos.
+          </p>
+          <div className="mt-8">{footerSlot}</div>
+          <p className="mt-10 border-t border-[#ddcfba] pt-6 text-xs text-[#a18a6d]">
+            ATCoPOS v1.0 · Django + React + Tailwind
+          </p>
+        </div>
       </section>
 
       {health.status === "loading" ? (
@@ -62,21 +81,27 @@ export default function HomePage({ footerSlot = null }) {
 
       {health.status !== "loading" && health.status !== "error" ? (
         <section className="grid gap-5 md:grid-cols-3">
-          <article className="panel-soft p-5">
-            <p className="text-sm text-slate-400">Estado API</p>
-            <p className="mt-3 text-2xl font-semibold text-cyan-200">
+          <article className="stat-card">
+            <p className="text-sm uppercase tracking-[0.16em] text-[#b5a18a]">
+              Estado API
+            </p>
+            <p className="mt-3 font-serif text-[34px] text-[#2a221b]">
               {health.status}
             </p>
           </article>
-          <article className="panel-soft p-5">
-            <p className="text-sm text-slate-400">Base de datos</p>
-            <p className="mt-3 text-2xl font-semibold text-orange-200">
+          <article className="stat-card">
+            <p className="text-sm uppercase tracking-[0.16em] text-[#b5a18a]">
+              Base de datos
+            </p>
+            <p className="mt-3 font-serif text-[34px] text-[#b2883e]">
               {health.database}
             </p>
           </article>
-          <article className="panel-soft p-5">
-            <p className="text-sm text-slate-400">Mensaje</p>
-            <p className="mt-3 text-base leading-6 text-slate-200">
+          <article className="stat-card">
+            <p className="text-sm uppercase tracking-[0.16em] text-[#b5a18a]">
+              Mensaje
+            </p>
+            <p className="mt-3 text-base leading-6 text-[#5f5243]">
               {health.message}
             </p>
           </article>

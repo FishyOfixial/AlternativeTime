@@ -6,9 +6,7 @@ describe("App routing shell", () => {
     window.history.pushState({}, "", "/login");
     render(<App />);
 
-    expect(
-      screen.getByText(/login placeholder con layout publico listo/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/bienvenido/i)).toBeInTheDocument();
   });
 
   it("renders the authenticated dashboard shell", () => {

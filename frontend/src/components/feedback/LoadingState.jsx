@@ -4,10 +4,10 @@ export default function LoadingState({
 }) {
   return (
     <div className="panel-soft flex items-center gap-4 p-5">
-      <div className="h-10 w-10 animate-pulse rounded-full border border-cyan-300/20 bg-cyan-300/15" />
+      <div className="h-10 w-10 animate-pulse rounded-full border border-[#d9c6a2] bg-[#eadbbd]" />
       <div>
-        <p className="text-base font-semibold text-white">{title}</p>
-        <p className="mt-1 text-sm text-slate-300">{message}</p>
+        <p className="font-serif text-lg text-[#2a221b]">{title}</p>
+        <p className="mt-1 text-sm text-[#736350]">{message}</p>
       </div>
     </div>
   );
