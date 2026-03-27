@@ -1,4 +1,4 @@
-# Sprint Backend 1
+﻿# Sprint Backend 1
 
 ## Resumen
 
@@ -147,8 +147,8 @@ Cobertura minima sobre salud, autenticacion y proteccion de acceso.
 
 ### Paso 8. Cierre del sprint
 
-- actualizar `docs/backend.md` si cambian las convenciones backend
-- registrar la decision de JWT en `docs/decisions.md` si aun no aparece
+- actualizar `docs/engineering/backend-guide.md` si cambian las convenciones backend
+- registrar la decision de JWT en `docs/planning/decisions-log.md` si aun no aparece
 - dejar listo el terreno para Sprint Backend 2: `clients` e `inventory`
 
 **Entregable**
@@ -180,8 +180,9 @@ Sprint cerrado con documentacion y decisiones alineadas al estado real del repo.
 
 ## Suposiciones y defaults elegidos
 
-- ruta del documento: `docs/sprints/sprint_backend_1.md`
+- ruta del documento: `docs/sprints/backend/backend-sprint-01-foundations.md`
 - convencion futura: un archivo Markdown por sprint dentro de `docs/sprints/`
 - estrategia de auth: JWT con DRF
 - alcance: base tecnica y autenticacion, sin modulos de negocio todavia
 - usuario base: `django.contrib.auth.models.User`
+

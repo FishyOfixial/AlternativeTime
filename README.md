@@ -1,4 +1,4 @@
-# Alternative Time
+﻿# Alternative Time
 
 Workspace base preparado para trabajar con:
 
@@ -83,7 +83,7 @@ Credenciales de desarrollo:
 
 Tambien puedes usar el query guardado en:
 
-- `docs/db/query/insert_devadmin_sqlite.sql`
+- `docs/reference/db/seed/insert_devadmin_sqlite.sql`
 
 Ese archivo inserta el mismo usuario de desarrollo directamente en la tabla
 `auth_user` de SQLite.
@@ -121,8 +121,13 @@ GET|POST /api/clients/
 GET|POST /api/inventory/
 GET|POST /api/sales/
 GET /api/finance/summary/
+GET /api/finance/balances/
+GET|POST /api/finance/entries/
+PUT|PATCH|DELETE /api/finance/entries/{id}/
 GET /api/reports/sales-summary/
 GET /api/reports/inventory-summary/
+GET /api/reports/dashboard-summary/
+GET /api/reports/{type}/export/?format=csv|xlsx
 ```
 
 ## Frontend
@@ -147,7 +152,7 @@ http://localhost:5173
 
 Plan operativo del frontend:
 
-- `docs/sprints/sprint_frontend_1.md` a `docs/sprints/sprint_frontend_9.md`
+- `docs/sprints/frontend/frontend-sprint-01-foundations.md` a `docs/sprints/frontend/frontend-sprint-09-hardening-release.md`
 
 ## Variables de entorno
 
@@ -182,3 +187,4 @@ DJANGO_LOG_LEVEL=INFO
 ```
 
 Usa `.env.example` como plantilla.
+

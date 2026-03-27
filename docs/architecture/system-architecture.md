@@ -1,4 +1,4 @@
-# Arquitectura Tecnica
+﻿# Arquitectura Tecnica
 
 ## Stack oficial
 
@@ -122,7 +122,7 @@ el onboarding, la version compartida y la documentacion unificada.
 - `backend/`: aplicacion Django REST API
 - `frontend/`: aplicacion React + Vite + Tailwind
 - `docs/`: documentacion funcional y tecnica del proyecto
-- `docs/design/`: referencias visuales del producto
+- `docs/assets/ui-mockups/`: referencias visuales del producto
 
 ## Interfaces publicas actuales
 
@@ -153,3 +153,4 @@ Todavia no se han cerrado por completo:
 
 Estos puntos deben evolucionar sobre esta base, sin asumir todavia una solucion
 cerrada.
+

@@ -1,4 +1,4 @@
-# Sprint Backend 5
+﻿# Sprint Backend 5
 
 ## Resumen
 
@@ -68,7 +68,7 @@ Al cerrar este sprint, el backend debe:
 
 ### 5. Documentacion y onboarding
 
-- actualizar `docs/backend.md`
+- actualizar `docs/engineering/backend-guide.md`
 - actualizar README de instalacion si cambian pasos reales
 - dejar clara la ruta para desarrollo, pruebas y despliegue
 
@@ -98,3 +98,4 @@ Al cerrar este sprint, el backend debe:
 - esta etapa es de consolidacion tecnica, no de expansion de producto
 - PostgreSQL es el destino de produccion confirmado
 - el backend seguira creciendo sobre la arquitectura modular ya definida
+

@@ -1,4 +1,4 @@
-# Backend
+﻿# Backend
 
 ## Estado actual
 
@@ -151,7 +151,7 @@ Pendientes aun abiertos:
 
 La implementacion debe quedar alineada con las pantallas de login y usuarios que
 ya aparecen en los artefactos de diseno y esta planificada en
-`docs/sprints/sprint_backend_1.md`.
+`docs/sprints/backend/backend-sprint-01-foundations.md`.
 
 ## Endpoint actual de referencia
 
@@ -190,7 +190,8 @@ Este endpoint sirve para:
 
 Los siguientes sprints de backend quedan orientados a:
 
-- `clients` e `inventory` en `docs/sprints/sprint_backend_2.md`
-- `sales` en `docs/sprints/sprint_backend_3.md`
-- `finance` y `reports` en `docs/sprints/sprint_backend_4.md`
-- endurecimiento, despliegue y calidad en `docs/sprints/sprint_backend_5.md`
+- `clients` e `inventory` en `docs/sprints/backend/backend-sprint-02-clients-inventory.md`
+- `sales` en `docs/sprints/backend/backend-sprint-03-sales.md`
+- `finance` y `reports` en `docs/sprints/backend/backend-sprint-04-finance-reports.md`
+- endurecimiento, despliegue y calidad en `docs/sprints/backend/backend-sprint-05-hardening-release.md`
+

@@ -1,4 +1,4 @@
-# Registro de Decisiones Tecnicas
+﻿# Registro de Decisiones Tecnicas
 
 ## DEC-001 Monorepo con `backend/` y `frontend/`
 
@@ -132,6 +132,28 @@ necesita una forma clara y moderna de autenticacion para el MVP.
 
 Deja un contrato de acceso consistente para frontend, simplifica la integracion
 API-first y prepara el terreno para permisos por rol en iteraciones futuras.
+
+**Estado**
+
+Aprobada.
+
+## DEC-008 Modulo de usuarios oculto temporalmente en frontend
+
+**Decision**
+
+Mantener el modulo de usuarios y la UI de roles fuera de navegacion y rutas
+visibles, usando feature flag, sin eliminar codigo ni contratos backend.
+
+**Contexto**
+
+La prioridad actual del producto es operacion comercial (inventario, ventas,
+finanzas, reportes, apartados). El sistema se usara en modo administrativo
+unificado durante esta fase.
+
+**Impacto**
+
+Reduce alcance y riesgo de release en frontend. Conserva opcion de reactivar
+usuarios/roles en una fase futura sin reescritura mayor.
 
 **Estado**
 

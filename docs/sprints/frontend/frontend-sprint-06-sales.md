@@ -1,9 +1,9 @@
-# Sprint Frontend 6
+﻿# Sprint Frontend 6
 
 ## Resumen
 
 Este sprint implementa el modulo de ventas sobre el dominio final definido en
-`docs/spec.md`: un reloj por venta, costo snapshot congelado, ganancias reales,
+`docs/specification/technical-specification.md`: un reloj por venta, costo snapshot congelado, ganancias reales,
 metodo de pago, canal de venta y captura desde una vista operativa completa.
 
 ## Objetivo del sprint
@@ -132,3 +132,4 @@ Experiencia integrada entre ventas, clientes e inventario.
 - el backend ya expone el contrato final de ventas
 - el detalle de cliente puede seguir ofreciendo alta de venta rapida, pero la
   vista oficial del modulo nace en este sprint
+

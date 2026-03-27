@@ -1,4 +1,4 @@
-# Product Overview
+﻿# Product Overview
 
 ## Vision breve
 
@@ -23,7 +23,7 @@ formularios y vistas de consulta.
 ## Modulos funcionales identificados
 
 Los siguientes modulos se infieren directamente del SRS y de los mockups en
-`docs/design/`:
+`docs/assets/ui-mockups/`:
 
 - Login
 - Dashboard
@@ -110,3 +110,4 @@ el repositorio las reglas concretas para:
 
 Estos puntos deben tratarse como pendientes de especificacion, no como hechos ya
 resueltos.
+
