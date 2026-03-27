@@ -50,7 +50,7 @@ export default function ClientsTable({
                   className="rounded-full border border-[#ddcfba] px-3 py-2 text-xs text-[#7d6751] transition hover:bg-[#f3ecde]"
                   to={`/clients/${client.id}`}
                 >
-                  Ver perfil ->
+                  Ver perfil
                 </NavLink>
               </td>
             </tr>

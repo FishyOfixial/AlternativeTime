@@ -25,3 +25,28 @@ export function formatLastPurchase(value) {
     year: "numeric"
   }).format(new Date(value));
 }
+
+export function formatDate(value) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(new Date(value));
+}
+
+export function buildInitialClientSaleForm() {
+  return {
+    product: "",
+    sale_date: new Date().toISOString().slice(0, 10),
+    payment_method: "cash",
+    sales_channel: "instagram",
+    amount_paid: "",
+    extras: "0.00",
+    sale_shipping_cost: "0.00",
+    notes: ""
+  };
+}
