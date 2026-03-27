@@ -7,6 +7,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from clients.models import Client
+from finance.models import FinanceEntry
 from inventory.models import InventoryItem, PurchaseCost
 from sales.models import Sale
 
@@ -55,6 +56,17 @@ class TestReportsApi(TestCase):
                 maintenance_cost=Decimal("0.00"),
                 other_costs=Decimal("0.00"),
             )
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("500.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            notes="Ingreso prueba",
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=False,
+        )
 
     def test_reports_require_authentication(self):
         response = self.client.get("/api/reports/sales-summary/")
@@ -147,3 +159,43 @@ class TestReportsApi(TestCase):
         self.assertEqual(response.data["kpis"]["cost_of_sales"], "12000")
         self.assertEqual(response.data["kpis"]["units_sold"], 1)
         self.assertEqual(len(response.data["monthly_breakdown"]), 12)
+
+    def test_export_reports_csv_and_xlsx(self):
+        Sale.objects.create(
+            client=self.customer,
+            product=self.product_a,
+            sale_date=timezone.localdate(),
+            payment_method="cash",
+            sales_channel="direct",
+            amount_paid=Decimal("30000.00"),
+            cost_snapshot=Decimal("20000.00"),
+            gross_profit=Decimal("10000.00"),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.client.force_authenticate(user=self.user)
+
+        report_types = [
+            "ventas_por_mes",
+            "ganancia_por_periodo",
+            "ventas_por_marca",
+            "top_productos",
+            "slow_movers",
+            "inventario_actual",
+            "costo_adquisicion",
+            "flujo_efectivo",
+            "historial_cliente",
+        ]
+
+        for report_type in report_types:
+            csv_response = self.client.get(
+                f"/api/reports/{report_type}/export/?format=csv"
+            )
+            self.assertEqual(csv_response.status_code, 200)
+            self.assertIn("attachment;", csv_response.get("Content-Disposition", ""))
+
+            xlsx_response = self.client.get(
+                f"/api/reports/{report_type}/export/?format=xlsx"
+            )
+            self.assertEqual(xlsx_response.status_code, 200)
+            self.assertIn("attachment;", xlsx_response.get("Content-Disposition", ""))

@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from clients.models import Client
+from finance.models import FinanceEntry
 from inventory.models import InventoryItem, PurchaseCost
 from sales.models import Sale
 
@@ -54,10 +55,110 @@ class TestFinanceSummaryApi(TestCase):
             created_by=self.user,
             updated_by=self.user,
         )
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("200.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            notes="Ingreso manual",
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=False,
+        )
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_EXPENSE,
+            concept=FinanceEntry.CONCEPT_PURCHASE,
+            amount=Decimal("50.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            notes="Egreso manual",
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=False,
+        )
         self.client.force_authenticate(user=self.user)
 
         response = self.client.get("/api/finance/summary/")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["total_sales_count"], 1)
-        self.assertEqual(response.data["gross_revenue"], "200")
+        self.assertEqual(Decimal(response.data["gross_revenue"]), Decimal("200.00"))
+        self.assertEqual(response.data["total_income"], "200.00")
+        self.assertEqual(response.data["total_expense"], "50.00")
+        self.assertEqual(response.data["net_balance"], "150.00")
+
+    def test_finance_balances_returns_accounts(self):
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("120.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=False,
+        )
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("80.00"),
+            account=FinanceEntry.ACCOUNT_BBVA,
+            entry_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=False,
+        )
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get("/api/finance/balances/")
+
+        self.assertEqual(response.status_code, 200)
+        accounts = {item["account"] for item in response.data}
+        self.assertIn(FinanceEntry.ACCOUNT_CASH, accounts)
+        self.assertIn(FinanceEntry.ACCOUNT_BBVA, accounts)
+
+    def test_finance_entries_crud_and_blocks_automatic(self):
+        self.client.force_authenticate(user=self.user)
+
+        create_response = self.client.post(
+            "/api/finance/entries/",
+            {
+                "entry_date": str(timezone.localdate()),
+                "entry_type": FinanceEntry.TYPE_INCOME,
+                "concept": FinanceEntry.CONCEPT_SALE,
+                "amount": "100.00",
+                "account": FinanceEntry.ACCOUNT_CASH,
+                "notes": "Manual",
+            },
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, 201)
+
+        entry_id = create_response.data["id"]
+        patch_response = self.client.patch(
+            f"/api/finance/entries/{entry_id}/",
+            {"amount": "120.00"},
+            format="json",
+        )
+        self.assertEqual(patch_response.status_code, 200)
+
+        delete_response = self.client.delete(f"/api/finance/entries/{entry_id}/")
+        self.assertEqual(delete_response.status_code, 204)
+
+        automatic_entry = FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("60.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=True,
+        )
+        blocked_response = self.client.patch(
+            f"/api/finance/entries/{automatic_entry.id}/",
+            {"amount": "70.00"},
+            format="json",
+        )
+        self.assertEqual(blocked_response.status_code, 403)

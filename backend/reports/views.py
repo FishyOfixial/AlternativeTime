@@ -1,12 +1,19 @@
 from calendar import month_abbr
 from decimal import Decimal
+import csv
+from io import BytesIO, StringIO
 
 from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
+from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from rest_framework.response import Response
+from rest_framework.renderers import BaseRenderer, BrowsableAPIRenderer, JSONRenderer
 from rest_framework.views import APIView
 
-from inventory.models import InventoryItem
+from finance.models import FinanceEntry
+from inventory.models import InventoryItem, PurchaseCost
 from sales.models import Sale
 
 
@@ -256,3 +263,354 @@ class DashboardSummaryReportView(APIView):
                 "monthly_breakdown": monthly_breakdown,
             }
         )
+
+
+class ExportReportView(APIView):
+    class _PassthroughRenderer(BaseRenderer):
+        charset = None
+
+        def render(self, data, accepted_media_type=None, renderer_context=None):
+            return data
+
+    class _CsvRenderer(_PassthroughRenderer):
+        media_type = "text/csv"
+        format = "csv"
+
+    class _XlsxRenderer(_PassthroughRenderer):
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        format = "xlsx"
+
+    renderer_classes = [
+        JSONRenderer,
+        BrowsableAPIRenderer,
+        _CsvRenderer,
+        _XlsxRenderer,
+    ]
+
+    SUPPORTED_FORMATS = {"csv", "xlsx"}
+    REPORT_TYPES = {
+        "ventas_por_mes",
+        "ganancia_por_periodo",
+        "ventas_por_marca",
+        "top_productos",
+        "slow_movers",
+        "inventario_actual",
+        "costo_adquisicion",
+        "flujo_efectivo",
+        "historial_cliente",
+    }
+
+    def get(self, request, type):
+        report_type = type
+        export_format = request.query_params.get("format", "csv")
+        if isinstance(export_format, str):
+            export_format = export_format.strip().strip('"').strip("'")
+        if report_type not in self.REPORT_TYPES:
+            return Response({"detail": "Tipo de reporte no soportado."}, status=400)
+        if export_format not in self.SUPPORTED_FORMATS:
+            return Response({"detail": "Formato no soportado."}, status=400)
+
+        headers, rows = self.build_report(report_type, request.query_params)
+        filename = f"{report_type}_{timezone.localdate()}.{export_format}"
+        if export_format == "csv":
+            return self.build_csv_response(headers, rows, filename)
+        return self.build_xlsx_response(headers, rows, filename)
+
+    def build_csv_response(self, headers, rows, filename):
+        buffer = StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(headers)
+        writer.writerows(rows)
+        response = HttpResponse(buffer.getvalue(), content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+    def build_xlsx_response(self, headers, rows, filename):
+        from openpyxl import Workbook
+
+        wb = Workbook()
+        ws = wb.active
+        ws.append(headers)
+        for row in rows:
+            ws.append(row)
+        stream = BytesIO()
+        wb.save(stream)
+        response = HttpResponse(
+            stream.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+    def parse_date_range(self, params):
+        date_from = parse_date(params.get("date_from") or "")
+        date_to = parse_date(params.get("date_to") or "")
+        return date_from, date_to
+
+    def apply_sales_filters(self, queryset, params):
+        date_from, date_to = self.parse_date_range(params)
+        if date_from:
+            queryset = queryset.filter(sale_date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(sale_date__lte=date_to)
+        channel = params.get("channel")
+        if channel:
+            queryset = queryset.filter(sales_channel=channel)
+        payment_method = params.get("payment_method")
+        if payment_method:
+            queryset = queryset.filter(payment_method=payment_method)
+        brand = params.get("brand")
+        if brand:
+            queryset = queryset.filter(product__brand__iexact=brand)
+        return queryset
+
+    def build_report(self, report_type, params):
+        if report_type == "ventas_por_mes":
+            return self.report_sales_by_month(params)
+        if report_type == "ganancia_por_periodo":
+            return self.report_profit_by_period(params)
+        if report_type == "ventas_por_marca":
+            return self.report_sales_by_brand(params)
+        if report_type == "top_productos":
+            return self.report_top_products(params)
+        if report_type == "slow_movers":
+            return self.report_slow_movers(params)
+        if report_type == "inventario_actual":
+            return self.report_inventory_current(params)
+        if report_type == "costo_adquisicion":
+            return self.report_purchase_cost(params)
+        if report_type == "flujo_efectivo":
+            return self.report_cash_flow(params)
+        if report_type == "historial_cliente":
+            return self.report_customer_history(params)
+        return ([], [])
+
+    def report_sales_by_month(self, params):
+        queryset = self.apply_sales_filters(Sale.objects.select_related("product"), params)
+        monthly = (
+            queryset.annotate(month=TruncMonth("sale_date"))
+            .values("month")
+            .annotate(
+                revenue=Sum("amount_paid"),
+                profit=Sum("gross_profit"),
+                cost=Sum("cost_snapshot"),
+            )
+            .order_by("month")
+        )
+        headers = ["Mes", "Ventas", "Ganancia", "Costo"]
+        rows = [
+            [
+                entry["month"].strftime("%Y-%m"),
+                str(entry["revenue"] or Decimal("0.00")),
+                str(entry["profit"] or Decimal("0.00")),
+                str(entry["cost"] or Decimal("0.00")),
+            ]
+            for entry in monthly
+            if entry["month"]
+        ]
+        return headers, rows
+
+    def report_profit_by_period(self, params):
+        queryset = self.apply_sales_filters(Sale.objects.select_related("product"), params)
+        aggregates = queryset.aggregate(
+            revenue=Sum("amount_paid"),
+            profit=Sum("gross_profit"),
+            cost=Sum("cost_snapshot"),
+        )
+        date_from, date_to = self.parse_date_range(params)
+        headers = ["Desde", "Hasta", "Ventas", "Costo", "Ganancia"]
+        rows = [
+            [
+                str(date_from) if date_from else "inicio",
+                str(date_to) if date_to else "hoy",
+                str(aggregates["revenue"] or Decimal("0.00")),
+                str(aggregates["cost"] or Decimal("0.00")),
+                str(aggregates["profit"] or Decimal("0.00")),
+            ]
+        ]
+        return headers, rows
+
+    def report_sales_by_brand(self, params):
+        queryset = self.apply_sales_filters(Sale.objects.select_related("product"), params)
+        grouped = (
+            queryset.values("product__brand")
+            .annotate(
+                units=Count("id"),
+                revenue=Sum("amount_paid"),
+                cost=Sum("cost_snapshot"),
+                profit=Sum("gross_profit"),
+            )
+            .order_by("-units", "product__brand")
+        )
+        headers = ["Marca", "Unidades", "Ventas", "Costo", "Ganancia"]
+        rows = [
+            [
+                entry["product__brand"] or "Sin marca",
+                entry["units"],
+                str(entry["revenue"] or Decimal("0.00")),
+                str(entry["cost"] or Decimal("0.00")),
+                str(entry["profit"] or Decimal("0.00")),
+            ]
+            for entry in grouped
+        ]
+        return headers, rows
+
+    def report_top_products(self, params):
+        queryset = self.apply_sales_filters(Sale.objects.select_related("product"), params)
+        queryset = queryset.order_by("-gross_profit", "-amount_paid")
+        headers = ["Producto", "ID", "Fecha venta", "Monto", "Costo", "Ganancia", "Dias en inventario"]
+        rows = [
+            [
+                sale.product.display_name if sale.product else "Venta",
+                sale.product.product_id if sale.product else "",
+                str(sale.sale_date),
+                str(sale.amount_paid),
+                str(sale.cost_snapshot),
+                str(sale.gross_profit),
+                sale.product.days_to_sell if sale.product else "",
+            ]
+            for sale in queryset
+        ]
+        return headers, rows
+
+    def report_slow_movers(self, params):
+        dias_minimos = params.get("dias_minimos")
+        try:
+            dias_minimos = int(dias_minimos) if dias_minimos is not None else 60
+        except ValueError:
+            dias_minimos = 60
+        queryset = InventoryItem.objects.filter(status=InventoryItem.STATUS_AVAILABLE)
+        headers = ["ID", "Marca", "Modelo", "Dias en inventario", "Etiqueta"]
+        rows = []
+        for item in queryset:
+            days = item.dias_en_inventario
+            if days >= dias_minimos:
+                rows.append(
+                    [
+                        item.product_id,
+                        item.brand,
+                        item.model_name,
+                        days,
+                        item.etiqueta_antiguedad,
+                    ]
+                )
+        return headers, rows
+
+    def report_inventory_current(self, params):
+        queryset = InventoryItem.objects.select_related("purchase_cost")
+        status_value = params.get("status")
+        if status_value:
+            queryset = queryset.filter(status=status_value)
+        brand = params.get("brand")
+        if brand:
+            queryset = queryset.filter(brand__iexact=brand)
+        tag = params.get("tag")
+        if tag:
+            queryset = queryset.filter(tag=tag)
+        headers = [
+            "ID",
+            "Marca",
+            "Modelo",
+            "Precio",
+            "Costo total",
+            "Estado",
+            "Etiqueta",
+            "Dias en inventario",
+        ]
+        rows = [
+            [
+                item.product_id,
+                item.brand,
+                item.model_name,
+                str(item.price),
+                str(item.total_purchase_cost),
+                item.status,
+                item.tag,
+                item.dias_en_inventario,
+            ]
+            for item in queryset
+        ]
+        return headers, rows
+
+    def report_purchase_cost(self, params):
+        date_from, date_to = self.parse_date_range(params)
+        queryset = PurchaseCost.objects.select_related("product")
+        if date_from:
+            queryset = queryset.filter(purchase_date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(purchase_date__lte=date_to)
+        payment_method = params.get("payment_method")
+        if payment_method:
+            queryset = queryset.filter(payment_method=payment_method)
+        headers = [
+            "Fecha compra",
+            "ID",
+            "Marca",
+            "Modelo",
+            "Total pagado",
+            "Metodo pago",
+            "Cuenta",
+            "Notas",
+        ]
+        rows = [
+            [
+                str(cost.purchase_date),
+                cost.product.product_id if cost.product else "",
+                cost.product.brand if cost.product else "",
+                cost.product.model_name if cost.product else "",
+                str(cost.total_pagado),
+                cost.payment_method,
+                cost.source_account,
+                cost.notes,
+            ]
+            for cost in queryset
+        ]
+        return headers, rows
+
+    def report_cash_flow(self, params):
+        date_from, date_to = self.parse_date_range(params)
+        queryset = FinanceEntry.objects.select_related("product")
+        if date_from:
+            queryset = queryset.filter(entry_date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(entry_date__lte=date_to)
+        account = params.get("account")
+        if account:
+            queryset = queryset.filter(account=account)
+        entry_type = params.get("type")
+        if entry_type:
+            queryset = queryset.filter(entry_type=entry_type)
+        headers = ["Fecha", "Tipo", "Concepto", "Monto", "Cuenta", "Reloj", "Notas"]
+        rows = [
+            [
+                str(entry.entry_date),
+                entry.entry_type,
+                entry.concept,
+                str(entry.amount),
+                entry.account,
+                entry.product.product_id if entry.product else "",
+                entry.notes,
+            ]
+            for entry in queryset
+        ]
+        return headers, rows
+
+    def report_customer_history(self, params):
+        customer_id = params.get("customer_id")
+        queryset = Sale.objects.select_related("client", "product")
+        if customer_id:
+            queryset = queryset.filter(client_id=customer_id)
+        headers = ["Cliente", "Fecha", "Reloj", "Monto", "Ganancia", "Canal", "Metodo"]
+        rows = [
+            [
+                sale.client.name if sale.client else "Venta libre",
+                str(sale.sale_date),
+                sale.product.display_name if sale.product else "",
+                str(sale.amount_paid),
+                str(sale.gross_profit),
+                sale.sales_channel,
+                sale.payment_method,
+            ]
+            for sale in queryset
+        ]
+        return headers, rows
