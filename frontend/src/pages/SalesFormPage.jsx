@@ -1,54 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+﻿import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
+import SaleCustomerSection from "../components/sales/SaleCustomerSection";
+import SaleHoldPanel from "../components/sales/SaleHoldPanel";
+import SalePaymentSection from "../components/sales/SalePaymentSection";
+import SaleProductSection from "../components/sales/SaleProductSection";
+import SaleSummaryPanel from "../components/sales/SaleSummaryPanel";
+import SaleTransactionSection from "../components/sales/SaleTransactionSection";
+import SalesFormHeader from "../components/sales/SalesFormHeader";
+import SalesInfoAlert from "../components/sales/SalesInfoAlert";
 import { useAuth } from "../contexts/AuthContext";
+import { buildInitialSaleForm, channelOptions, paymentOptions } from "../constants/sales";
 import { createClient, listClients } from "../services/clients";
 import { listInventory } from "../services/inventory";
 import { createSale } from "../services/sales";
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    maximumFractionDigits: 0
-  }).format(Number(value || 0));
-}
-
-function buildInitialSaleForm() {
-  return {
-    product: "",
-    customer: "",
-    customer_name: "",
-    customer_contact: "",
-    customer_email: "",
-    customer_address: "",
-    customer_notes: "",
-    sale_date: new Date().toISOString().slice(0, 10),
-    payment_method: "cash",
-    sales_channel: "marketplace",
-    amount_paid: "",
-    extras: "0.00",
-    sale_shipping_cost: "0.00",
-    notes: ""
-  };
-}
-
-const paymentOptions = [
-  { value: "cash", label: "Efectivo" },
-  { value: "transfer", label: "Transferencia bancaria" },
-  { value: "card", label: "Tarjeta / MSI" },
-  { value: "msi", label: "MSI" },
-  { value: "consignment", label: "Consigna" }
-];
-
-const channelOptions = [
-  { value: "marketplace", label: "Marketplace" },
-  { value: "instagram", label: "Instagram" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "direct", label: "Directo" },
-  { value: "other", label: "Otro" }
-];
+import { formatCurrency } from "../utils/sales";
 
 export default function SalesFormPage() {
   const { accessToken } = useAuth();
@@ -96,6 +63,11 @@ export default function SalesFormPage() {
   const selectedItem = useMemo(
     () => inventoryState.items.find((item) => String(item.id) === String(formValues.product)),
     [inventoryState.items, formValues.product]
+  );
+  const selectedClient = useMemo(
+    () =>
+      clientsState.items.find((client) => String(client.id) === String(formValues.customer)),
+    [clientsState.items, formValues.customer]
   );
 
   const costSnapshot = Number(selectedItem?.total_cost || 0);
@@ -264,26 +236,9 @@ export default function SalesFormPage() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="eyebrow">Ventas</p>
-          <h1 className="mt-3 font-serif text-4xl tracking-tight text-[#2a221b]">
-            Registrar venta
-          </h1>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <NavLink
-            className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-sm text-[#7d6751]"
-            to="/sales"
-          >
-            Cancelar
-          </NavLink>
-        </div>
-      </section>
+      <SalesFormHeader />
 
-      <div className="rounded-xl border border-[#cfe0ef] bg-[#eef5fe] px-4 py-3 text-sm text-[#5f7da2]">
-        Al confirmar, el estado del reloj cambiara automaticamente a Vendido y se calculara la ganancia.
-      </div>
+      <SalesInfoAlert />
 
       {clientSuccess ? (
         <div className="rounded-xl border border-[#d9e5d7] bg-[#edf7ed] px-4 py-3 text-sm text-[#4c6d50]">
@@ -297,339 +252,61 @@ export default function SalesFormPage() {
         </div>
       ) : null}
 
-      <form className="grid gap-6 xl:grid-cols-[1.2fr_0.5fr]" id="sales-form" onSubmit={handleSubmit}>
+      <form
+        className="grid gap-6 xl:grid-cols-[1.2fr_0.5fr]"
+        id="sales-form"
+        onSubmit={handleSubmit}
+      >
         <div className="space-y-5">
-          <section className="panel-surface p-5">
-            <h2 className="font-serif text-2xl text-[#2a221b]">Reloj a vender</h2>
-            <div className="mt-4">
-              <select
-                className="w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]"
-                name="product"
-                onChange={handleChange}
-                required
-                value={formValues.product}
-              >
-                <option value="">Selecciona un reloj</option>
-                {inventoryState.items.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.display_name} • {item.product_id} • {formatCurrency(item.price)}
-                  </option>
-                ))}
-              </select>
-              {fieldErrors.product ? (
-                <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.product}</p>
-              ) : null}
-            </div>
+          <SaleProductSection
+            inventoryItems={inventoryState.items}
+            selectedItem={selectedItem}
+            productValue={formValues.product}
+            onChange={handleChange}
+            formatCurrency={formatCurrency}
+            fieldErrors={fieldErrors}
+          />
 
-            {selectedItem ? (
-              <div className="mt-4 rounded-xl border border-[#e4d7c3] bg-[#fffaf1] p-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#eee5d5] text-2xl">?</div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-[#2a221b]">
-                      {selectedItem.product_id} • {selectedItem.display_name}
-                    </p>
-                    <p className="mt-1 text-xs text-[#8c7963]">
-                      Precio lista: {formatCurrency(selectedItem.price)} • Costo: {formatCurrency(selectedItem.total_cost)} • Condicion: {selectedItem.condition_score}
-                    </p>
-                  </div>
-                  <span className="rounded-md bg-[#edf7f1] px-2 py-1 text-xs text-[#7da281]">
-                    Disponible
-                  </span>
-                </div>
-              </div>
-            ) : null}
-          </section>
+          <SaleCustomerSection
+            clients={clientsState.items}
+            selectedClient={selectedClient}
+            formValues={formValues}
+            onChange={handleChange}
+            fieldErrors={fieldErrors}
+          />
 
-          <section className="panel-surface p-5">
-            <h2 className="font-serif text-2xl text-[#2a221b]">Datos del cliente</h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block md:col-span-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Cliente existente
-                </span>
-                <select
-                  className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                  name="customer"
-                  onChange={handleChange}
-                  value={formValues.customer}
-                >
-                  <option value="">Crear nuevo cliente</option>
-                  {clientsState.items.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name} - {client.phone || "sin telefono"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+          <SaleTransactionSection
+            formValues={formValues}
+            onChange={handleChange}
+            fieldErrors={fieldErrors}
+            channelOptions={channelOptions}
+          />
 
-            {formValues.customer ? (
-              <div className="mt-5 rounded-xl border border-[#e4d7c3] bg-[#fffaf1] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Cliente seleccionado
-                </p>
-                <p className="mt-2 font-semibold text-[#2a221b]">
-                  {clientsState.items.find((client) => String(client.id) === String(formValues.customer))?.name ||
-                    "Cliente"}
-                </p>
-                <p className="mt-1 text-sm text-[#8c7963]">
-                  {clientsState.items.find((client) => String(client.id) === String(formValues.customer))?.phone ||
-                    "Sin telefono"}{" "}
-                  ·{" "}
-                  {clientsState.items.find((client) => String(client.id) === String(formValues.customer))?.instagram_handle ||
-                    "Sin IG"}
-                </p>
-              </div>
-            ) : (
-              <div className="mt-5 rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Datos del nuevo cliente
-                </p>
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <label className="block">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                      Nombre del cliente
-                    </span>
-                    <input
-                      className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                      name="customer_name"
-                      onChange={handleChange}
-                      placeholder="Nombre del comprador"
-                      value={formValues.customer_name}
-                    />
-                    {fieldErrors.customer_name ? (
-                      <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.customer_name}</p>
-                    ) : null}
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                      Contacto (telefono / Instagram)
-                    </span>
-                    <input
-                      className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                      name="customer_contact"
-                      onChange={handleChange}
-                      placeholder="33 1234 5678 / @usuario"
-                      value={formValues.customer_contact}
-                    />
-                    {fieldErrors.customer_contact ? (
-                      <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.customer_contact}</p>
-                    ) : null}
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                      Email
-                    </span>
-                    <input
-                      className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                      name="customer_email"
-                      onChange={handleChange}
-                      placeholder="correo@ejemplo.com"
-                      type="email"
-                      value={formValues.customer_email}
-                    />
-                    {fieldErrors.customer_email ? (
-                      <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.customer_email}</p>
-                    ) : null}
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                      Direccion
-                    </span>
-                    <input
-                      className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                      name="customer_address"
-                      onChange={handleChange}
-                      placeholder="Ciudad / colonia / referencia"
-                      value={formValues.customer_address}
-                    />
-                  </label>
-                  <label className="md:col-span-2 block">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                      Notas del cliente
-                    </span>
-                    <textarea
-                      className="mt-2 min-h-20 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                      name="customer_notes"
-                      onChange={handleChange}
-                      placeholder="Preferencias, referencias, etc."
-                      value={formValues.customer_notes}
-                    />
-                  </label>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section className="panel-surface p-5">
-            <h2 className="font-serif text-2xl text-[#2a221b]">Datos de la transaccion</h2>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Monto cobrado
-                </span>
-                <input
-                  className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                  min="0"
-                  name="amount_paid"
-                  onChange={handleChange}
-                  step="0.01"
-                  type="number"
-                  value={formValues.amount_paid}
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Canal de venta
-                </span>
-                <select
-                  className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                  name="sales_channel"
-                  onChange={handleChange}
-                  value={formValues.sales_channel}
-                >
-                  {channelOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Fecha de venta
-                </span>
-                <input
-                  className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                  name="sale_date"
-                  onChange={handleChange}
-                  type="date"
-                  value={formValues.sale_date}
-                />
-                {fieldErrors.sale_date ? (
-                  <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.sale_date}</p>
-                ) : null}
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Extras (accesorios, caja...)
-                </span>
-                <input
-                  className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                  min="0"
-                  name="extras"
-                  onChange={handleChange}
-                  step="0.01"
-                  type="number"
-                  value={formValues.extras}
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Costo de envio al cliente
-                </span>
-                <input
-                  className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                  min="0"
-                  name="sale_shipping_cost"
-                  onChange={handleChange}
-                  step="0.01"
-                  type="number"
-                  value={formValues.sale_shipping_cost}
-                />
-              </label>
-              <label className="md:col-span-3 block">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                  Notas de la venta
-                </span>
-                <textarea
-                  className="mt-2 min-h-20 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                  name="notes"
-                  onChange={handleChange}
-                  value={formValues.notes}
-                />
-              </label>
-            </div>
-          </section>
-
-          <section className="panel-surface p-5">
-            <h2 className="font-serif text-2xl text-[#2a221b]">Metodo de pago</h2>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {paymentOptions.map((option) => (
-                <button
-                  key={option.value}
-                  className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm transition ${
-                    formValues.payment_method === option.value
-                      ? "border-[#b69556] bg-[#fff5dd] text-[#2a221b]"
-                      : "border-[#dccfb9] bg-[#fffdf9] text-[#7d6751]"
-                  }`}
-                  onClick={() => handlePaymentChange(option.value)}
-                  type="button"
-                >
-                  <span>{option.label}</span>
-                  {formValues.payment_method === option.value ? (
-                    <span className="text-[#b69556]">?</span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          </section>
+          <SalePaymentSection
+            paymentOptions={paymentOptions}
+            selectedMethod={formValues.payment_method}
+            onSelect={handlePaymentChange}
+          />
         </div>
 
         <div className="space-y-5">
-          <section className="panel-surface p-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-[#b09a7e]">Resumen de la venta</p>
-            <div className="mt-4 space-y-3 text-sm text-[#7d6751]">
-              <div className="flex items-center justify-between">
-                <span>Precio cobrado</span>
-                <span>{formatCurrency(amountPaid)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Costo del reloj</span>
-                <span>-{formatCurrency(costSnapshot)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Extras</span>
-                <span>{formatCurrency(extras)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Costo envio</span>
-                <span>{formatCurrency(shipping)}</span>
-              </div>
-            </div>
-            <div className="mt-4 border-t border-[#e5d7c2] pt-4">
-              <div className="flex items-center justify-between">
-                <span className="font-serif text-2xl text-[#2a221b]">Ganancia</span>
-                <span className="font-serif text-3xl text-[#5f8f66]">
-                  {formatCurrency(profit)}
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-[#8c7963]">
-                Margen: {margin.toFixed(1)}%
-              </p>
-            </div>
-            <button
-              className="gold-button mt-5 w-full"
-              disabled={isSubmitting || !formValues.product || !formValues.amount_paid}
-              type="submit"
-            >
-              {isSubmitting ? "Confirmando venta..." : "Confirmar venta"}
-            </button>
-          </section>
+          <SaleSummaryPanel
+            amountPaid={amountPaid}
+            costSnapshot={costSnapshot}
+            extras={extras}
+            shipping={shipping}
+            profit={profit}
+            margin={margin}
+            formatCurrency={formatCurrency}
+            isSubmitting={isSubmitting}
+            canSubmit={Boolean(formValues.product && formValues.amount_paid)}
+          />
 
-          <section className="panel-surface p-5">
-            <p className="font-serif text-xl text-[#2a221b]">¿El cliente pagara en parcialidades?</p>
-            <button
-              className="mt-4 w-full rounded-md border border-[#dec5bd] bg-[#fff4f1] px-4 py-3 text-sm text-[#8d5b4d]"
-              disabled
-              type="button"
-            >
-              Registrar como apartado
-            </button>
-          </section>
+          <SaleHoldPanel />
         </div>
       </form>
     </div>
   );
 }
+
+

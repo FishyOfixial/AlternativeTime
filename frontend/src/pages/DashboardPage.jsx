@@ -316,7 +316,7 @@ export default function DashboardPage() {
                   {selectedYear} dividido por meses
                 </h2>
                 <p className="mt-2 text-sm text-[#8a775f]">
-                  Visualiza ventas, ganancias o costo de ventas a lo largo del ano.
+                  Visualiza ventas, ganancias o costo de ventas a lo largo del año.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 rounded-full border border-[#e0d4c0] bg-[#f7f1e8] p-2">
