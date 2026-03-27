@@ -15,9 +15,11 @@ import FinancePage from "../pages/FinancePage";
 import ReportsPage from "../pages/ReportsPage";
 import SalesFormPage from "../pages/SalesFormPage";
 import SalesPage from "../pages/SalesPage";
+import { USERS_MODULE_ENABLED } from "../constants/features";
 
 const modulePages = [
   {
+    enabled: USERS_MODULE_ENABLED,
     path: "/users",
     title: "Usuarios",
     eyebrow: "Sprint Frontend 8",
@@ -49,7 +51,7 @@ export default function AppRouter() {
             <Route path="/sales/new" element={<SalesFormPage />} />
             <Route path="/finance" element={<FinancePage />} />
             <Route path="/reports" element={<ReportsPage />} />
-            {modulePages.map((page) => (
+            {modulePages.filter((page) => page.enabled).map((page) => (
               <Route
                 key={page.path}
                 path={page.path}

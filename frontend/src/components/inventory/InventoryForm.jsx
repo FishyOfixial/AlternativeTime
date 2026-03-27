@@ -188,7 +188,7 @@ export default function InventoryForm({
               <input className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3" max="10" min="1" name="condition_score" onChange={handleChange} step="0.1" type="number" value={values.condition_score} />
             </label>
             <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">Proveedor / vendedor</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">Proveedor</span>
               <input className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3" name="provider" onChange={handleChange} value={values.provider} />
             </label>
             <label className="block">

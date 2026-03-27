@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { USERS_MODULE_ENABLED } from "../../constants/features";
 
 const links = [
   { to: "/dashboard", label: "Dashboard" },
@@ -8,7 +9,7 @@ const links = [
   { to: "/sales", label: "Ventas"},
   { to: "/finance", label: "Finanzas"},
   { to: "/reports", label: "Reportes"},
-  { to: "/users", label: "Usuarios"}
+  { to: "/users", label: "Usuarios", enabled: USERS_MODULE_ENABLED }
 ];
 
 export default function Sidebar() {
@@ -32,7 +33,7 @@ export default function Sidebar() {
           Navegacion
         </p>
         <nav className="mt-5 flex flex-col gap-2">
-          {links.map((link) => (
+          {links.filter((link) => link.enabled !== false).map((link) => (
             <NavLink
               key={link.to}
               to={link.to}

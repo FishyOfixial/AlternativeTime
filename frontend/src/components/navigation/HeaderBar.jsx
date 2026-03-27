@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
+import { USERS_MODULE_ENABLED } from "../../constants/features";
 
 const titles = {
   "/dashboard": "Dashboard",
@@ -8,7 +9,7 @@ const titles = {
   "/sales": "Ventas",
   "/finance": "Finanzas",
   "/reports": "Reportes",
-  "/users": "Usuarios"
+  ...(USERS_MODULE_ENABLED ? { "/users": "Usuarios" } : {})
 };
 
 export default function HeaderBar() {
