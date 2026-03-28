@@ -117,7 +117,7 @@ function buildFormState(defaultValues = {}) {
   };
 }
 
-const labelClassName = "text-[11px] font-semibold uppercase tracking-[0.16em] text-[#b09a7e]";
+const labelClassName = "text-[10px] font-semibold uppercase tracking-[0.06em] lg:tracking-[0.16em] text-[#b09a7e]";
 const fieldClassName =
   "mt-1.5 w-full rounded-lg border border-[#dccfb9] bg-[#fffdf9] px-3 py-2.5 text-sm text-[#2a221b] outline-none transition focus:border-[#b69556] focus:ring-2 focus:ring-[#ead9b4]";
 
