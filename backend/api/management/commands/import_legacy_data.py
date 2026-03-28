@@ -396,8 +396,10 @@ class Command(BaseCommand):
         inserted = 0
         rows = conn.execute("SELECT * FROM finanzas ORDER BY id ASC").fetchall()
         for row in rows:
-            entry_type = self._map_entry_type(row["tipo"])
             raw_amount = self._to_decimal(row["monto"])
+            entry_type = self._entry_type_from_signed_amount(
+                raw_amount, fallback=self._map_entry_type(row["tipo"])
+            )
             amount = abs(raw_amount)
             concept = self._map_concept(row["concepto"])
             notes = self._clean_text(row["notas"])
@@ -440,8 +442,11 @@ class Command(BaseCommand):
             """
         ).fetchall()
         for row in rows:
-            entry_type = self._map_entry_type(row["entry_type"])
-            amount = abs(self._to_decimal(row["amount"]))
+            raw_amount = self._to_decimal(row["amount"])
+            entry_type = self._entry_type_from_signed_amount(
+                raw_amount, fallback=self._map_entry_type(row["entry_type"])
+            )
+            amount = abs(raw_amount)
             concept = self._map_concept(row["concept"])
             notes = self._clean_text(row["notes"])
             product = inventory_map.get(self._clean_text(row["legacy_product_id"]))
@@ -629,6 +634,8 @@ class Command(BaseCommand):
     @staticmethod
     def _map_account(value):
         normalized = str(value or "").strip().lower()
+        if "nu" in normalized:
+            return FinanceEntry.ACCOUNT_AMEX
         if "bbva" in normalized or "transfer" in normalized:
             return FinanceEntry.ACCOUNT_BBVA
         if "amex" in normalized:
@@ -643,6 +650,14 @@ class Command(BaseCommand):
         if normalized in {"egreso", "expense"}:
             return FinanceEntry.TYPE_EXPENSE
         return FinanceEntry.TYPE_INCOME
+
+    @staticmethod
+    def _entry_type_from_signed_amount(amount, fallback):
+        if amount < 0:
+            return FinanceEntry.TYPE_EXPENSE
+        if amount > 0:
+            return FinanceEntry.TYPE_INCOME
+        return fallback
 
     @staticmethod
     def _map_concept(value):
