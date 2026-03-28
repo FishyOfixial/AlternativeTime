@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ClientActionsPanel from "../components/clients/ClientActionsPanel";
 import ClientDetailHeader from "../components/clients/ClientDetailHeader";
 import ClientDetailStats from "../components/clients/ClientDetailStats";
-import ClientForm from "../components/clients/ClientForm";
+import ClientFormModal from "../components/clients/ClientFormModal";
 import ClientNotesCard from "../components/clients/ClientNotesCard";
 import ClientPurchaseHistory from "../components/clients/ClientPurchaseHistory";
 import ErrorState from "../components/feedback/ErrorState";
@@ -72,6 +72,20 @@ export default function ClientDetailPage() {
     }
   }
 
+  function closeEditModal() {
+    setUpdateError("");
+    setIsEditOpen(false);
+  }
+
+  function toggleEditModal() {
+    if (isEditOpen) {
+      closeEditModal();
+      return;
+    }
+    setUpdateError("");
+    setIsEditOpen(true);
+  }
+
   async function handleDeactivate() {
     setIsDeleting(true);
     setDeactivateError("");
@@ -103,27 +117,21 @@ export default function ClientDetailPage() {
       <ClientDetailHeader
         client={client}
         isEditOpen={isEditOpen}
-        onToggleEdit={() => setIsEditOpen((current) => !current)}
+        onToggleEdit={toggleEditModal}
       />
 
       <ClientDetailStats averageTicket={averageTicket} client={client} />
 
-      {isEditOpen ? (
-        <section className="panel-surface p-5 sm:p-6">
-          {updateError ? (
-            <div className="mb-4">
-              <ErrorState message={updateError} title="No pudimos guardar los cambios" />
-            </div>
-          ) : null}
-
-          <ClientForm
-            defaultValues={client}
-            isSubmitting={isSaving}
-            onSubmit={handleUpdate}
-            submitLabel="Guardar cambios"
-          />
-        </section>
-      ) : null}
+      <ClientFormModal
+        defaultValues={client}
+        isOpen={isEditOpen}
+        isSubmitting={isSaving}
+        onClose={closeEditModal}
+        onSubmit={handleUpdate}
+        submitError={updateError}
+        submitLabel="Guardar cambios"
+        title="Editar cliente"
+      />
 
       <section className="grid gap-5 xl:grid-cols-[1.1fr_0.8fr]">
         <ClientPurchaseHistory instagramHandle={client.instagram_handle} purchases={client.purchase_history} />

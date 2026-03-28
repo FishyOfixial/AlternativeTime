@@ -1,7 +1,6 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import ClientForm from "../components/clients/ClientForm";
+import { useEffect, useMemo, useState } from "react";
+import ClientFormModal from "../components/clients/ClientFormModal";
 import ClientsFilters from "../components/clients/ClientsFilters";
-import ClientsHeader from "../components/clients/ClientsHeader";
 import ClientsSummaryCards from "../components/clients/ClientsSummaryCards";
 import ClientsTable from "../components/clients/ClientsTable";
 import EmptyState from "../components/feedback/EmptyState";
@@ -71,9 +70,7 @@ export default function ClientsPage() {
     });
   }, [clientsState.clients, filter, searchTerm]);
 
-  const recurringClients = clientsState.clients.filter(
-    (client) => client.purchases_count >= 2
-  ).length;
+  const recurringClients = clientsState.clients.filter((client) => client.purchases_count >= 2).length;
 
   async function handleCreateClient(payload) {
     setIsSaving(true);
@@ -90,34 +87,41 @@ export default function ClientsPage() {
     }
   }
 
+  function openCreateModal() {
+    setSubmitError("");
+    setIsCreateOpen(true);
+  }
+
+  function closeCreateModal() {
+    setSubmitError("");
+    setIsCreateOpen(false);
+  }
+
+  function toggleCreateModal() {
+    if (isCreateOpen) {
+      closeCreateModal();
+      return;
+    }
+    openCreateModal();
+  }
+
   return (
     <div className="space-y-6">
-      <ClientsHeader onToggleCreate={() => setIsCreateOpen((current) => !current)} />
-
       <ClientsSummaryCards
         total={clientsState.clients.length}
         active={clientsState.clients.filter((client) => client.is_active).length}
         recurring={recurringClients}
       />
 
-      {isCreateOpen ? (
-        <section className="panel-surface p-6">
-          {submitError ? (
-            <div className="mb-4">
-              <ErrorState
-                message={submitError}
-                title="No pudimos guardar el cliente"
-              />
-            </div>
-          ) : null}
-
-          <ClientForm
-            isSubmitting={isSaving}
-            onSubmit={handleCreateClient}
-            submitLabel="Crear cliente"
-          />
-        </section>
-      ) : null}
+      <ClientFormModal
+        isOpen={isCreateOpen}
+        title="Crear cliente"
+        submitLabel="Crear cliente"
+        isSubmitting={isSaving}
+        submitError={submitError}
+        onSubmit={handleCreateClient}
+        onClose={closeCreateModal}
+      />
 
       <section className="panel-surface p-0">
         <ClientsFilters
@@ -125,32 +129,25 @@ export default function ClientsPage() {
           onSearchChange={setSearchTerm}
           filter={filter}
           onFilterChange={setFilter}
+          onToggleCreate={toggleCreateModal}
+          isCreateOpen={isCreateOpen}
         />
 
         {clientsState.status === "loading" ? (
           <div className="p-6">
-            <LoadingState
-              message="Estamos consultando la lista de clientes en el backend."
-              title="Cargando clientes"
-            />
+            <LoadingState message="Estamos consultando la lista de clientes en el backend." title="Cargando clientes" />
           </div>
         ) : null}
 
         {clientsState.status === "error" ? (
           <div className="p-6">
-            <ErrorState
-              message={clientsState.error}
-              title="No pudimos cargar clientes"
-            />
+            <ErrorState message={clientsState.error} title="No pudimos cargar clientes" />
           </div>
         ) : null}
 
         {clientsState.status === "success" && filteredClients.length === 0 ? (
           <div className="p-6">
-            <EmptyState
-              message="No hay clientes para este filtro o busqueda."
-              title="Sin clientes para mostrar"
-            />
+            <EmptyState message="No hay clientes para este filtro o busqueda." title="Sin clientes para mostrar" />
           </div>
         ) : null}
 

@@ -15,6 +15,9 @@ import { formatCurrency } from "../utils/inventory";
 
 export default function InventoryPage() {
   const { accessToken } = useAuth();
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 1024px)").matches : true
+  );
   const [inventoryState, setInventoryState] = useState({
     status: "loading",
     items: []
@@ -24,7 +27,9 @@ export default function InventoryPage() {
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [selectedPrice, setSelectedPrice] = useState("all");
   const [selectedDays, setSelectedDays] = useState("all");
-  const [viewMode, setViewMode] = useState("table");
+  const [viewMode, setViewMode] = useState(() =>
+    typeof window !== "undefined" && !window.matchMedia("(min-width: 1024px)").matches ? "cards" : "table"
+  );
   const [isImporting, setIsImporting] = useState(false);
   const [importFeedback, setImportFeedback] = useState(null);
   const fileInputRef = useRef(null);
@@ -47,6 +52,24 @@ export default function InventoryPage() {
   useEffect(() => {
     loadItems();
   }, [loadItems]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const media = window.matchMedia("(min-width: 1024px)");
+    const handleChange = () => {
+      setIsDesktop(media.matches);
+      if (!media.matches) {
+        setViewMode("cards");
+      }
+    };
+
+    handleChange();
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
 
   const brands = useMemo(
     () => [...new Set(inventoryState.items.map((item) => item.brand).filter(Boolean))].sort(),
@@ -137,8 +160,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <InventoryHeader isImporting={isImporting} onImportClick={handleImportClick} />
+    <div className="space-y-2">
       <input
         accept=".csv,text/csv"
         className="hidden"
@@ -176,7 +198,13 @@ export default function InventoryPage() {
           selectedStatus={selectedStatus}
           onSelect={setSelectedStatus}
         />
-        <InventoryViewToggle viewMode={viewMode} onChange={setViewMode} />
+        <InventoryViewToggle
+          showViewOptions={isDesktop}
+          viewMode={viewMode}
+          onChange={setViewMode}
+          onImportClick={handleImportClick}
+          isImporting={isImporting}
+        />
       </section>
 
       <InventoryFilters
@@ -210,7 +238,7 @@ export default function InventoryPage() {
         />
       ) : null}
 
-      {inventoryState.status === "success" && filteredItems.length > 0 && viewMode === "table" ? (
+      {inventoryState.status === "success" && filteredItems.length > 0 && isDesktop && viewMode === "table" ? (
         <InventoryTable
           items={filteredItems}
           formatCurrency={formatCurrency}
@@ -221,7 +249,7 @@ export default function InventoryPage() {
         />
       ) : null}
 
-      {inventoryState.status === "success" && filteredItems.length > 0 && viewMode === "cards" ? (
+      {inventoryState.status === "success" && filteredItems.length > 0 && (!isDesktop || viewMode === "cards") ? (
         <InventoryCards
           items={filteredItems}
           formatCurrency={formatCurrency}

@@ -7,22 +7,6 @@ from django.utils import timezone
 
 from api.model_mixins import TimestampedSoftDeleteModel
 
-BRAND_PREFIXES = {
-    "hamilton": "HAM",
-    "seiko": "SEI",
-    "casio": "CAS",
-    "g-shock": "G-S",
-    "citizen": "CIT",
-    "timex": "TIM",
-    "tissot": "TIS",
-    "omega": "OME",
-    "orient": "ORI",
-    "bulova": "BUL",
-    "victorinox": "VIC",
-    "rolex": "ROL",
-    "cartier": "CAR",
-}
-
 PAYMENT_CHOICES = [
     ("cash", "Efectivo"),
     ("transfer", "Transferencia"),
@@ -40,10 +24,10 @@ ACCOUNT_CHOICES = [
 
 
 def get_brand_prefix(brand):
-    normalized_brand = (brand or "").strip().lower()
+    normalized_brand = "".join(ch for ch in (brand or "").strip().upper() if ch.isalnum())
     if not normalized_brand:
         return "ATC"
-    return BRAND_PREFIXES.get(normalized_brand, normalized_brand[:3].upper())
+    return normalized_brand[:3]
 
 
 def compute_age_tag(days_in_inventory):
@@ -298,11 +282,18 @@ class PurchaseCost(models.Model):
 
 def generate_product_id(brand):
     prefix = get_brand_prefix(brand)
-    latest_item = InventoryItem.all_objects.filter(product_id__startswith=f"{prefix}-").order_by(
-        "-product_id"
-    ).first()
-    if latest_item and "-" in latest_item.product_id:
-        next_number = int(latest_item.product_id.split("-")[1]) + 1
-    else:
-        next_number = 1
+    latest_items = InventoryItem.all_objects.exclude(product_id="").values_list("product_id", flat=True)
+    max_number = 0
+    for product_id in latest_items:
+        if "-" not in product_id:
+            continue
+        number_part = product_id.split("-")[1]
+        try:
+            parsed = int(number_part)
+        except (TypeError, ValueError):
+            continue
+        if parsed > max_number:
+            max_number = parsed
+
+    next_number = max_number + 1
     return f"{prefix}-{next_number:03d}"

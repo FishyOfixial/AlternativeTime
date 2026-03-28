@@ -58,17 +58,17 @@ export default function InventoryTable({
         <table className="w-full min-w-[940px] border-collapse text-left lg:min-w-[980px]">
           <thead className="sticky top-0 z-10 bg-[#f0e8dc] text-xs uppercase tracking-[0.16em] text-[#b4a085]">
             <tr>
-              <th className="w-[110px] px-4 py-4">ID</th>
-              <th className="min-w-[220px] px-4 py-4">Marca / modelo</th>
-              <th className="hidden w-[110px] px-4 py-4 lg:table-cell">Ano</th>
-              <th className="w-[80px] px-4 py-4">Cond.</th>
-              <th className="w-[130px] px-4 py-4">Costo compra</th>
-              <th className="w-[120px] px-4 py-4">Precio</th>
-              <th className="w-[110px] px-4 py-4">Utilidad</th>
-              <th className="w-[120px] px-4 py-4">Estado</th>
-              <th className="w-[110px] px-4 py-4">Dias inv.</th>
-              <th className="hidden w-[110px] px-4 py-4 lg:table-cell">Etiqueta</th>
-              <th className="w-[80px] px-4 py-4" />
+              <th className="w-[110px] px-4 py-2">ID</th>
+              <th className="min-w-[220px] px-4 py-2">Marca / modelo</th>
+              <th className="hidden w-[110px] px-4 py-2 lg:table-cell">Ano</th>
+              <th className="w-[80px] px-4 py-2">Cond.</th>
+              <th className="w-[130px] px-4 py-2">Costo compra</th>
+              <th className="w-[120px] px-4 py-2">Precio</th>
+              <th className="w-[110px] px-4 py-2">Utilidad</th>
+              <th className="w-[120px] px-4 py-2">Estado</th>
+              <th className="w-[110px] px-4 py-2">Dias inv.</th>
+              <th className="hidden w-[110px] px-4 py-2 lg:table-cell">Etiqueta</th>
+              <th className="w-[80px] px-4 py-2" />
             </tr>
           </thead>
           <tbody>

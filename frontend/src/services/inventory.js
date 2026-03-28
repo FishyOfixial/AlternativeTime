@@ -35,6 +35,24 @@ function buildInventoryPayload(payload) {
   };
 }
 
+async function handleJsonResponse(response, fallbackMessage) {
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch {
+    payload = {};
+  }
+
+  if (!response.ok) {
+    const error = new Error(fallbackMessage || `HTTP ${response.status}`);
+    error.status = response.status;
+    error.data = payload;
+    throw error;
+  }
+
+  return payload;
+}
+
 export function listInventory(accessToken, filters = {}) {
   const searchParams = new URLSearchParams();
 
@@ -57,23 +75,25 @@ export function getInventoryItem(accessToken, itemId) {
 }
 
 export function createInventoryItem(accessToken, payload) {
-  return apiJson("/api/inventory/", {
+  return fetch("/api/inventory/", {
     method: "POST",
     headers: authHeaders(accessToken, {
+      Accept: "application/json",
       "Content-Type": "application/json"
     }),
     body: JSON.stringify(buildInventoryPayload(payload))
-  });
+  }).then((response) => handleJsonResponse(response, "No pudimos crear el reloj."));
 }
 
 export function updateInventoryItem(accessToken, itemId, payload) {
-  return apiJson(`/api/inventory/${itemId}/`, {
+  return fetch(`/api/inventory/${itemId}/`, {
     method: "PATCH",
     headers: authHeaders(accessToken, {
+      Accept: "application/json",
       "Content-Type": "application/json"
     }),
     body: JSON.stringify(buildInventoryPayload(payload))
-  });
+  }).then((response) => handleJsonResponse(response, "No pudimos actualizar el reloj."));
 }
 
 export async function deleteInventoryItem(accessToken, itemId) {

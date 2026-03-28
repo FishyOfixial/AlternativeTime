@@ -1,3 +1,5 @@
+import { NavLink } from "react-router-dom";
+
 export default function InventoryFilters({
   searchTerm,
   onSearchChange,
@@ -11,7 +13,14 @@ export default function InventoryFilters({
 }) {
   return (
     <section className="panel-soft p-3 sm:p-4">
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(280px,1fr)_auto_auto_auto]">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#eadfcd] pb-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8d7964]">Tabla de inventario</p>
+        <NavLink className="gold-button px-4 py-2 text-xs" to="/inventory/new">
+          + Nuevo reloj
+        </NavLink>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-[minmax(280px,1fr)_auto_auto_auto]">
         <input
           className="w-full min-w-0 rounded-md border border-[#dccfb9] bg-[#fffdf9] px-3 py-2.5 text-sm xl:min-w-[260px]"
           onChange={(event) => onSearchChange(event.target.value)}
