@@ -47,7 +47,7 @@ def compute_summary(sales_queryset, inventory_queryset):
     profit = aggregates["profit"] or Decimal("0.00")
     cost_of_sales = aggregates["cost_of_sales"] or Decimal("0.00")
 
-    sold_products = [sale.product for sale in sales_queryset.select_related("product")]
+    sold_products = [sale.product for sale in sales_queryset.select_related("product") if sale.product is not None]
     avg_days_to_sell = (
         sum((product.days_to_sell or 0) for product in sold_products) / len(sold_products)
         if sold_products

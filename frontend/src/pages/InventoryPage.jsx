@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import EmptyState from "../components/feedback/EmptyState";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
@@ -10,7 +10,7 @@ import InventoryTable from "../components/inventory/InventoryTable";
 import InventoryViewToggle from "../components/inventory/InventoryViewToggle";
 import { useAuth } from "../contexts/AuthContext";
 import { statusClasses, statusLabels, tagClasses, tagLabels } from "../constants/inventory";
-import { listInventory } from "../services/inventory";
+import { importInventoryCsv, listInventory } from "../services/inventory";
 import { formatCurrency } from "../utils/inventory";
 
 export default function InventoryPage() {
@@ -25,25 +25,28 @@ export default function InventoryPage() {
   const [selectedPrice, setSelectedPrice] = useState("all");
   const [selectedDays, setSelectedDays] = useState("all");
   const [viewMode, setViewMode] = useState("table");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importFeedback, setImportFeedback] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const loadItems = useCallback(async () => {
+    try {
+      const items = await listInventory(accessToken);
+      setInventoryState({
+        status: "success",
+        items
+      });
+    } catch {
+      setInventoryState({
+        status: "error",
+        items: []
+      });
+    }
+  }, [accessToken]);
 
   useEffect(() => {
-    async function loadItems() {
-      try {
-        const items = await listInventory(accessToken);
-        setInventoryState({
-          status: "success",
-          items
-        });
-      } catch {
-        setInventoryState({
-          status: "error",
-          items: []
-        });
-      }
-    }
-
     loadItems();
-  }, [accessToken]);
+  }, [loadItems]);
 
   const brands = useMemo(
     () => [...new Set(inventoryState.items.map((item) => item.brand).filter(Boolean))].sort(),
@@ -96,9 +99,76 @@ export default function InventoryPage() {
     });
   }, [inventoryState.items, searchTerm, selectedStatus, selectedBrand, selectedPrice, selectedDays]);
 
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleCsvSelected(event) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setIsImporting(true);
+    setImportFeedback(null);
+
+    try {
+      const result = await importInventoryCsv(accessToken, file);
+      const failed = Number(result.failed || 0);
+      setImportFeedback({
+        type: failed > 0 ? "warning" : "success",
+        message:
+          failed > 0
+            ? `Importacion parcial: ${result.created} creados y ${failed} con error.`
+            : `Importacion completa: ${result.created} relojes creados.`,
+        errors: result.errors || []
+      });
+      await loadItems();
+    } catch (error) {
+      setImportFeedback({
+        type: "error",
+        message: error?.message || "No pudimos importar el archivo CSV.",
+        errors: error?.payload?.errors || []
+      });
+    } finally {
+      setIsImporting(false);
+      event.target.value = "";
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <InventoryHeader />
+      <InventoryHeader isImporting={isImporting} onImportClick={handleImportClick} />
+      <input
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={handleCsvSelected}
+        ref={fileInputRef}
+        type="file"
+      />
+
+      {importFeedback ? (
+        <section
+          className={`rounded-xl border px-4 py-3 text-sm ${
+            importFeedback.type === "success"
+              ? "border-[#c6ddc8] bg-[#edf8ef] text-[#3d6e46]"
+              : importFeedback.type === "warning"
+                ? "border-[#e4d7b7] bg-[#fbf5e6] text-[#7b6843]"
+                : "border-[#e7c2bc] bg-[#fff1ee] text-[#8e4f45]"
+          }`}
+        >
+          <p>{importFeedback.message}</p>
+          {importFeedback.errors?.length ? (
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+              {importFeedback.errors.slice(0, 5).map((rowError) => (
+                <li key={`csv-error-${rowError.row}`}>
+                  Fila {rowError.row}: {JSON.stringify(rowError.errors)}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="flex flex-wrap items-center justify-between gap-3">
         <InventoryStatusTabs

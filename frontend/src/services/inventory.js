@@ -82,3 +82,29 @@ export async function deleteInventoryItem(accessToken, itemId) {
     headers: authHeaders(accessToken)
   });
 }
+
+export async function importInventoryCsv(accessToken, file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/inventory/import-csv/", {
+    method: "POST",
+    headers: authHeaders(accessToken),
+    body: formData
+  });
+
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch {
+    payload = {};
+  }
+
+  if (!response.ok) {
+    const error = new Error(payload.detail || "No pudimos importar el CSV.");
+    error.payload = payload;
+    throw error;
+  }
+
+  return payload;
+}

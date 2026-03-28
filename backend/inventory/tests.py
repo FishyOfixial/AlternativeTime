@@ -140,3 +140,39 @@ class TestInventoryApi(TestCase):
         self.assertEqual(response.status_code, 204)
         item.refresh_from_db()
         self.assertTrue(item.is_deleted)
+
+    def test_import_csv_creates_inventory_items(self):
+        csv_content = (
+            "marca,modelo,precio,fecha_compra,estado,canal_venta,costo_reloj,costo_envio,costo_mantenimiento\n"
+            "Seiko,5 Sports,4500.00,2026-03-01,disponible,instagram,2500.00,100.00,50.00\n"
+            "Casio,G-Shock 5600,3200.00,2026-03-05,apartado,whatsapp,1800.00,80.00,20.00\n"
+        )
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        file_obj = SimpleUploadedFile("inventario.csv", csv_content.encode("utf-8"), content_type="text/csv")
+
+        response = self.client.post("/api/inventory/import-csv/", {"file": file_obj}, format="multipart")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["created"], 2)
+        self.assertEqual(response.data["failed"], 0)
+        self.assertEqual(InventoryItem.objects.count(), 2)
+        self.assertEqual(PurchaseCost.objects.count(), 2)
+        self.assertEqual(FinanceEntry.objects.filter(concept=FinanceEntry.CONCEPT_PURCHASE).count(), 2)
+
+    def test_import_csv_returns_row_errors_when_data_is_invalid(self):
+        csv_content = (
+            "marca,modelo,precio,fecha_compra\n"
+            "Seiko,5 Sports,4500.00,2026-03-01\n"
+            "Casio,G-Shock 5600,,-\n"
+        )
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        file_obj = SimpleUploadedFile("inventario.csv", csv_content.encode("utf-8"), content_type="text/csv")
+
+        response = self.client.post("/api/inventory/import-csv/", {"file": file_obj}, format="multipart")
+
+        self.assertEqual(response.status_code, 207)
+        self.assertEqual(response.data["created"], 1)
+        self.assertEqual(response.data["failed"], 1)
+        self.assertEqual(len(response.data["errors"]), 1)

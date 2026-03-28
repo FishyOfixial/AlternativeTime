@@ -5,6 +5,10 @@ __pycache__/
 .env
 .env.*
 !.env.example
+docs/reference/db/*.sql
+docs/reference/db/*.xlsx
+docs/reference/db/*.xls
+docs/reference/db/*.csv
 
 backend/staticfiles/
 backend/media/
