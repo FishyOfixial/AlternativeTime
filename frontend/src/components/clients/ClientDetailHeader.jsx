@@ -1,11 +1,10 @@
-import { NavLink } from "react-router-dom";
 import { formatLastPurchase, getClientInitials } from "../../utils/clients";
 
 export default function ClientDetailHeader({ client, isEditOpen, onToggleEdit }) {
   return (
     <section className="flex items-start justify-between gap-4">
       <div className="flex items-start gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#d6ccb8] bg-[#edf4ee] font-semibold text-2xl text-[#6d9b85]">
+        <div className="hidden h-14 w-14 items-center justify-center rounded-full border border-[#d6ccb8] bg-[#edf4ee] font-semibold text-2xl text-[#6d9b85] sm:flex">
           {getClientInitials(client.name)}
         </div>
         <div>
@@ -17,7 +16,7 @@ export default function ClientDetailHeader({ client, isEditOpen, onToggleEdit })
               </span>
             ) : null}
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#7f6d59]">
+          <div className="mt-1 flex items-center gap-2 overflow-x-auto whitespace-nowrap text-[11px] text-[#7f6d59] sm:mt-2 sm:gap-3 sm:text-sm">
             <span>{client.phone}</span>
             <span>-</span>
             <span>{client.instagram_handle || "Sin IG"}</span>
@@ -35,12 +34,6 @@ export default function ClientDetailHeader({ client, isEditOpen, onToggleEdit })
         >
           {isEditOpen ? "Cerrar" : "Editar"}
         </button>
-        <NavLink
-          className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-4 py-2 text-sm text-[#7d6751] transition hover:bg-[#f3ecde]"
-          to="/clients"
-        >
-          Volver
-        </NavLink>
       </div>
     </section>
   );

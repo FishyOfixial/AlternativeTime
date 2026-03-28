@@ -37,7 +37,7 @@ export default function ClientForm({
 
   return (
     <form className="space-y-3.5" onSubmit={handleSubmit}>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">Nombre</span>
           <input className={inputClassName} defaultValue={values.name} name="name" required type="text" />
@@ -49,7 +49,7 @@ export default function ClientForm({
         </label>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">Email</span>
           <input className={inputClassName} defaultValue={values.email} name="email" type="email" />

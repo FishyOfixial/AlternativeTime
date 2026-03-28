@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ClientActionsPanel from "../components/clients/ClientActionsPanel";
 import ClientDetailHeader from "../components/clients/ClientDetailHeader";
@@ -45,14 +45,6 @@ export default function ClientDetailPage() {
   }, [accessToken, clientId]);
 
   const client = clientState.client;
-
-  const averageTicket = useMemo(() => {
-    if (!client || !client.purchases_count) {
-      return 0;
-    }
-
-    return Number(client.total_spent || 0) / client.purchases_count;
-  }, [client]);
 
   async function handleUpdate(payload) {
     setIsSaving(true);
@@ -120,7 +112,7 @@ export default function ClientDetailPage() {
         onToggleEdit={toggleEditModal}
       />
 
-      <ClientDetailStats averageTicket={averageTicket} client={client} />
+      <ClientDetailStats client={client} />
 
       <ClientFormModal
         defaultValues={client}

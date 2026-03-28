@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 
+function getTodayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const initialValues = {
   brand: "",
   model_name: "",
@@ -9,7 +13,7 @@ const initialValues = {
   provider: "",
   description: "",
   notes: "",
-  purchase_date: "",
+  purchase_date: getTodayIsoDate(),
   price: "0.00",
   status: "available",
   sales_channel: "marketplace",
@@ -100,7 +104,7 @@ function buildFormState(defaultValues = {}) {
     ...defaultValues,
     condition_score: String(defaultValues.condition_score ?? initialValues.condition_score),
     price: String(defaultValues.price ?? initialValues.price),
-    purchase_date: defaultValues.purchase_date || "",
+    purchase_date: defaultValues.purchase_date || initialValues.purchase_date,
     purchase_cost: {
       ...initialValues.purchase_cost,
       ...Object.fromEntries(
@@ -378,7 +382,13 @@ export default function InventoryForm({
               <FieldError fieldName="source_account" nestedPath="purchase_cost.source_account" />
             </Field>
             <Field label="Fecha de compra">
-              <input className={getInputClass("purchase_date")} name="purchase_date" onChange={handleChange} type="date" value={values.purchase_date} />
+              <input
+                className={`${getInputClass("purchase_date")} block w-full min-w-0 max-w-full appearance-none text-xs sm:text-sm`}
+                name="purchase_date"
+                onChange={handleChange}
+                type="date"
+                value={values.purchase_date}
+              />
               <FieldError fieldName="purchase_date" />
             </Field>
             <Field label="Canal de venta previsto">

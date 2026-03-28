@@ -46,6 +46,13 @@ select {
   font: inherit;
 }
 
+input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
