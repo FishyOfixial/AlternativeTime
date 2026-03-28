@@ -12,7 +12,6 @@ const initialValues = {
   price: "0.00",
   status: "available",
   sales_channel: "marketplace",
-  image_url: "",
   purchase_cost: {
     watch_cost: "0.00",
     shipping_cost: "0.00",
@@ -137,7 +136,6 @@ export default function InventoryForm({
       price: values.price,
       status: values.status,
       sales_channel: values.sales_channel,
-      image_url: values.image_url.trim(),
       purchase_cost: {
         watch_cost: values.purchase_cost.watch_cost,
         shipping_cost: values.purchase_cost.shipping_cost,
@@ -301,24 +299,6 @@ export default function InventoryForm({
               <p className="mt-2 text-sm text-[#8c7963]">Utilidad: {summary.margin.toFixed(1)}%</p>
             </div>
           </div>
-        </section>
-
-        <section className="panel-surface p-5">
-          <h2 className="font-serif text-2xl text-[#2a221b]">Foto del reloj</h2>
-          <div className="mt-4 flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-[#dccfb9] bg-[#faf4e9] px-4 py-6 text-center text-sm text-[#a08c73]">
-            {values.image_url ? (
-              <img alt="Preview del reloj" className="max-h-40 rounded-xl object-cover" src={values.image_url} />
-            ) : (
-              <div>
-                <p>Pega la URL de la imagen del reloj.</p>
-                <p className="mt-1 text-xs">La subida directa de archivos queda para la siguiente fase.</p>
-              </div>
-            )}
-          </div>
-          <label className="mt-4 block">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">URL de imagen</span>
-            <input className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3" name="image_url" onChange={handleChange} value={values.image_url} />
-          </label>
         </section>
 
         <button className="gold-button w-full" disabled={isSubmitting} type="submit">

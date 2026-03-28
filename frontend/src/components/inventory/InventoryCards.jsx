@@ -11,11 +11,7 @@ export default function InventoryCards({
       {items.map((item) => (
         <article key={item.id} className="overflow-hidden rounded-2xl border border-[#ddcfba] bg-[#fbf7f0]">
           <div className="flex min-h-28 items-center justify-center bg-[#eee5d5]">
-            {item.image_url ? (
-              <img alt={item.display_name} className="h-24 w-full object-cover" src={item.image_url} />
-            ) : (
-              <div className="text-6xl">⌚</div>
-            )}
+            <div className="text-6xl">⌚</div>
           </div>
           <div className="p-4">
             <div className="flex items-start justify-between gap-2">

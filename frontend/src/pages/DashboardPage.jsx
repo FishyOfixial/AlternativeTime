@@ -255,14 +255,14 @@ export default function DashboardPage() {
 
       {dashboardState.status === "success" ? (
         <>
-          <section className="panel-surface p-6">
+          <section className="panel-surface p-4">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="eyebrow">Seguimiento</p>
-                <h2 className="mt-2 font-serif text-2xl text-[#2a221b]">Alertas operativas</h2>
+                <h2 className="mt-1 font-serif text-xl text-[#2a221b]">Alertas operativas</h2>
               </div>
               <NavLink
-                className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#7d6751] transition hover:bg-[#f3ecde]"
+                className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7d6751] transition hover:bg-[#f3ecde]"
                 to="/layaways"
               >
                 Ver apartados
@@ -275,16 +275,16 @@ export default function DashboardPage() {
               <p className="mt-4 text-sm text-[#a55b4f]">No pudimos cargar alertas operativas.</p>
             ) : null}
             {notificationsState.status === "success" ? (
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-4 py-4">
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-3 py-3">
                   <p className="text-xs uppercase tracking-[0.16em] text-[#b5a18a]">Apartados vencidos</p>
-                  <p className="mt-2 font-serif text-3xl text-[#a55b4f]">
+                  <p className="mt-1 font-serif text-2xl text-[#a55b4f]">
                     {notificationsState.data?.counts?.layaway_overdue || 0}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-4 py-4">
+                <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-3 py-3">
                   <p className="text-xs uppercase tracking-[0.16em] text-[#b5a18a]">Inventario +60 dias</p>
-                  <p className="mt-2 font-serif text-3xl text-[#2a221b]">
+                  <p className="mt-1 font-serif text-2xl text-[#2a221b]">
                     {notificationsState.data?.counts?.inventory_old || 0}
                   </p>
                 </div>
@@ -378,14 +378,14 @@ export default function DashboardPage() {
             </section>
           </section>
 
-          <section className="panel-surface p-6">
+          <section className="panel-surface p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="eyebrow">Desglose mensual</p>
-                <h2 className="mt-2 font-serif text-2xl text-[#2a221b]">
+                <h2 className="mt-1 font-serif text-xl text-[#2a221b]">
                   {selectedYear} dividido por meses
                 </h2>
-                <p className="mt-2 text-sm text-[#8a775f]">
+                <p className="mt-1 text-xs text-[#8a775f]">
                   Visualiza ventas, ganancias o costo de ventas a lo largo del año.
                 </p>
               </div>
@@ -407,48 +407,43 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-12 md:items-end">
-              {months.map((month) => {
-                const amount = Number(month[chartMode] || 0);
-                const height =
-                  chartMax > 0 ? `${Math.max((amount / chartMax) * 100, 6)}%` : "6%";
+            <div className="mt-6 max-w-[720px] overflow-x-auto">
+              <div className="flex min-w-[1440px] items-end gap-4 pr-2">
+                {months.map((month) => {
+                  const amount = Number(month[chartMode] || 0);
+                  const height =
+                    chartMax > 0 ? `${Math.max((amount / chartMax) * 100, 6)}%` : "6%";
 
-                return (
-                  <div key={month.month} className="flex flex-col items-center gap-3">
-                    <div className="flex h-56 w-full items-end rounded-[20px] bg-[#f4ede1] px-2 py-3">
-                      <div
-                        className={`w-full rounded-[14px] ${
-                          chartMode === "sales"
-                            ? "bg-[#201914]"
-                            : chartMode === "profit"
-                              ? "bg-[#7b9367]"
-                              : "bg-[#b38f49]"
-                        }`}
-                        style={{ height }}
-                      />
+                  return (
+                    <div key={month.month} className="flex w-[110px] flex-col items-center gap-2">
+                      <div className="flex h-44 w-full items-end rounded-2xl bg-[#f4ede1] px-2 py-2">
+                        <div
+                          className={`w-full rounded-xl ${
+                            chartMode === "sales"
+                              ? "bg-[#201914]"
+                              : chartMode === "profit"
+                                ? "bg-[#7b9367]"
+                                : "bg-[#b38f49]"
+                          }`}
+                          style={{ height }}
+                        />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-[#8c7963]">
+                          {month.month}
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-[#2a221b]">
+                          {formatCurrency(amount)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-xs uppercase tracking-[0.14em] text-[#8c7963]">
-                        {month.month}
-                      </p>
-                      <p className="mt-1 text-sm font-medium text-[#2a221b]">
-                        {formatCurrency(amount)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-3">
-            <RankingList
-              emptyMessage="Aun no hay ventas suficientes para calcular marcas mas vendidas."
-              renderValue={(row) => `${row.units_sold} uds`}
-              rows={dashboardState.data.brands_sold ?? []}
-              subtitle="Top marcas"
-              title="Marcas mas vendidas"
-            />
+          <section className="grid gap-5 xl:grid-cols-2">
             <RankingList
               emptyMessage="Aun no hay historial suficiente para calcular rotacion."
               renderValue={(row) => `${formatNumber(row.avg_days_to_sell)} dias`}
