@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { NavLink } from "react-router-dom";
 import EmptyState from "../components/feedback/EmptyState";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
 import { useAuth } from "../contexts/AuthContext";
+import { listNotifications } from "../services/layaways";
 import { getDashboardSummary } from "../services/reports";
 
 const initialState = {
@@ -29,7 +31,8 @@ function formatCurrency(value) {
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "MXN",
-    maximumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(numericValue);
 }
 
@@ -125,6 +128,10 @@ function RankingList({ title, subtitle, rows, renderValue, emptyMessage }) {
 export default function DashboardPage() {
   const { accessToken } = useAuth();
   const [dashboardState, setDashboardState] = useState(initialState);
+  const [notificationsState, setNotificationsState] = useState({
+    status: "loading",
+    data: null
+  });
   const [selectedRange, setSelectedRange] = useState("month");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [chartMode, setChartMode] = useState("sales");
@@ -170,6 +177,32 @@ export default function DashboardPage() {
       active = false;
     };
   }, [accessToken, selectedRange, selectedYear]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadNotifications() {
+      setNotificationsState({ status: "loading", data: null });
+      try {
+        const data = await listNotifications(accessToken);
+        if (!active) {
+          return;
+        }
+        setNotificationsState({ status: "success", data });
+      } catch {
+        if (!active) {
+          return;
+        }
+        setNotificationsState({ status: "error", data: null });
+      }
+    }
+
+    loadNotifications();
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
 
   const months = dashboardState.data?.monthly_breakdown ?? [];
   const years = dashboardState.data?.available_years ?? [selectedYear];
@@ -222,6 +255,43 @@ export default function DashboardPage() {
 
       {dashboardState.status === "success" ? (
         <>
+          <section className="panel-surface p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="eyebrow">Seguimiento</p>
+                <h2 className="mt-2 font-serif text-2xl text-[#2a221b]">Alertas operativas</h2>
+              </div>
+              <NavLink
+                className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#7d6751] transition hover:bg-[#f3ecde]"
+                to="/layaways"
+              >
+                Ver apartados
+              </NavLink>
+            </div>
+            {notificationsState.status === "loading" ? (
+              <p className="mt-4 text-sm text-[#8a775f]">Cargando alertas...</p>
+            ) : null}
+            {notificationsState.status === "error" ? (
+              <p className="mt-4 text-sm text-[#a55b4f]">No pudimos cargar alertas operativas.</p>
+            ) : null}
+            {notificationsState.status === "success" ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-[#b5a18a]">Apartados vencidos</p>
+                  <p className="mt-2 font-serif text-3xl text-[#a55b4f]">
+                    {notificationsState.data?.counts?.layaway_overdue || 0}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-4 py-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-[#b5a18a]">Inventario +60 dias</p>
+                  <p className="mt-2 font-serif text-3xl text-[#2a221b]">
+                    {notificationsState.data?.counts?.inventory_old || 0}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </section>
+
           <section className="grid gap-4 xl:grid-cols-[1.45fr_0.95fr]">
             <div className="grid gap-4 md:grid-cols-2">
               <DashboardKpiCard

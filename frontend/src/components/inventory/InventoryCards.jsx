@@ -14,7 +14,7 @@ export default function InventoryCards({
             {item.image_url ? (
               <img alt={item.display_name} className="h-24 w-full object-cover" src={item.image_url} />
             ) : (
-              <div className="text-4xl">Reloj</div>
+              <div className="text-6xl">⌚</div>
             )}
           </div>
           <div className="p-4">

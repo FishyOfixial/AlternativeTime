@@ -12,6 +12,8 @@ import InventoryPage from "../pages/InventoryPage";
 import LoginPage from "../pages/LoginPage";
 import ModulePage from "../pages/ModulePage";
 import FinancePage from "../pages/FinancePage";
+import LayawayDetailPage from "../pages/LayawayDetailPage";
+import LayawaysPage from "../pages/LayawaysPage";
 import ReportsPage from "../pages/ReportsPage";
 import SalesFormPage from "../pages/SalesFormPage";
 import SalesPage from "../pages/SalesPage";
@@ -49,6 +51,8 @@ export default function AppRouter() {
             <Route path="/inventory/:itemId" element={<InventoryFormPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/sales/new" element={<SalesFormPage />} />
+            <Route path="/layaways" element={<LayawaysPage />} />
+            <Route path="/layaways/:layawayId" element={<LayawayDetailPage />} />
             <Route path="/finance" element={<FinancePage />} />
             <Route path="/reports" element={<ReportsPage />} />
             {modulePages.filter((page) => page.enabled).map((page) => (

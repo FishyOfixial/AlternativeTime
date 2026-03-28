@@ -7,6 +7,7 @@ const titles = {
   "/clients": "Clientes",
   "/inventory": "Inventario",
   "/sales": "Ventas",
+  "/layaways": "Apartados",
   "/finance": "Finanzas",
   "/reports": "Reportes",
   ...(USERS_MODULE_ENABLED ? { "/users": "Usuarios" } : {})
@@ -14,10 +15,12 @@ const titles = {
 
 export default function HeaderBar() {
   const location = useLocation();
-  const pageTitle = useMemo(
-    () => titles[location.pathname] ?? "Alternative Time",
-    [location.pathname]
-  );
+  const pageTitle = useMemo(() => {
+    if (location.pathname.startsWith("/layaways/")) {
+      return "Detalle de apartado";
+    }
+    return titles[location.pathname] ?? "Alternative Time";
+  }, [location.pathname]);
 
   return (
     <header className="flex items-center justify-between gap-4 border-b border-[#dacdb8] bg-[#fbf7f0] px-6 py-4 sm:px-8">

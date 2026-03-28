@@ -99,6 +99,19 @@ export default function SalesFormPage() {
     setFormValues((current) => ({ ...current, payment_method: value }));
   }
 
+  function handleRegisterLayaway() {
+    if (!formValues.product) {
+      return;
+    }
+    navigate("/layaways", {
+      state: {
+        openCreate: true,
+        prefillProductId: String(formValues.product),
+        prefillAgreedPrice: formValues.amount_paid || ""
+      }
+    });
+  }
+
   function buildClientPayload() {
     const name = formValues.customer_name.trim();
     const contact = formValues.customer_contact.trim();
@@ -302,7 +315,10 @@ export default function SalesFormPage() {
             canSubmit={Boolean(formValues.product && formValues.amount_paid)}
           />
 
-          <SaleHoldPanel />
+          <SaleHoldPanel
+            disabled={!formValues.product}
+            onRegister={handleRegisterLayaway}
+          />
         </div>
       </form>
     </div>

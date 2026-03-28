@@ -2,15 +2,15 @@
 
 ## Backend
 
-- Implementar modulo de apartados (`Layaway`) y abonos (`LayawayPayment`).
-- Integrar cierre automatico de apartado con creacion de venta final.
-- Exponer endpoint de alertas operativas (apartados vencidos, inventario viejo).
+- [x] Implementar modulo de apartados (`Layaway`) y abonos (`LayawayPayment`).
+- [x] Integrar cierre automatico de apartado con creacion de venta final.
+- [x] Exponer endpoint de alertas operativas (apartados vencidos, inventario viejo).
 - Fortalecer pruebas de integracion entre `inventory`, `sales`, `finance` y `reports`.
 - Validar contratos de exportacion y filtros por reporte contra `docs/specification/technical-specification.md`.
 
 ## Frontend
 
-- Ejecutar Sprint Frontend 8 para apartados y abonos.
+- [~] Ejecutar Sprint Frontend 8 para apartados y abonos.
 - Ejecutar Sprint Frontend 9 para hardening, pruebas y cierre de release.
 - Continuar modularizacion de paginas extensas para reducir deuda tecnica.
 - Homologar UX de estados `loading/error/empty/success` en todos los modulos.

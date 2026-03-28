@@ -120,6 +120,10 @@ GET  /api/auth/me/
 GET|POST /api/clients/
 GET|POST /api/inventory/
 GET|POST /api/sales/
+GET|POST /api/layaways/
+GET /api/layaways/{id}/
+POST /api/layaways/{id}/payments/
+GET /api/notifications/
 GET /api/finance/summary/
 GET /api/finance/balances/
 GET|POST /api/finance/entries/

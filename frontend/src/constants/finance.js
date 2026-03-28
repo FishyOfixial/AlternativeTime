@@ -12,6 +12,7 @@ export const typeLabels = {
 
 export const conceptLabels = {
   sale: "Venta",
+  layaway_payment: "Cobro de apartado",
   purchase: "Compra",
   capital_payment: "Abono a capital",
   transfer: "Transferencia",
@@ -44,6 +45,7 @@ export const initialEntryForm = {
 
 export const conceptOptions = [
   { value: "capital_payment", label: "Abono a capital" },
+  { value: "layaway_payment", label: "Cobro de apartado" },
   { value: "purchase", label: "Compra" },
   { value: "sale", label: "Venta" },
   { value: "transfer", label: "Transferencia" },

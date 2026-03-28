@@ -1,6 +1,4 @@
-﻿# Sprint Frontend 8
-
-## Resumen
+﻿# Sprint Frontend 8`r`n`r`n## Estado`r`n`r`nEn ejecucion.`r`n`r`n## Resumen
 
 Este sprint cubre los requerimientos pendientes de operacion comercial que hoy no
 estan visibles en la app: apartados, abonos y alertas internas de seguimiento.
@@ -116,3 +114,4 @@ Panel de seguimiento operativo integrado.
 - apartados no reemplazan venta directa, son flujo paralelo
 - fecha limite es opcional pero recomendable para alertas
 - notificaciones internas pueden iniciar como feed simple en UI
+

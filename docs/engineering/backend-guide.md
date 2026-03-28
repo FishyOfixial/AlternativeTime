@@ -30,6 +30,7 @@ Apps de dominio ya incorporadas:
 - `clients`
 - `inventory`
 - `sales`
+- `layaways`
 - `finance`
 - `reports`
 
@@ -86,6 +87,7 @@ Ejemplos de convencion:
 - `/api/clients/`
 - `/api/inventory/`
 - `/api/sales/`
+- `/api/layaways/`
 
 Reglas recomendadas:
 
@@ -167,6 +169,8 @@ Y ya cuenta con endpoints iniciales de negocio y consolidacion:
 - `/api/clients/`
 - `/api/inventory/`
 - `/api/sales/`
+- `/api/layaways/`
+- `/api/notifications/`
 - `GET /api/finance/summary/`
 - `GET /api/reports/sales-summary/`
 - `GET /api/reports/inventory-summary/`

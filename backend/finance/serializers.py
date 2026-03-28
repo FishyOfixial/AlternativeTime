@@ -9,6 +9,7 @@ class FinanceEntrySerializer(serializers.ModelSerializer):
     sale_id = serializers.IntegerField(source="sale.id", read_only=True)
     created_by_id = serializers.IntegerField(source="created_by.id", read_only=True)
     updated_by_id = serializers.IntegerField(source="updated_by.id", read_only=True)
+    concept_label = serializers.CharField(source="get_concept_display", read_only=True)
 
     class Meta:
         model = FinanceEntry
@@ -17,6 +18,7 @@ class FinanceEntrySerializer(serializers.ModelSerializer):
             "entry_date",
             "entry_type",
             "concept",
+            "concept_label",
             "amount",
             "account",
             "notes",

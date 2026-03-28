@@ -15,12 +15,14 @@ class FinanceEntry(TimestampedSoftDeleteModel):
     CONCEPT_SALE = "sale"
     CONCEPT_PURCHASE = "purchase"
     CONCEPT_CAPITAL_PAYMENT = "capital_payment"
+    CONCEPT_LAYAWAY_PAYMENT = "layaway_payment"
     CONCEPT_TRANSFER = "transfer"
     CONCEPT_EXPENSE = "expense"
     CONCEPT_CHOICES = [
         (CONCEPT_SALE, "Venta"),
         (CONCEPT_PURCHASE, "Compra"),
         (CONCEPT_CAPITAL_PAYMENT, "Abono a capital"),
+        (CONCEPT_LAYAWAY_PAYMENT, "Cobro de apartado"),
         (CONCEPT_TRANSFER, "Transferencia"),
         (CONCEPT_EXPENSE, "Gasto"),
     ]
