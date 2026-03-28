@@ -199,3 +199,41 @@ class TestReportsApi(TestCase):
             )
             self.assertEqual(xlsx_response.status_code, 200)
             self.assertIn("attachment;", xlsx_response.get("Content-Disposition", ""))
+
+    def test_export_report_rejects_invalid_type(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get("/api/reports/reporte_invalido/export/?format=csv")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Tipo de reporte", response.data["detail"])
+
+    def test_cash_flow_export_respects_type_filter(self):
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("500.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=False,
+        )
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_EXPENSE,
+            concept=FinanceEntry.CONCEPT_EXPENSE,
+            amount=Decimal("100.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=False,
+        )
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get("/api/reports/flujo_efectivo/export/?format=csv&type=income")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.content.decode("utf-8")
+        self.assertIn("income", payload)
+        self.assertNotIn("expense", payload)

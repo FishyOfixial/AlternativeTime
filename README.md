@@ -59,7 +59,7 @@ Validaciones recomendadas del backend:
 ```powershell
 cd backend
 ..\.venv\Scripts\python.exe manage.py check
-..\.venv\Scripts\python.exe manage.py test users api clients inventory sales finance reports
+..\.venv\Scripts\python.exe manage.py test users api clients inventory sales layaways finance reports
 ```
 
 ## Valores por defecto para desarrollo
@@ -152,6 +152,13 @@ Frontend local:
 
 ```text
 http://localhost:5173
+```
+
+Validaciones recomendadas del frontend:
+
+```powershell
+npm.cmd run test:run --prefix frontend
+npm.cmd run build --prefix frontend
 ```
 
 Plan operativo del frontend:

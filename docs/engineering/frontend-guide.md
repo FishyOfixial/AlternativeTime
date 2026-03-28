@@ -1,21 +1,18 @@
-﻿# Frontend
+# Frontend
 
 ## Estado actual
 
-El frontend ya opera como sistema funcional para:
+El frontend ya opera de punta a punta para:
 
-- autenticacion
-- dashboard
+- autenticacion y sesion
+- dashboard y alertas operativas
 - clientes
 - inventario
-- ventas
-- finanzas
-- reportes
+- ventas directas
+- apartados y abonos
+- finanzas y reportes
 
-Tambien se realizo una etapa de modularizacion en componentes para reducir
-paginas monoliticas y mejorar mantenibilidad.
-
-## Estructura actual (resumen)
+## Estructura
 
 ```text
 frontend/
@@ -27,25 +24,27 @@ frontend/
 |  |- layouts/
 |  |- pages/
 |  |- services/
+|  |- test/
 |  `- utils/
 `- package.json
 ```
 
-## Modulos actualmente visibles en UI
+## Modulos visibles en UI
 
 - `/dashboard`
 - `/clients`
 - `/inventory`
 - `/sales`
+- `/layaways`
 - `/finance`
 - `/reports`
 
 ## Modulos ocultos temporalmente
 
-- `/users` se mantiene en codigo pero oculto por feature flag.
-- No se muestra control por roles en frontend en esta etapa.
+- `/users` se mantiene en codigo, oculto por `USERS_MODULE_ENABLED=false`.
+- No hay control por roles activo en UI.
 
-## Integracion actual con backend
+## Integracion backend
 
 El frontend consume endpoints reales de:
 
@@ -53,31 +52,30 @@ El frontend consume endpoints reales de:
 - `clients`
 - `inventory`
 - `sales`
+- `layaways`
 - `finance`
 - `reports`
+- `notifications`
 
-Las llamadas se concentran en `src/services/` y la UI usa patrones comunes de:
+## Pruebas y validacion
 
-- estado de carga (`LoadingState`)
-- estado de error (`ErrorState`)
-- estado vacio (`EmptyState`)
+Comandos recomendados:
+
+```powershell
+npm.cmd run test:run --prefix frontend
+npm.cmd run build --prefix frontend
+```
+
+La suite cubre rutas protegidas principales y manejo de errores de servicios.
 
 ## Estado de sprints frontend
 
-- Sprint 1 a 7: implementados
-- Sprint 8: pendiente (apartados, abonos, alertas)
-- Sprint 9: pendiente (hardening, pruebas, release)
+- Sprint 1 a 8: implementados
+- Sprint 9: hardening y cierre de release en ejecucion
 
 ## Convenciones vigentes
 
-- componentes reutilizables por modulo de negocio
-- constantes y utilidades separadas por dominio
-- formularios con validacion de backend mostrada en UI
-- textos y labels en espanol para operacion diaria
-
-## Pendientes frontend mas importantes
-
-- implementar flujo de apartados y pagos parciales
-- unificar criterios de UX en formularios largos restantes
-- ampliar pruebas para regresion de modulos criticos
-- cerrar checklist de release con documentacion final
+- estados `loading/error/empty/success` reutilizables
+- labels y copy operativos en espanol
+- componentes por dominio de negocio
+- constantes y utilidades separadas por modulo

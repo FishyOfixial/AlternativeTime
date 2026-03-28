@@ -1,96 +1,54 @@
-﻿# Roadmap Inicial
+# Roadmap Inicial
 
 ## Fase 1: base tecnica y autenticacion
 
-**Objetivo**
+**Estado**: Completada.
 
-Consolidar la base del proyecto y el acceso al sistema.
-
-**Estado**
-
-Completada.
-
-**Entregables logrados**
-
-- estructura estable de backend y frontend
-- autenticacion JWT integrada en frontend y backend
+- estructura base backend/frontend
+- autenticacion JWT
 - rutas protegidas y sesion persistente
-- layout base autenticado
 
 ## Fase 2: clientes e inventario
 
-**Objetivo**
+**Estado**: Completada.
 
-Implementar modulos operativos de catalogo y relacion comercial.
-
-**Estado**
-
-Completada.
-
-**Entregables logrados**
-
-- CRUD de clientes
-- CRUD de inventario
-- pantallas de listado, detalle y formulario
-- filtros y estados base de operacion
+- CRUD clientes
+- CRUD inventario
+- vistas de listado, detalle y formulario
 
 ## Fase 3: ventas
 
-**Objetivo**
+**Estado**: Completada.
 
-Habilitar flujo principal de venta con integracion de cliente e inventario.
-
-**Estado**
-
-Completada.
-
-**Entregables logrados**
-
-- historial de ventas con filtros
-- registro de venta con validaciones
-- reflejo de costo snapshot, ganancia y margen
+- historial de ventas
+- captura de venta con validaciones
+- costo snapshot, ganancia y margen
 
 ## Fase 4: finanzas y reportes
 
-**Objetivo**
+**Estado**: Completada.
 
-Construir capa de consolidacion financiera y exportacion operativa.
+- frontend finanzas y reportes conectado
+- exportaciones CSV/XLSX
+- CRUD manual de movimientos financieros
 
-**Estado**
+## Fase 5: apartados y abonos
 
-Parcialmente completada.
+**Estado**: Completada.
 
-**Entregables logrados**
-
-- frontend de finanzas y reportes conectado a backend
-- exportaciones CSV/XLSX en reportes
-- CRUD manual de movimientos financieros en backend
-
-**Pendiente principal**
-
-- completar flujo de apartados/abonos y alertas operativas para cerrar spec comercial
-
-## Fase 5: cierre funcional pendiente (apartados)
-
-**Objetivo**
-
-Agregar flujo de apartados y pagos parciales, con su seguimiento en UI.
-
-**Desglose operativo frontend**
-
-- Sprint Frontend 8: apartados, abonos y alertas operativas
+- modulo de apartados
+- registro de abonos y cierre automatico a venta
+- alertas operativas en dashboard
 
 ## Fase 6: hardening y release
 
-**Objetivo**
+**Estado**: En ejecucion.
 
-Asegurar estabilidad, pruebas y documentacion para salida controlada.
-
-**Desglose operativo frontend**
-
-- Sprint Frontend 9: calidad, hardening y release
+- pruebas de regresion frontend/backend
+- estandarizacion UX de estados y mensajes
+- reduccion de deuda tecnica y modularizacion
+- checklist de release y validacion final
 
 ## Nota de alcance
 
-El modulo de usuarios y control por roles en frontend queda fuera del alcance actual.
-Se mantiene en codigo como capacidad futura, pero oculto en la UI hasta nueva decision de producto.
+`Usuarios` y control por roles permanecen ocultos en UI hasta nueva definicion de producto.

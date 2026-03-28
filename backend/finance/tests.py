@@ -84,9 +84,9 @@ class TestFinanceSummaryApi(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["total_sales_count"], 1)
         self.assertEqual(Decimal(response.data["gross_revenue"]), Decimal("200.00"))
-        self.assertEqual(response.data["total_income"], "200.00")
-        self.assertEqual(response.data["total_expense"], "50.00")
-        self.assertEqual(response.data["net_balance"], "150.00")
+        self.assertEqual(Decimal(response.data["total_income"]), Decimal("200.00"))
+        self.assertEqual(Decimal(response.data["total_expense"]), Decimal("50.00"))
+        self.assertEqual(Decimal(response.data["net_balance"]), Decimal("150.00"))
 
     def test_finance_balances_returns_accounts(self):
         FinanceEntry.objects.create(

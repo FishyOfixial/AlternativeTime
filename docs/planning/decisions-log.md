@@ -158,3 +158,24 @@ usuarios/roles en una fase futura sin reescritura mayor.
 **Estado**
 
 Aprobada.
+
+## DEC-009 Sprint 9 enfocado en hardening sin features nuevas
+
+**Decision**
+
+Ejecutar Sprint 9 como cierre de calidad y release sin agregar nuevas
+funcionalidades de negocio ni endpoints.
+
+**Contexto**
+
+Con Sprint 8 ya implementado (apartados, abonos y alertas), el principal riesgo
+para salida es regresion cruzada entre modulos y deuda tecnica en frontend.
+
+**Impacto**
+
+Prioriza estabilidad, cobertura de pruebas, consistencia UX y documentacion de
+release. Reduce riesgo operativo antes de habilitar nuevas capacidades.
+
+**Estado**
+
+Aprobada.

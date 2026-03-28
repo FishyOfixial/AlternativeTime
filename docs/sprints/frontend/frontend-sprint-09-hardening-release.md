@@ -1,4 +1,6 @@
-﻿# Sprint Frontend 9
+# Sprint Frontend 9
+
+**Estado:** En ejecucion
 
 ## Resumen
 
@@ -53,7 +55,7 @@ Al cerrar este sprint, el frontend debe:
 
 ### Paso 1. Cobertura de pruebas
 
-- pruebas para clientes, inventario, ventas, finanzas y reportes
+- pruebas para autenticacion, clientes, inventario, ventas, apartados, finanzas y reportes
 - pruebas de servicios para manejo de errores de backend
 
 **Entregable**
@@ -74,7 +76,7 @@ Experiencia coherente entre modulos.
 
 - continuar modularizacion de paginas largas
 - reducir duplicacion de utilidades y constantes
-- limpiar texto corrupto o inconsistencias de encoding
+- limpiar inconsistencias de texto
 
 **Entregable**
 
@@ -82,8 +84,8 @@ Codigo frontend mas mantenible y estable.
 
 ### Paso 4. Cierre documental y release
 
-- actualizar roadmap, backlog, frontend.md y README
-- checklist de release manual (build, smoke, auth, endpoints criticos)
+- actualizar roadmap, backlog, frontend-guide y README
+- checklist de release manual (build, tests y smoke)
 
 **Entregable**
 
@@ -92,9 +94,22 @@ Paquete listo para release controlado.
 ## Criterios de aceptacion
 
 - `npm run build --prefix frontend` estable
-- pruebas minimas corren sin regresiones criticas
+- `npm run test:run --prefix frontend` con suite critica en verde
+- pruebas backend relevantes sin regresiones
 - no aparece modulo de usuarios en la UI
 - documentacion refleja alcance real del sistema
+
+## Checklist de release manual
+
+- [ ] Login + restauracion de sesion
+- [ ] Dashboard carga KPIs y alertas
+- [ ] Clientes: listar, crear, editar
+- [ ] Inventario: listar, crear, editar
+- [ ] Ventas: registrar venta directa
+- [ ] Apartados: crear, abonar, cerrar
+- [ ] Finanzas: resumen, movimientos, exportacion
+- [ ] Reportes: generacion y exportaciones CSV/XLSX
+- [ ] Build frontend y pruebas frontend/backend en verde
 
 ## Dependencias del sprint
 

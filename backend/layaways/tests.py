@@ -198,3 +198,33 @@ class LayawayApiTests(TestCase):
         self.assertGreaterEqual(response.data["counts"]["layaway_overdue"], 1)
         self.assertGreaterEqual(response.data["counts"]["inventory_old"], 1)
         layaway.refresh_from_db()
+
+    def test_reject_payment_for_completed_layaway(self):
+        layaway = Layaway.objects.create(
+            product=self.item,
+            client=self.customer,
+            agreed_price=Decimal("9000.00"),
+            amount_paid=Decimal("9000.00"),
+            balance_due=Decimal("0.00"),
+            status=Layaway.STATUS_COMPLETED,
+            start_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.item.status = InventoryItem.STATUS_SOLD
+        self.item.sold_date = timezone.localdate()
+        self.item.save()
+
+        response = self.client.post(
+            f"/api/layaways/{layaway.id}/payments/",
+            {
+                "payment_date": str(timezone.localdate()),
+                "amount": "100.00",
+                "payment_method": "cash",
+                "account": "cash",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertGreater(len(response.data), 0)
