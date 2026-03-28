@@ -17,14 +17,14 @@
   return (
     <section className="flex flex-wrap items-center gap-3">
       <input
-        className="min-w-[230px] flex-1 rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm"
+        className="w-full min-w-0 flex-1 rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm sm:min-w-[230px]"
         onChange={(event) => onSearchChange(event.target.value)}
         placeholder="Buscar cliente, ID reloj..."
         type="search"
         value={searchTerm}
       />
       <select
-        className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm"
+        className="w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm sm:w-auto"
         onChange={(event) => onMonthChange(event.target.value)}
         value={selectedMonth}
       >
@@ -35,7 +35,7 @@
         ))}
       </select>
       <select
-        className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm"
+        className="w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm sm:w-auto"
         onChange={(event) => onChannelChange(event.target.value)}
         value={selectedChannel}
       >
@@ -47,7 +47,7 @@
         ))}
       </select>
       <select
-        className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm"
+        className="w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm sm:w-auto"
         onChange={(event) => onMethodChange(event.target.value)}
         value={selectedMethod}
       >
@@ -59,7 +59,7 @@
         ))}
       </select>
       <select
-        className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm"
+        className="w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-sm sm:w-auto"
         onChange={(event) => onBrandChange(event.target.value)}
         value={selectedBrand}
       >

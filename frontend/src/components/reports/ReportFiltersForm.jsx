@@ -53,16 +53,6 @@ export default function ReportFiltersForm({
           <div className="mt-4 grid gap-4">
             <label className="block">
               <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                Reporte seleccionado
-              </span>
-              <p className="mt-2 text-sm text-[#5d5144]">
-                {reportOptions.find((option) => option.id === selectedReportType)?.title ||
-                  "Selecciona un reporte"}
-              </p>
-            </label>
-
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
                 Rango temporal
               </span>
               <div className="mt-2 flex flex-wrap gap-2">

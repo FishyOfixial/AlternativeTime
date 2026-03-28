@@ -1,71 +1,63 @@
+import { useState } from "react";
+import { NavLink } from "react-router-dom";
 import ErrorState from "../feedback/ErrorState";
-import ClientSaleForm from "./ClientSaleForm";
 
-export default function ClientActionsPanel({
-  saleSuccess,
-  saleError,
-  isSaleFormOpen,
-  onToggleSaleForm,
-  onCreateSale,
-  saleForm,
-  onSaleFormChange,
-  inventoryState,
-  selectedItem,
-  isCreatingSale,
-  isDeleting,
-  onDelete
-}) {
-  const isSaleDisabled =
-    isCreatingSale ||
-    inventoryState.status === "error" ||
-    inventoryState.items.length === 0 ||
-    !saleForm.product ||
-    !saleForm.amount_paid;
+export default function ClientActionsPanel({ clientId, deactivateError, isDeleting, onDeactivate }) {
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [confirmChecked, setConfirmChecked] = useState(false);
+
+  function handleToggleConfirm() {
+    setIsConfirmOpen((current) => !current);
+    setConfirmChecked(false);
+  }
+
+  async function handleConfirmDeactivate() {
+    await onDeactivate();
+  }
 
   return (
-    <section className="panel-surface p-6">
+    <section className="panel-surface p-5">
       <p className="font-serif text-2xl text-[#2a221b]">Acciones</p>
 
-      {saleSuccess ? (
-        <p className="mt-4 rounded-md border border-[#d9e5d7] bg-[#edf7ed] px-4 py-3 text-sm text-[#4c6d50]">
-          {saleSuccess}
-        </p>
-      ) : null}
-
-      {saleError ? (
+      {deactivateError ? (
         <div className="mt-4">
-          <ErrorState message={saleError} title="No pudimos registrar la venta" />
+          <ErrorState message={deactivateError} title="No pudimos inactivar el cliente" />
         </div>
       ) : null}
 
+      <NavLink className="gold-button mt-4 w-full py-2.5" to={`/sales/new?customer=${clientId}`}>
+        + Registrar nueva venta
+      </NavLink>
+
       <button
-        className="gold-button mt-4 w-full"
-        onClick={onToggleSaleForm}
+        className="mt-3 w-full rounded-md border border-[#dec5bd] bg-[#fff4f1] px-4 py-2.5 text-sm text-[#8d5b4d] transition hover:bg-[#fbe9e4]"
+        onClick={handleToggleConfirm}
         type="button"
       >
-        {isSaleFormOpen ? "Cerrar venta" : "+ Registrar nueva venta"}
+        {isConfirmOpen ? "Cancelar" : "Inactivar cliente"}
       </button>
 
-      {isSaleFormOpen ? (
-        <ClientSaleForm
-          inventoryItems={inventoryState.items}
-          isDisabled={isSaleDisabled}
-          isSubmitting={isCreatingSale}
-          onChange={onSaleFormChange}
-          onSubmit={onCreateSale}
-          saleForm={saleForm}
-          selectedItem={selectedItem}
-        />
+      {isConfirmOpen ? (
+        <div className="mt-3 rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-4">
+          <label className="flex items-start gap-3 text-sm text-[#6f5a46]">
+            <input
+              checked={confirmChecked}
+              className="mt-1"
+              onChange={(event) => setConfirmChecked(event.target.checked)}
+              type="checkbox"
+            />
+            Confirmo que quiero inactivar este cliente. Dejara de aparecer en listados y selectores.
+          </label>
+          <button
+            className="mt-3 w-full rounded-md border border-[#d8b3ab] bg-[#ffecea] px-4 py-2.5 text-sm font-semibold text-[#8d5b4d] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={!confirmChecked || isDeleting}
+            onClick={handleConfirmDeactivate}
+            type="button"
+          >
+            {isDeleting ? "Inactivando..." : "Confirmar inactivacion"}
+          </button>
+        </div>
       ) : null}
-
-      <button
-        className="mt-4 w-full rounded-md border border-[#dec5bd] bg-[#fff4f1] px-4 py-3 text-sm text-[#8d5b4d] transition hover:bg-[#fbe9e4]"
-        disabled={isDeleting}
-        onClick={onDelete}
-        type="button"
-      >
-        {isDeleting ? "Eliminando..." : "Eliminar cliente"}
-      </button>
     </section>
   );
 }

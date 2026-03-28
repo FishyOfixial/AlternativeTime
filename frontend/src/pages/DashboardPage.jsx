@@ -50,29 +50,29 @@ function formatNumber(value, maximumFractionDigits = 1) {
 
 function DashboardKpiCard({ label, value, helper, delta, tone = "default" }) {
   const toneClasses = {
-    default: "stat-card bg-[#fcf8f2]",
-    dark: "stat-card border-[#3c3125] bg-[#211b16] text-[#f7f1e6]",
-    accent: "stat-card border-[#d8c096] bg-[#f5ecda]"
+    default: "rounded-xl border border-[#ddcfba] bg-[#fcf8f2] p-4",
+    dark: "rounded-xl border border-[#3c3125] bg-[#211b16] p-4 text-[#f7f1e6]",
+    accent: "rounded-xl border border-[#d8c096] bg-[#f5ecda] p-4"
   };
   const deltaClass = Number(delta) >= 0 ? "text-[#6e9d63]" : "text-[#a55b4f]";
 
   return (
     <article className={toneClasses[tone] ?? toneClasses.default}>
       <p
-        className={`text-sm uppercase tracking-[0.18em] ${
+        className={`text-[11px] uppercase tracking-[0.16em] ${
           tone === "dark" ? "text-[#9d8666]" : "text-[#b5a18a]"
         }`}
       >
         {label}
       </p>
       <p
-        className={`mt-4 font-serif text-[32px] ${
+        className={`mt-2 font-serif text-[24px] sm:text-[28px] ${
           tone === "dark" ? "text-[#f8f1e7]" : "text-[#2a221b]"
         }`}
       >
         {value}
       </p>
-      <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+      <div className="mt-2 flex items-center justify-between gap-3 text-xs">
         <span className={tone === "dark" ? "text-[#d5c2aa]" : "text-[#8d7964]"}>{helper}</span>
         {delta !== undefined ? (
           <span className={`font-semibold ${deltaClass}`}>{formatPercent(delta)}</span>
@@ -84,7 +84,7 @@ function DashboardKpiCard({ label, value, helper, delta, tone = "default" }) {
 
 function RankingList({ title, subtitle, rows, renderValue, emptyMessage }) {
   return (
-    <section className="panel-surface p-6">
+    <section className="panel-surface p-5">
       <p className="eyebrow">{subtitle}</p>
       <h2 className="mt-2 font-serif text-2xl text-[#2a221b]">{title}</h2>
 
@@ -93,7 +93,7 @@ function RankingList({ title, subtitle, rows, renderValue, emptyMessage }) {
           {emptyMessage}
         </div>
       ) : (
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 max-h-[42vh] space-y-3 overflow-y-auto pr-1">
           {rows.map((row, index) => (
             <div
               key={`${title}-${row.brand}`}
@@ -120,16 +120,18 @@ function RankingList({ title, subtitle, rows, renderValue, emptyMessage }) {
 }
 
 function MonthlyBreakdown({ months, chartMode, chartMax }) {
+  const trackWidth = Math.max(months.length * 92, 660);
+
   return (
-    <div className="mt-6 max-w-[720px] overflow-x-auto">
-      <div className="flex min-w-[1440px] items-end gap-4 pr-2">
+    <div className="mt-4 max-w-full overflow-x-auto xl:max-w-[760px]">
+      <div className="flex items-end gap-2 pr-2" style={{ minWidth: `${trackWidth}px` }}>
         {months.map((month) => {
           const amount = Number(month[chartMode] || 0);
           const height = chartMax > 0 ? `${Math.max((amount / chartMax) * 100, 6)}%` : "6%";
 
           return (
-            <div key={month.month} className="flex w-[110px] flex-col items-center gap-2">
-              <div className="flex h-44 w-full items-end rounded-2xl bg-[#f4ede1] px-2 py-2">
+            <div key={month.month} className="flex w-[84px] flex-col items-center gap-2">
+              <div className="flex h-32 w-full items-end rounded-xl bg-[#f4ede1] px-1.5 py-1.5 sm:h-36">
                 <div
                   className={`w-full rounded-xl ${
                     chartMode === "sales"
@@ -163,7 +165,7 @@ function RentabilityTable({ brands }) {
   }
 
   return (
-    <div className="mt-5 overflow-x-auto">
+    <div className="mt-5 max-h-[250px] overflow-auto">
       <table className="min-w-full border-collapse text-left">
         <thead className="border-b border-[#eadfcd] text-xs uppercase tracking-[0.16em] text-[#b4a085]">
           <tr>
@@ -284,23 +286,34 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <section className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="mt-3 font-serif text-4xl tracking-tight text-[#2a221b]">Dashboard de negocio.</h1>
+          <p className="eyebrow">Dashboard</p>
+          <h1 className="mt-2 font-serif text-3xl tracking-tight text-[#2a221b] sm:text-4xl">
+            Dashboard de negocio
+          </h1>
         </div>
-        <div className="flex flex-wrap items-center gap-2 rounded-[22px] border border-[#ddcfba] bg-[#fcf8f2] p-2">
-          {rangeOptions.map((option) => (
-            <button
-              key={option.value}
-              className={`rounded-full px-4 py-2 text-sm transition ${
-                selectedRange === option.value
-                  ? "bg-[#201914] text-[#ddb65f]"
-                  : "text-[#7d6751] hover:bg-[#f0e6d5]"
-              }`}
-              onClick={() => setSelectedRange(option.value)}
-              type="button"
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="w-full max-w-[520px] rounded-xl border border-[#ddcfba] bg-[#fcf8f2] p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8d7964]">
+            Rango global del dashboard
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            {rangeOptions.map((option) => (
+              <button
+                key={option.value}
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  selectedRange === option.value
+                    ? "bg-[#201914] text-[#ddb65f]"
+                    : "text-[#7d6751] hover:bg-[#f0e6d5]"
+                }`}
+                onClick={() => setSelectedRange(option.value)}
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-[#8a775f]">
+            Este rango actualiza KPIs, detalle por mes y rankings.
+          </p>
         </div>
       </section>
 
@@ -347,17 +360,17 @@ export default function DashboardPage() {
             />
           </section>
 
-          <section className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-            <section className="panel-surface p-5">
+          <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <section className="panel-surface p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="eyebrow">Desglose mensual</p>
                   <h2 className="mt-1 font-serif text-xl text-[#2a221b]">{selectedYear} dividido por meses</h2>
                   <p className="mt-1 text-xs text-[#8a775f]">Visualiza ventas, ganancia o costo de ventas.</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-[auto_auto] sm:items-center">
                   <select
-                    className="rounded-full border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-sm text-[#2a221b] outline-none transition focus:border-[#b69556] focus:ring-2 focus:ring-[#ead9b4]"
+                    className="w-full rounded-full border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-sm text-[#2a221b] outline-none transition focus:border-[#b69556] focus:ring-2 focus:ring-[#ead9b4] sm:w-auto"
                     onChange={(event) => setSelectedYear(Number(event.target.value))}
                     value={selectedYear}
                   >
@@ -386,13 +399,13 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-	              <MonthlyBreakdown chartMax={chartMax} chartMode={chartMode} months={months} />
-                <div className="mt-5 border-t border-[#e6d9c5] pt-4">
-                  <p className="eyebrow">Rentabilidad</p>
-                  <h3 className="mt-1 font-serif text-xl text-[#2a221b]">Marcas mas vendidas</h3>
-                  <RentabilityTable brands={dashboardState.data.brands_sold ?? []} />
-                </div>
-	            </section>
+              <MonthlyBreakdown chartMax={chartMax} chartMode={chartMode} months={months} />
+              <div className="mt-5 border-t border-[#e6d9c5] pt-4">
+                <p className="eyebrow">Rentabilidad</p>
+                <h3 className="mt-1 font-serif text-xl text-[#2a221b]">Marcas mas vendidas</h3>
+                <RentabilityTable brands={dashboardState.data.brands_sold ?? []} />
+              </div>
+            </section>
 
             <div className="space-y-4">
               <section className="panel-surface p-4">
@@ -415,7 +428,7 @@ export default function DashboardPage() {
                   <p className="mt-4 text-sm text-[#a55b4f]">No pudimos cargar alertas operativas.</p>
                 ) : null}
                 {notificationsState.status === "success" ? (
-                  <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                     <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-3 py-3">
                       <p className="text-xs uppercase tracking-[0.16em] text-[#b5a18a]">Apartados vencidos</p>
                       <p className="mt-1 font-serif text-2xl text-[#a55b4f]">
@@ -432,10 +445,10 @@ export default function DashboardPage() {
                 ) : null}
               </section>
 
-              <section className="panel-surface p-5">
+              <section className="panel-surface p-4 sm:p-5">
                 <p className="eyebrow">Snapshot</p>
                 <h2 className="mt-1 font-serif text-xl text-[#2a221b]">Resumen operativo</h2>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                   <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] p-3">
                     <p className="text-xs uppercase tracking-[0.18em] text-[#b5a18a]">Costo de ventas</p>
                     <p className="mt-2 font-serif text-2xl text-[#2a221b]">{formatCurrency(kpis.cost_of_sales)}</p>
@@ -470,12 +483,12 @@ export default function DashboardPage() {
             />
           </section>
 
-	          {(dashboardState.data.brands_sold ?? []).length === 0 ? (
-	            <EmptyState
-	              title="Todavia no hay ventas registradas"
-	              message="En cuanto existan ventas e inventario con costo, aqui veras KPIs y rentabilidad por marca."
-	            />
-	          ) : null}
+          {(dashboardState.data.brands_sold ?? []).length === 0 ? (
+            <EmptyState
+              title="Todavia no hay ventas registradas"
+              message="En cuanto existan ventas e inventario con costo, aqui veras KPIs y rentabilidad por marca."
+            />
+          ) : null}
         </>
       ) : null}
     </div>

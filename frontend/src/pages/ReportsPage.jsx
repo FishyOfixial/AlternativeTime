@@ -199,15 +199,6 @@ export default function ReportsPage() {
   const hasError = dashboardState.status === "error";
   return (
     <div className="space-y-6">
-      <section className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="eyebrow">Reportes</p>
-          <h1 className="mt-3 font-serif text-4xl tracking-tight text-[#2a221b]">
-            Reportes
-          </h1>
-        </div>
-      </section>
-
       {exportError ? (
         <div className="rounded-xl border border-[#e4c2bc] bg-[#fff1ee] px-4 py-3 text-sm text-[#935849]">
           {exportError}

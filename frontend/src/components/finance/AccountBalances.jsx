@@ -10,7 +10,7 @@
             <p className="text-xs uppercase tracking-[0.16em] text-[#c2b29a]">
               {card.label}
             </p>
-            <p className="mt-2 font-serif text-[30px] text-[#2a221b]">
+            <p className="mt-2 font-serif text-[26px] text-[#2a221b] sm:text-[30px]">
               {balancesMap[card.key] ? formatCurrency(balancesMap[card.key]) : "-"}
             </p>
             <p className="mt-1 text-xs text-[#b09a7e]">

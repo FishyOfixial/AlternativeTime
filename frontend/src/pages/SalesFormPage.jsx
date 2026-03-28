@@ -1,5 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
 import SaleCustomerSection from "../components/sales/SaleCustomerSection";
@@ -20,6 +20,7 @@ import { formatCurrency } from "../utils/sales";
 export default function SalesFormPage() {
   const { accessToken } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [inventoryState, setInventoryState] = useState({
     status: "loading",
     items: []
@@ -33,6 +34,7 @@ export default function SalesFormPage() {
   const [submitError, setSubmitError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [clientSuccess, setClientSuccess] = useState("");
+  const preselectedCustomer = searchParams.get("customer");
 
   useEffect(() => {
     async function loadInventory() {
@@ -60,6 +62,29 @@ export default function SalesFormPage() {
     loadClients();
   }, [accessToken]);
 
+  useEffect(() => {
+    if (!preselectedCustomer || clientsState.status !== "success") {
+      return;
+    }
+
+    const exists = clientsState.items.some(
+      (client) => String(client.id) === String(preselectedCustomer)
+    );
+    if (!exists) {
+      return;
+    }
+
+    setFormValues((current) => ({
+      ...current,
+      customer: String(preselectedCustomer),
+      customer_name: "",
+      customer_contact: "",
+      customer_email: "",
+      customer_address: "",
+      customer_notes: ""
+    }));
+  }, [clientsState.items, clientsState.status, preselectedCustomer]);
+
   const selectedItem = useMemo(
     () => inventoryState.items.find((item) => String(item.id) === String(formValues.product)),
     [inventoryState.items, formValues.product]
@@ -85,11 +110,9 @@ export default function SalesFormPage() {
         const nextItem = inventoryState.items.find((item) => String(item.id) === value);
         next.amount_paid = nextItem ? String(nextItem.price || "") : "";
       }
-      if (name === "customer") {
-        if (value) {
-          next.customer_name = "";
-          next.customer_contact = "";
-        }
+      if (name === "customer" && value) {
+        next.customer_name = "";
+        next.customer_contact = "";
       }
       return next;
     });
@@ -230,12 +253,7 @@ export default function SalesFormPage() {
   }
 
   if (inventoryState.status === "loading") {
-    return (
-      <LoadingState
-        title="Cargando inventario"
-        message="Estamos consultando los relojes disponibles."
-      />
-    );
+    return <LoadingState title="Cargando inventario" message="Estamos consultando los relojes disponibles." />;
   }
 
   if (inventoryState.status === "error") {
@@ -265,11 +283,7 @@ export default function SalesFormPage() {
         </div>
       ) : null}
 
-      <form
-        className="grid gap-6 xl:grid-cols-[1.2fr_0.5fr]"
-        id="sales-form"
-        onSubmit={handleSubmit}
-      >
+      <form className="grid gap-6 xl:grid-cols-[1.2fr_0.5fr]" id="sales-form" onSubmit={handleSubmit}>
         <div className="space-y-5">
           <SaleProductSection
             inventoryItems={inventoryState.items}
@@ -315,14 +329,9 @@ export default function SalesFormPage() {
             canSubmit={Boolean(formValues.product && formValues.amount_paid)}
           />
 
-          <SaleHoldPanel
-            disabled={!formValues.product}
-            onRegister={handleRegisterLayaway}
-          />
+          <SaleHoldPanel disabled={!formValues.product} onRegister={handleRegisterLayaway} />
         </div>
       </form>
     </div>
   );
 }
-
-

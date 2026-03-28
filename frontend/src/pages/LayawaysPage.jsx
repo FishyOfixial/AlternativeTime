@@ -192,7 +192,6 @@ export default function LayawaysPage() {
     <div className="space-y-6">
       <section className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="mt-2 font-serif text-4xl tracking-tight text-[#2a221b]">Apartados</h1>
           <p className="mt-2 text-sm text-[#8a775f]">
             Gestiona apartados activos, vencimientos y abonos del cliente.
           </p>
