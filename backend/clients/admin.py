@@ -5,6 +5,6 @@ from .models import Client
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "phone", "email", "is_active", "created_at")
-    search_fields = ("name", "phone", "email")
-    list_filter = ("is_active",)
+    list_display = ("id", "name", "phone", "instagram_handle", "is_active", "created_at")
+    search_fields = ("name", "phone", "email", "instagram_handle")
+    list_filter = ("is_active", "is_deleted")

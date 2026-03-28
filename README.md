@@ -1,4 +1,4 @@
-# Alternative Time
+﻿# Alternative Time
 
 Workspace base preparado para trabajar con:
 
@@ -59,7 +59,7 @@ Validaciones recomendadas del backend:
 ```powershell
 cd backend
 ..\.venv\Scripts\python.exe manage.py check
-..\.venv\Scripts\python.exe manage.py test users api clients inventory sales finance reports
+..\.venv\Scripts\python.exe manage.py test users api clients inventory sales layaways finance reports
 ```
 
 ## Valores por defecto para desarrollo
@@ -83,7 +83,7 @@ Credenciales de desarrollo:
 
 Tambien puedes usar el query guardado en:
 
-- `docs/db/query/insert_devadmin_sqlite.sql`
+- `docs/reference/db/seed/insert_devadmin_sqlite.sql`
 
 Ese archivo inserta el mismo usuario de desarrollo directamente en la tabla
 `auth_user` de SQLite.
@@ -120,9 +120,18 @@ GET  /api/auth/me/
 GET|POST /api/clients/
 GET|POST /api/inventory/
 GET|POST /api/sales/
+GET|POST /api/layaways/
+GET /api/layaways/{id}/
+POST /api/layaways/{id}/payments/
+GET /api/notifications/
 GET /api/finance/summary/
+GET /api/finance/balances/
+GET|POST /api/finance/entries/
+PUT|PATCH|DELETE /api/finance/entries/{id}/
 GET /api/reports/sales-summary/
 GET /api/reports/inventory-summary/
+GET /api/reports/dashboard-summary/
+GET /api/reports/{type}/export/?format=csv|xlsx
 ```
 
 ## Frontend
@@ -144,6 +153,17 @@ Frontend local:
 ```text
 http://localhost:5173
 ```
+
+Validaciones recomendadas del frontend:
+
+```powershell
+npm.cmd run test:run --prefix frontend
+npm.cmd run build --prefix frontend
+```
+
+Plan operativo del frontend:
+
+- `docs/sprints/frontend/frontend-sprint-01-foundations.md` a `docs/sprints/frontend/frontend-sprint-09-hardening-release.md`
 
 ## Variables de entorno
 
@@ -178,3 +198,4 @@ DJANGO_LOG_LEVEL=INFO
 ```
 
 Usa `.env.example` como plantilla.
+

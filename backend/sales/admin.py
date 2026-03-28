@@ -1,17 +1,10 @@
 from django.contrib import admin
 
-from .models import Sale, SaleItem
-
-
-class SaleItemInline(admin.TabularInline):
-    model = SaleItem
-    extra = 0
-    readonly_fields = ("inventory_item", "quantity", "unit_price", "subtotal")
+from .models import Sale
 
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ("id", "client", "created_by", "total", "created_at")
-    list_filter = ("created_at",)
-    search_fields = ("client__name", "created_by__username")
-    inlines = [SaleItemInline]
+    list_display = ("id", "product", "customer", "amount_paid", "sale_date", "payment_method")
+    list_filter = ("sale_date", "payment_method", "sales_channel")
+    search_fields = ("product__product_id", "product__brand", "customer__name", "customer_name")

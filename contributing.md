@@ -4,8 +4,18 @@
 
 - `backend/` contiene Django REST API.
 - `frontend/` contiene React + Vite + Tailwind.
+- `docs/` esta organizado por dominios (`product`, `architecture`, `engineering`,
+  `planning`, `specification`, `sprints`, `assets`, `reference`).
 - `.env` vive en la raiz del proyecto y no debe subirse al repositorio.
 - `.env.example` si se versiona para documentar la configuracion esperada.
+
+## Convenciones de documentacion
+
+- Usa `kebab-case` para nombres de archivos y carpetas.
+- En sprints, usa prefijo de capa + numero + tema:
+  - `backend-sprint-XX-...`
+  - `frontend-sprint-XX-...`
+- Si mueves o renombras docs, actualiza enlaces en `README.md` y `docs/README.md`.
 
 ## Flujo recomendado
 

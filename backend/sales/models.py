@@ -1,12 +1,21 @@
-from django.conf import settings
+from decimal import Decimal
+
+from django.core.validators import MinValueValidator
 from django.db import models
 
+from api.model_mixins import TimestampedSoftDeleteModel
 from clients.models import Client
-from inventory.models import InventoryItem
+from inventory.models import InventoryItem, PAYMENT_CHOICES
 
 
-class Sale(models.Model):
-    # Sales can be linked to a client, but walk-in sales should stay possible.
+class Sale(TimestampedSoftDeleteModel):
+    CHANNEL_MARKETPLACE = "marketplace"
+    CHANNEL_INSTAGRAM = "instagram"
+    CHANNEL_WHATSAPP = "whatsapp"
+    CHANNEL_DIRECT = "direct"
+    CHANNEL_OTHER = "other"
+    CHANNEL_CHOICES = InventoryItem.CHANNEL_CHOICES
+
     client = models.ForeignKey(
         Client,
         on_delete=models.SET_NULL,
@@ -14,35 +23,71 @@ class Sale(models.Model):
         blank=True,
         related_name="sales",
     )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="sales",
-    )
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"Sale #{self.pk}"
-
-
-class SaleItem(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name="items")
-    inventory_item = models.ForeignKey(
+    product = models.ForeignKey(
         InventoryItem,
         on_delete=models.PROTECT,
-        related_name="sale_items",
+        related_name="sales_records",
+        null=True,
+        blank=True,
     )
-    quantity = models.PositiveIntegerField()
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+    sale_date = models.DateField()
+    customer_name = models.CharField(max_length=120, blank=True)
+    customer_contact = models.CharField(max_length=80, blank=True)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
+    sales_channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+    )
+    extras = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
+    sale_shipping_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
+    cost_snapshot = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    gross_profit = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    profit_percentage = models.DecimalField(max_digits=7, decimal_places=4, default=0)
+    notes = models.TextField(blank=True)
 
     class Meta:
-        ordering = ["id"]
+        ordering = ["-sale_date", "-created_at"]
 
     def __str__(self):
-        return f"{self.inventory_item} x {self.quantity}"
+        product_label = self.product.display_name if self.product_id else f"venta-{self.pk}"
+        return f"{product_label} - {self.amount_paid}"
+
+    @property
+    def customer(self):
+        return self.client
+
+    def sync_customer_snapshot(self):
+        if self.client_id:
+            self.customer_name = self.client.name
+            self.customer_contact = self.client.phone or self.client.instagram_handle or ""
+
+    def calculate_profit_fields(self):
+        self.gross_profit = (
+            (self.amount_paid or Decimal("0.00"))
+            - (self.cost_snapshot or Decimal("0.00"))
+            - (self.extras or Decimal("0.00"))
+            - (self.sale_shipping_cost or Decimal("0.00"))
+        )
+        if self.cost_snapshot and self.cost_snapshot > 0:
+            self.profit_percentage = self.gross_profit / self.cost_snapshot
+        else:
+            self.profit_percentage = Decimal("0.0000")
+
+    def save(self, *args, **kwargs):
+        self.sync_customer_snapshot()
+        self.calculate_profit_fields()
+        self.total = self.amount_paid
+        super().save(*args, **kwargs)

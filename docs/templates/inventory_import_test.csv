@@ -1,0 +1,4 @@
+marca,modelo,anio,condicion,proveedor,descripcion,notas,precio,fecha_compra,estado,canal_venta,costo_reloj,costo_envio,costo_mantenimiento,otros_costos,metodo_pago,cuenta_origen,notas_compra
+Seiko,5 Sports SRPD55,2021,8.5,Coleccionista local,Reloj automatico con caja original,Corona con uso ligero,6500.00,2026-03-10,disponible,instagram,4200.00,120.00,80.00,0.00,efectivo,cash,Compra en efectivo
+Casio,G-Shock DW-5600,2020,9.0,Proveedor mayorista,Reloj digital resistente a impactos,Incluye manual,3200.00,2026-03-12,apartado,whatsapp,2100.00,90.00,0.00,0.00,transferencia,bbva,Transferencia SPEI
+Citizen,Eco-Drive BM8475,2019,8.0,Tienda aliada,Reloj solar en buen estado,Cambio de correa reciente,5400.00,2026-03-15,vendido,directo,3500.00,100.00,150.00,50.00,tarjeta,amex,Compra con tarjeta

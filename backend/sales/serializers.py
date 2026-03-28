@@ -1,128 +1,171 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 
 from clients.models import Client
+from finance.models import FinanceEntry
+from finance.services import recalculate_account_balance
 from inventory.models import InventoryItem
 
-from .models import Sale, SaleItem
+from .models import Sale
 
 
-class SaleItemReadSerializer(serializers.ModelSerializer):
-    inventory_item_id = serializers.IntegerField(source="inventory_item.id", read_only=True)
-    inventory_item_name = serializers.CharField(source="inventory_item.name", read_only=True)
-    inventory_item_sku = serializers.CharField(source="inventory_item.sku", read_only=True)
-
-    class Meta:
-        model = SaleItem
-        fields = [
-            "id",
-            "inventory_item_id",
-            "inventory_item_name",
-            "inventory_item_sku",
-            "quantity",
-            "unit_price",
-            "subtotal",
-        ]
+def infer_destination_account(payment_method):
+    mapping = {
+        "cash": FinanceEntry.ACCOUNT_CASH,
+        "transfer": FinanceEntry.ACCOUNT_BBVA,
+        "card": FinanceEntry.ACCOUNT_CREDIT,
+        "msi": FinanceEntry.ACCOUNT_CREDIT,
+        "consignment": FinanceEntry.ACCOUNT_AMEX,
+    }
+    return mapping.get(payment_method, FinanceEntry.ACCOUNT_CASH)
 
 
 class SaleSerializer(serializers.ModelSerializer):
-    client_id = serializers.IntegerField(source="client.id", read_only=True)
-    client_name = serializers.CharField(source="client.name", read_only=True)
+    customer = serializers.IntegerField(source="client.id", read_only=True)
+    customer_id = serializers.IntegerField(source="client.id", read_only=True)
+    customer_name = serializers.CharField(read_only=True)
+    customer_contact = serializers.CharField(read_only=True)
+    product_id = serializers.IntegerField(source="product.id", read_only=True)
+    product_label = serializers.CharField(source="product.display_name", read_only=True)
+    product_code = serializers.CharField(source="product.product_id", read_only=True)
     created_by_id = serializers.IntegerField(source="created_by.id", read_only=True)
     created_by_username = serializers.CharField(source="created_by.username", read_only=True)
-    items = SaleItemReadSerializer(many=True, read_only=True)
 
     class Meta:
         model = Sale
         fields = [
             "id",
-            "client_id",
-            "client_name",
+            "customer",
+            "customer_id",
+            "customer_name",
+            "customer_contact",
+            "product",
+            "product_id",
+            "product_label",
+            "product_code",
+            "sale_date",
+            "payment_method",
+            "sales_channel",
+            "amount_paid",
+            "extras",
+            "sale_shipping_cost",
+            "cost_snapshot",
+            "gross_profit",
+            "profit_percentage",
+            "notes",
             "created_by_id",
             "created_by_username",
-            "total",
-            "items",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "customer_id",
+            "customer_name",
+            "customer_contact",
+            "product_id",
+            "product_label",
+            "product_code",
+            "cost_snapshot",
+            "gross_profit",
+            "profit_percentage",
+            "created_by_id",
+            "created_by_username",
             "created_at",
             "updated_at",
         ]
 
 
-class SaleItemCreateSerializer(serializers.Serializer):
-    inventory_item = serializers.IntegerField()
-    quantity = serializers.IntegerField(min_value=1)
-
-
-class SaleCreateSerializer(serializers.Serializer):
-    client = serializers.PrimaryKeyRelatedField(
+class SaleCreateSerializer(serializers.ModelSerializer):
+    customer = serializers.PrimaryKeyRelatedField(
         queryset=Client.objects.all(),
         required=False,
         allow_null=True,
+        source="client",
     )
-    items = SaleItemCreateSerializer(many=True)
+    product = serializers.PrimaryKeyRelatedField(queryset=InventoryItem.objects.all())
 
-    def validate_items(self, value):
-        if not value:
-            raise serializers.ValidationError("At least one sale item is required.")
-        return value
+    class Meta:
+        model = Sale
+        fields = [
+            "customer",
+            "product",
+            "sale_date",
+            "customer_name",
+            "customer_contact",
+            "payment_method",
+            "sales_channel",
+            "amount_paid",
+            "extras",
+            "sale_shipping_cost",
+            "notes",
+        ]
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        product = attrs["product"]
+        sale_date = attrs["sale_date"]
+        customer = attrs.get("client")
+        customer_name = (attrs.get("customer_name") or "").strip()
+
+        if sale_date > timezone.localdate():
+            raise serializers.ValidationError({"sale_date": "No se permiten ventas futuras."})
+        if sale_date < product.purchase_date:
+            raise serializers.ValidationError({"sale_date": "La venta no puede ser anterior a la compra."})
+        if product.status == InventoryItem.STATUS_SOLD:
+            raise serializers.ValidationError({"product": "Este reloj ya fue vendido."})
+        if Sale.objects.filter(product=product).exclude(pk=getattr(self.instance, "pk", None)).exists():
+            raise serializers.ValidationError({"product": "Este reloj ya tiene una venta registrada."})
+        if not customer and not customer_name:
+            raise serializers.ValidationError(
+                {"customer_name": "Debes indicar un cliente o al menos un nombre libre."}
+            )
+        return attrs
+
+    def _sync_sale_finance_entry(self, sale):
+        finance_entry, _ = FinanceEntry.all_objects.update_or_create(
+            sale=sale,
+            concept=FinanceEntry.CONCEPT_SALE,
+            defaults={
+                "entry_type": FinanceEntry.TYPE_INCOME,
+                "amount": sale.amount_paid,
+                "account": infer_destination_account(sale.payment_method),
+                "entry_date": sale.sale_date,
+                "product": sale.product,
+                "notes": sale.notes,
+                "created_by": sale.created_by,
+                "updated_by": sale.updated_by,
+                "is_automatic": True,
+                "is_deleted": False,
+            },
+        )
+        recalculate_account_balance(finance_entry.account)
 
     @transaction.atomic
     def create(self, validated_data):
         request = self.context["request"]
-        client = validated_data.get("client")
-        items_data = validated_data["items"]
+        user = request.user
+        product = validated_data["product"]
+        cost_snapshot = product.total_purchase_cost
 
-        item_ids = [item["inventory_item"] for item in items_data]
-        inventory_items = {
-            item.id: item
-            for item in InventoryItem.objects.select_for_update().filter(id__in=item_ids)
-        }
+        sale = Sale.objects.create(
+            **validated_data,
+            cost_snapshot=cost_snapshot,
+            created_by=user,
+            updated_by=user,
+        )
 
-        sale = Sale.objects.create(client=client, created_by=request.user, total=Decimal("0.00"))
-        total = Decimal("0.00")
-        sale_items = []
+        product.status = InventoryItem.STATUS_SOLD
+        product.sold_date = sale.sale_date
+        product.sold_at = timezone.now()
+        product.days_to_sell = max((sale.sale_date - product.purchase_date).days, 0)
+        product.updated_by = user
+        product.save()
 
-        for item_data in items_data:
-            inventory_item_id = item_data["inventory_item"]
-            quantity = item_data["quantity"]
-
-            inventory_item = inventory_items.get(inventory_item_id)
-            if inventory_item is None:
-                raise serializers.ValidationError(
-                    {"items": [f"Inventory item {inventory_item_id} does not exist."]}
-                )
-
-            if not inventory_item.is_active:
-                raise serializers.ValidationError(
-                    {"items": [f"Inventory item {inventory_item.sku} is inactive."]}
-                )
-
-            if inventory_item.stock < quantity:
-                raise serializers.ValidationError(
-                    {"items": [f"Inventory item {inventory_item.sku} has insufficient stock."]}
-                )
-
-            unit_price = inventory_item.price
-            subtotal = unit_price * quantity
-            total += subtotal
-
-            inventory_item.stock -= quantity
-            inventory_item.save(update_fields=["stock", "updated_at"])
-
-            sale_items.append(
-                SaleItem(
-                    sale=sale,
-                    inventory_item=inventory_item,
-                    quantity=quantity,
-                    unit_price=unit_price,
-                    subtotal=subtotal,
-                )
-            )
-
-        SaleItem.objects.bulk_create(sale_items)
-        sale.total = total
-        sale.save(update_fields=["total", "updated_at"])
+        self._sync_sale_finance_entry(sale)
         sale.refresh_from_db()
         return sale
 

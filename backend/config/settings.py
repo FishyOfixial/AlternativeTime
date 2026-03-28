@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "clients",
     "inventory",
     "sales",
+    "layaways",
     "finance",
     "reports",
     "django.contrib.admin",
