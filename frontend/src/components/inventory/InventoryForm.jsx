@@ -121,9 +121,9 @@ const labelClassName = "text-[11px] font-semibold uppercase tracking-[0.16em] te
 const fieldClassName =
   "mt-1.5 w-full rounded-lg border border-[#dccfb9] bg-[#fffdf9] px-3 py-2.5 text-sm text-[#2a221b] outline-none transition focus:border-[#b69556] focus:ring-2 focus:ring-[#ead9b4]";
 
-function Field({ label, children }) {
+function Field({ label, children, className = "" }) {
   return (
-    <label className="block">
+    <label className={`block ${className}`.trim()}>
       <span className={labelClassName}>{label}</span>
       {children}
     </label>
@@ -282,7 +282,7 @@ export default function InventoryForm({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-4 grid grid-cols-2 gap-3">
             <Field label="Marca">
               <input className={getInputClass("brand")} name="brand" onChange={handleChange} required value={values.brand} />
               <FieldError fieldName="brand" />
@@ -320,18 +320,18 @@ export default function InventoryForm({
               </select>
               <FieldError fieldName="status" />
             </Field>
-            <Field label="Descripcion">
+            <Field className="col-span-2" label="Descripcion">
               <textarea
-                className={`${getInputClass("description")} min-h-24 resize-none`}
+                className={`${getInputClass("description")} min-h-16 resize-none`}
                 name="description"
                 onChange={handleChange}
                 value={values.description}
               />
               <FieldError fieldName="description" />
             </Field>
-            <Field label="Notas internas">
+            <Field className="col-span-2" label="Notas internas">
               <textarea
-                className={`${getInputClass("notes")} min-h-24 resize-none`}
+                className={`${getInputClass("notes")} min-h-16 resize-none`}
                 name="notes"
                 onChange={handleChange}
                 value={values.notes}
@@ -345,7 +345,7 @@ export default function InventoryForm({
           <p className="eyebrow">Adquisicion</p>
           <h2 className="mt-1 font-serif text-2xl text-[#2a221b]">Costos y origen</h2>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Field label="Costo del reloj">
               <input className={getInputClass("watch_cost", "purchase_cost.watch_cost")} data-group="purchase_cost" min="0" name="watch_cost" onChange={handlePurchaseCostChange} step="0.01" type="number" value={values.purchase_cost.watch_cost} />
               <FieldError fieldName="watch_cost" nestedPath="purchase_cost.watch_cost" />
@@ -401,9 +401,9 @@ export default function InventoryForm({
               </select>
               <FieldError fieldName="sales_channel" />
             </Field>
-            <Field label="Notas de compra">
+            <Field className="col-span-2 sm:col-span-3" label="Notas de compra">
               <textarea
-                className={`${getInputClass("notes", "purchase_cost.notes")} min-h-24 resize-none`}
+                className={`${getInputClass("notes", "purchase_cost.notes")} min-h-16 resize-none`}
                 data-group="purchase_cost"
                 name="notes"
                 onChange={handlePurchaseCostChange}

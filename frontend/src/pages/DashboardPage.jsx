@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
 import EmptyState from "../components/feedback/EmptyState";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
@@ -82,11 +81,11 @@ function DashboardKpiCard({ label, value, helper, delta, tone = "default" }) {
   );
 }
 
-function RankingList({ title, subtitle, rows, renderValue, emptyMessage }) {
+function RankingList({ title, subtitle, rows, renderValue, renderMeta, emptyMessage }) {
   return (
     <section className="panel-surface p-5">
       <p className="eyebrow">{subtitle}</p>
-      <h2 className="mt-2 font-serif text-2xl text-[#2a221b]">{title}</h2>
+      <h2 className="mt-2 font-serif text-lg text-[#2a221b] sm:text-2xl">{title}</h2>
 
       {rows.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-[#d9ccb8] bg-[#f9f4eb] px-5 py-8 text-sm text-[#8a775f]">
@@ -97,20 +96,18 @@ function RankingList({ title, subtitle, rows, renderValue, emptyMessage }) {
           {rows.map((row, index) => (
             <div
               key={`${title}-${row.brand}`}
-              className="flex items-center justify-between rounded-2xl border border-[#e6dac6] bg-[#fdfaf5] px-4 py-4"
+              className="flex items-center justify-between rounded-xl border border-[#e6dac6] bg-[#fdfaf5] px-3 py-2.5"
             >
-              <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#201914] font-semibold text-[#ddb65f]">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#201914] text-xs font-semibold text-[#ddb65f]">
                   {index + 1}
                 </div>
                 <div>
-                  <p className="font-medium text-[#2a221b]">{row.brand}</p>
-                  <p className="text-sm text-[#8a775f]">
-                    {row.units_sold !== undefined ? `${row.units_sold} unidades` : `${row.units} en stock`}
-                  </p>
+                  <p className="text-sm font-medium text-[#2a221b]">{row.brand}</p>
+                  {renderMeta ? <p className="text-xs text-[#8a775f]">{renderMeta(row)}</p> : null}
                 </div>
               </div>
-              <p className="font-serif text-2xl text-[#2a221b]">{renderValue(row)}</p>
+              <p className="font-serif text-lg text-[#2a221b]">{renderValue(row)}</p>
             </div>
           ))}
         </div>
@@ -171,10 +168,10 @@ function RentabilityTable({ brands }) {
           <tr>
             <th className="pb-3 pr-4">Marca</th>
             <th className="pb-3 pr-4">Unidades</th>
-            <th className="pb-3 pr-4">Ventas</th>
-            <th className="pb-3 pr-4">Costo</th>
+            <th className="hidden pb-3 pr-4 sm:table-cell">Ventas</th>
+            <th className="hidden pb-3 pr-4 sm:table-cell">Costo</th>
             <th className="pb-3 pr-4">Ganancia</th>
-            <th className="pb-3">Dias promedio</th>
+            <th className="hidden pb-3 sm:table-cell">Dias promedio</th>
           </tr>
         </thead>
         <tbody>
@@ -182,10 +179,10 @@ function RentabilityTable({ brands }) {
             <tr key={brand.brand} className="border-t border-[#eee2cd] text-sm text-[#5d5144]">
               <td className="py-3 pr-4 font-medium text-[#2a221b]">{brand.brand}</td>
               <td className="py-3 pr-4">{brand.units_sold}</td>
-              <td className="py-3 pr-4">{formatCurrency(brand.revenue)}</td>
-              <td className="py-3 pr-4">{formatCurrency(brand.cost_of_sales)}</td>
+              <td className="hidden py-3 pr-4 sm:table-cell">{formatCurrency(brand.revenue)}</td>
+              <td className="hidden py-3 pr-4 sm:table-cell">{formatCurrency(brand.cost_of_sales)}</td>
               <td className="py-3 pr-4 font-semibold text-[#6e9d63]">{formatCurrency(brand.profit)}</td>
-              <td className="py-3">{formatNumber(brand.avg_days_to_sell)} dias</td>
+              <td className="hidden py-3 sm:table-cell">{formatNumber(brand.avg_days_to_sell)} dias</td>
             </tr>
           ))}
         </tbody>
@@ -295,11 +292,11 @@ export default function DashboardPage() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8d7964]">
             Rango global del dashboard
           </p>
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <div className="mt-2 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
             {rangeOptions.map((option) => (
               <button
                 key={option.value}
-                className={`rounded-full px-4 py-2 text-sm transition ${
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm transition ${
                   selectedRange === option.value
                     ? "bg-[#201914] text-[#ddb65f]"
                     : "text-[#7d6751] hover:bg-[#f0e6d5]"
@@ -311,9 +308,6 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-[#8a775f]">
-            Este rango actualiza KPIs, detalle por mes y rankings.
-          </p>
         </div>
       </section>
 
@@ -333,7 +327,7 @@ export default function DashboardPage() {
 
       {dashboardState.status === "success" ? (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
             <DashboardKpiCard
               delta={kpis.sales_revenue_delta}
               helper="vs periodo anterior"
@@ -361,83 +355,79 @@ export default function DashboardPage() {
           </section>
 
           <section className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-            <section className="panel-surface p-4 sm:p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="eyebrow">Desglose mensual</p>
-                  <h2 className="mt-1 font-serif text-xl text-[#2a221b]">{selectedYear} dividido por meses</h2>
-                  <p className="mt-1 text-xs text-[#8a775f]">Visualiza ventas, ganancia o costo de ventas.</p>
-                </div>
-                <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-[auto_auto] sm:items-center">
-                  <select
-                    className="w-full rounded-full border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-sm text-[#2a221b] outline-none transition focus:border-[#b69556] focus:ring-2 focus:ring-[#ead9b4] sm:w-auto"
-                    onChange={(event) => setSelectedYear(Number(event.target.value))}
-                    value={selectedYear}
-                  >
-                    {years.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex flex-wrap gap-2 rounded-full border border-[#e0d4c0] bg-[#f7f1e8] p-2">
-                    {chartModes.map((mode) => (
-                      <button
-                        key={mode.value}
-                        className={`rounded-full px-3 py-1.5 text-xs transition ${
-                          chartMode === mode.value
-                            ? "bg-[#201914] text-[#ddb65f]"
-                            : "text-[#7d6751] hover:bg-[#efe5d3]"
-                        }`}
-                        onClick={() => setChartMode(mode.value)}
-                        type="button"
-                      >
-                        {mode.label}
-                      </button>
-                    ))}
+            <section className="panel-surface max-w-full overflow-hidden p-4 sm:p-5">
+              <section className="mx-auto w-full max-w-[980px]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="eyebrow">Desglose mensual</p>
+                    <h2 className="mt-1 font-serif text-xl text-[#2a221b]">{selectedYear} dividido por meses</h2>
+                    <p className="mt-1 text-xs text-[#8a775f]">Visualiza ventas, ganancia o costo de ventas.</p>
+                  </div>
+                  <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-[auto_auto] sm:items-center">
+                    <select
+                      className="w-full rounded-full border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-sm text-[#2a221b] outline-none transition focus:border-[#b69556] focus:ring-2 focus:ring-[#ead9b4] sm:w-auto"
+                      onChange={(event) => setSelectedYear(Number(event.target.value))}
+                      value={selectedYear}
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex flex-wrap gap-2 rounded-full border border-[#e0d4c0] bg-[#f7f1e8] p-2">
+                      {chartModes.map((mode) => (
+                        <button
+                          key={mode.value}
+                          className={`rounded-full px-3 py-1.5 text-xs transition ${
+                            chartMode === mode.value
+                              ? "bg-[#201914] text-[#ddb65f]"
+                              : "text-[#7d6751] hover:bg-[#efe5d3]"
+                          }`}
+                          onClick={() => setChartMode(mode.value)}
+                          type="button"
+                        >
+                          {mode.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <MonthlyBreakdown chartMax={chartMax} chartMode={chartMode} months={months} />
-              <div className="mt-5 border-t border-[#e6d9c5] pt-4">
-                <p className="eyebrow">Rentabilidad</p>
-                <h3 className="mt-1 font-serif text-xl text-[#2a221b]">Marcas mas vendidas</h3>
-                <RentabilityTable brands={dashboardState.data.brands_sold ?? []} />
-              </div>
+                <MonthlyBreakdown chartMax={chartMax} chartMode={chartMode} months={months} />
+                <div className="mt-5 border-t border-[#e6d9c5] pt-4">
+                  <p className="eyebrow">Rentabilidad</p>
+                  <h3 className="mt-1 font-serif text-xl text-[#2a221b]">Marcas mas vendidas</h3>
+                  <RentabilityTable brands={dashboardState.data.brands_sold ?? []} />
+                </div>
+              </section>
             </section>
 
-            <div className="space-y-4">
-              <section className="panel-surface p-4">
+            <div className="grid grid-cols-2 items-stretch gap-4 md:grid-cols-1">
+              <section className="panel-surface h-full max-h-[250px] w-full max-w-full overflow-y-auto p-4 sm:max-h-none sm:overflow-visible">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="eyebrow">Seguimiento</p>
-                    <h2 className="mt-1 font-serif text-xl text-[#2a221b]">Alertas operativas</h2>
+                    <h2 className="mt-1 font-serif text-lg text-[#2a221b]">Alertas</h2>
                   </div>
-                  <NavLink
-                    className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7d6751] transition hover:bg-[#f3ecde]"
-                    to="/layaways"
-                  >
-                    Ver apartados
-                  </NavLink>
                 </div>
                 {notificationsState.status === "loading" ? (
                   <p className="mt-4 text-sm text-[#8a775f]">Cargando alertas...</p>
                 ) : null}
                 {notificationsState.status === "error" ? (
-                  <p className="mt-4 text-sm text-[#a55b4f]">No pudimos cargar alertas operativas.</p>
+                  <p className="mt-4 text-sm text-[#a55b4f]">No pudimos cargar alertas.</p>
                 ) : null}
                 {notificationsState.status === "success" ? (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                     <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-3 py-3">
-                      <p className="text-xs uppercase tracking-[0.16em] text-[#b5a18a]">Apartados vencidos</p>
-                      <p className="mt-1 font-serif text-2xl text-[#a55b4f]">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-[#b5a18a] sm:text-xs">Apartados vencidos</p>
+                      <p className="mt-1 font-serif text-xl text-[#a55b4f] sm:text-2xl">
                         {notificationsState.data?.counts?.layaway_overdue || 0}
                       </p>
                     </div>
                     <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] px-3 py-3">
-                      <p className="text-xs uppercase tracking-[0.16em] text-[#b5a18a]">Inventario +60 dias</p>
-                      <p className="mt-1 font-serif text-2xl text-[#2a221b]">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-[#b5a18a] sm:text-xs">Inventario +60 dias</p>
+                      <p className="mt-1 font-serif text-xl text-[#2a221b] sm:text-2xl">
                         {notificationsState.data?.counts?.inventory_old || 0}
                       </p>
                     </div>
@@ -445,28 +435,28 @@ export default function DashboardPage() {
                 ) : null}
               </section>
 
-              <section className="panel-surface p-4 sm:p-5">
+              <section className="panel-surface h-full max-h-[250px] w-full max-w-full overflow-hidden p-4 sm:max-h-none sm:p-5">
                 <p className="eyebrow">Snapshot</p>
-                <h2 className="mt-1 font-serif text-xl text-[#2a221b]">Resumen operativo</h2>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <h2 className="mt-1 font-serif text-lg text-[#2a221b]">Resumen</h2>
+                <div className="mt-4 grid max-h-[170px] gap-3 overflow-y-auto pr-1 sm:max-h-none sm:grid-cols-2 sm:overflow-visible lg:grid-cols-1">
                   <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] p-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#b5a18a]">Costo de ventas</p>
-                    <p className="mt-2 font-serif text-2xl text-[#2a221b]">{formatCurrency(kpis.cost_of_sales)}</p>
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#b5a18a] sm:text-xs">Costo de ventas</p>
+                    <p className="mt-2 font-serif text-xl text-[#2a221b] sm:text-2xl">{formatCurrency(kpis.cost_of_sales)}</p>
                   </div>
                   <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] p-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#b5a18a]">Inventory / sales ratio</p>
-                    <p className="mt-2 font-serif text-2xl text-[#2a221b]">{formatNumber(kpis.inventory_sales_ratio, 2)}</p>
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#b5a18a] sm:text-xs">Inventory / sales ratio</p>
+                    <p className="mt-2 font-serif text-xl text-[#2a221b] sm:text-2xl">{formatNumber(kpis.inventory_sales_ratio, 2)}</p>
                   </div>
                   <div className="rounded-2xl border border-[#e4d7c3] bg-[#fdfaf5] p-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#b5a18a]">Unidades vendidas</p>
-                    <p className="mt-2 font-serif text-2xl text-[#2a221b]">{formatNumber(kpis.units_sold, 0)}</p>
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-[#b5a18a] sm:text-xs">Unidades vendidas</p>
+                    <p className="mt-2 font-serif text-xl text-[#2a221b] sm:text-2xl">{formatNumber(kpis.units_sold, 0)}</p>
                   </div>
                 </div>
               </section>
             </div>
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-2">
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5">
             <RankingList
               emptyMessage="Aun no hay historial suficiente para calcular rotacion."
               renderValue={(row) => `${formatNumber(row.avg_days_to_sell)} dias`}
@@ -477,6 +467,12 @@ export default function DashboardPage() {
             <RankingList
               emptyMessage="No hay stock activo para agrupar por marca."
               renderValue={(row) => `${row.units} uds`}
+              renderMeta={(row) => (
+                <>
+                  <span className="sm:hidden">{row.units}</span>
+                  <span className="hidden sm:inline">{row.units} en stock</span>
+                </>
+              )}
               rows={dashboardState.data.stock_by_brand ?? []}
               subtitle="Stock"
               title="Unidades por marca"

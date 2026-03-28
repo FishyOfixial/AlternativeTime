@@ -71,9 +71,6 @@ export default function ReportFiltersForm({
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-[#8a775f]">
-                Este rango se aplica a la exportacion si no eliges fechas.
-              </p>
             </label>
 
             {selectedRange === "year" ? (
