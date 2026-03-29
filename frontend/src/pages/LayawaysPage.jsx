@@ -105,6 +105,7 @@ export default function LayawaysPage() {
       setFormValues((current) => ({
         ...current,
         product: stateData.prefillProductId || current.product,
+        customer: stateData.prefillCustomerId || current.customer,
         agreed_price: stateData.prefillAgreedPrice || current.agreed_price
       }));
     }

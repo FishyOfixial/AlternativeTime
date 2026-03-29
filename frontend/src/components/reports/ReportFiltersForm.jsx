@@ -309,7 +309,7 @@ export default function ReportFiltersForm({
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
                 Formato de exportacion
               </p>
-              <div className="mt-2 grid grid-cols-2 gap-3">
+              <div className="mt-2">
                 <button
                   className={`rounded-md border px-4 py-2 text-xs ${
                     exportFormat === "xlsx"
@@ -320,17 +320,6 @@ export default function ReportFiltersForm({
                   type="button"
                 >
                   Excel
-                </button>
-                <button
-                  className={`rounded-md border px-4 py-2 text-xs ${
-                    exportFormat === "csv"
-                      ? "border-[#201914] bg-[#201914] text-[#ddb65f]"
-                      : "border-[#dccfb9] bg-[#fffdf9] text-[#7d6751]"
-                  }`}
-                  onClick={() => onExportFormatChange("csv")}
-                  type="button"
-                >
-                  CSV
                 </button>
               </div>
             </div>

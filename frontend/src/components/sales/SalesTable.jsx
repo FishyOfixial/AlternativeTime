@@ -1,26 +1,30 @@
 import ResponsiveTableShell from "../common/ResponsiveTableShell";
 
-function SaleMobileCard({ sale, formatDate, formatCurrency, channelLabels, paymentLabels }) {
+function SaleMobileCard({ sale, formatDate, formatCurrency }) {
   return (
-    <article className="rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-4">
+    <article className="rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.16em] text-[#b4a085]">{sale.product_code || "-"}</p>
-          <p className="truncate font-medium text-[#2a221b]" title={sale.product_label || "Venta"}>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] uppercase tracking-[0.12em] text-[#b4a085]">
+            <span>{sale.product_code || "-"}</span>
+            <span>{formatDate(sale.sale_date)}</span>
+          </div>
+          <p className="mt-1 truncate font-medium text-[#2a221b]" title={sale.product_label || "Venta"}>
             {sale.product_label || "Venta"}
           </p>
-          <p className="mt-1 text-xs text-[#8a775f]">{formatDate(sale.sale_date)}</p>
+          <p className="mt-1 truncate text-xs text-[#8a775f]" title={sale.customer_name || "Venta libre"}>
+            {sale.customer_name || "Venta libre"}
+          </p>
         </div>
-        <p className="text-sm font-semibold text-[#2a221b]">{formatCurrency(sale.amount_paid)}</p>
+        <div className="text-right">
+          <p className="text-sm font-semibold text-[#2a221b]">{formatCurrency(sale.amount_paid)}</p>
+          <p className="mt-1 text-[11px] font-semibold text-[#6ca07e]">{formatCurrency(sale.gross_profit)}</p>
+        </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#5d5144]">
-        <p className="truncate" title={sale.customer_name || "Venta libre"}>
-          Cliente: {sale.customer_name || "Venta libre"}
-        </p>
-        <p>{channelLabels[sale.sales_channel] || sale.sales_channel}</p>
-        <p>{paymentLabels[sale.payment_method] || sale.payment_method}</p>
-        <p className="font-semibold text-[#6ca07e]">{formatCurrency(sale.gross_profit)}</p>
+      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] text-[#5d5144]">
+        <p className="truncate">Costo: {formatCurrency(sale.cost_snapshot)}</p>
+        <p className="text-right">Margen: {(Number(sale.profit_percentage || 0) * 100).toFixed(1)}%</p>
       </div>
     </article>
   );
@@ -41,8 +45,6 @@ export default function SalesTable({
           sale={sale}
           formatDate={formatDate}
           formatCurrency={formatCurrency}
-          channelLabels={channelLabels}
-          paymentLabels={paymentLabels}
         />
       ))}
       desktopContent={
