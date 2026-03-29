@@ -22,6 +22,10 @@ export default function ClientsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [sortConfig, setSortConfig] = useState({
+    field: "name",
+    direction: "asc"
+  });
 
   async function loadClients() {
     try {
@@ -69,6 +73,51 @@ export default function ClientsPage() {
       return true;
     });
   }, [clientsState.clients, filter, searchTerm]);
+
+  const sortedClients = useMemo(() => {
+    const items = [...filteredClients];
+    const { field, direction } = sortConfig;
+    const factor = direction === "asc" ? 1 : -1;
+
+    function compareStrings(a, b) {
+      return String(a || "").localeCompare(String(b || ""), "es", { sensitivity: "base" });
+    }
+
+    items.sort((left, right) => {
+      if (field === "name") {
+        return compareStrings(left.name, right.name) * factor;
+      }
+      if (field === "total_spent") {
+        return (Number(left.total_spent || 0) - Number(right.total_spent || 0)) * factor;
+      }
+      if (field === "purchases_count") {
+        return (Number(left.purchases_count || 0) - Number(right.purchases_count || 0)) * factor;
+      }
+      if (field === "last_purchase_at") {
+        const leftDate = left.last_purchase_at ? new Date(left.last_purchase_at).getTime() : 0;
+        const rightDate = right.last_purchase_at ? new Date(right.last_purchase_at).getTime() : 0;
+        return (leftDate - rightDate) * factor;
+      }
+      return 0;
+    });
+
+    return items;
+  }, [filteredClients, sortConfig]);
+
+  function handleSort(field) {
+    setSortConfig((current) => {
+      if (current.field === field) {
+        return {
+          field,
+          direction: current.direction === "asc" ? "desc" : "asc"
+        };
+      }
+      return {
+        field,
+        direction: "asc"
+      };
+    });
+  }
 
   const recurringClients = clientsState.clients.filter((client) => client.purchases_count >= 2).length;
 
@@ -151,12 +200,15 @@ export default function ClientsPage() {
           </div>
         ) : null}
 
-        {clientsState.status === "success" && filteredClients.length > 0 ? (
+        {clientsState.status === "success" && sortedClients.length > 0 ? (
           <ClientsTable
-            clients={filteredClients}
+            clients={sortedClients}
             getClientInitials={getClientInitials}
             formatCurrency={formatCurrency}
             formatLastPurchase={formatLastPurchase}
+            sortField={sortConfig.field}
+            sortDirection={sortConfig.direction}
+            onSort={handleSort}
           />
         ) : null}
       </section>

@@ -26,8 +26,9 @@ mantenimiento y trazabilidad.
 5. [Roadmap](planning/roadmap.md)
 6. [Backlog](planning/backlog.md)
 7. [Decisions Log](planning/decisions-log.md)
-8. [Technical Specification](specification/technical-specification.md)
-9. [Technical Specification Addendum v1.1](specification/technical-specification-addendum-v1.1.md)
+8. [Offline Sync Action Plan](planning/offline-sync-action-plan.md)
+9. [Technical Specification](specification/technical-specification.md)
+10. [Technical Specification Addendum v1.1](specification/technical-specification-addendum-v1.1.md)
 
 ## Convencion de nombres
 

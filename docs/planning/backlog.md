@@ -29,6 +29,7 @@
 - [~] Ampliar cobertura de pruebas automatizadas.
 - [ ] Definir pipeline minimo de CI para lint, tests y build.
 - [ ] Validar corrida completa sobre PostgreSQL antes de release.
+- [ ] Evaluar y preparar arquitectura `offline-first` (PWA + sincronizacion) segun `docs/planning/offline-sync-action-plan.md`.
 
 ## Documentacion
 
