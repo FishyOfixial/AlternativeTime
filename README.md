@@ -154,6 +154,13 @@ Frontend local:
 http://localhost:5173
 ```
 
+Nota de planeacion:
+
+- Existe un roadmap documentado para evolucionar el frontend a PWA con soporte
+  offline-first, pensado especificamente para ecosistema Apple multi-device
+  (`iPhone`, `iPad`, `Mac`), sin implementacion activa todavia.
+- Referencia: `docs/planning/offline-sync-action-plan.md`
+
 Validaciones recomendadas del frontend:
 
 ```powershell

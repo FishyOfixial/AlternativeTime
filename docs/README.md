@@ -30,6 +30,12 @@ mantenimiento y trazabilidad.
 9. [Technical Specification](specification/technical-specification.md)
 10. [Technical Specification Addendum v1.1](specification/technical-specification-addendum-v1.1.md)
 
+## Nota de planeacion actual
+
+La ruta PWA / offline-first esta documentada como trabajo futuro y considera
+explicitamente el entorno real del cliente en ecosistema Apple multi-device
+(`iPhone`, `iPad`, `Mac`).
+
 ## Convencion de nombres
 
 - Carpetas: `kebab-case` por dominio (`system-architecture`, `ui-mockups`).

@@ -57,6 +57,7 @@
 - persistencia local para lectura
 - cola de sincronizacion y estrategia de conflictos
 - hardening transaccional para evitar duplicados y drift de datos
+- soporte prioritario para ecosistema Apple multi-device (`iPhone`, `iPad`, `Mac`)
 
 Ver detalle en `docs/planning/offline-sync-action-plan.md`.
 
@@ -79,6 +80,15 @@ Ver detalle en `docs/planning/offline-sync-action-plan.md`.
 - No iniciar subfase siguiente sin cerrar criterios de terminado de la actual.
 - Mantener `sales`, `layaways` y `finance` offline deshabilitados hasta completar 7.4.
 - Liberar por feature flags y smoke tests en entorno controlado.
+- Validar primero comportamiento real en Safari iPhone/iPad y Safari/Chrome en Mac.
+
+### Consideraciones operativas de Fase 7
+
+- El MVP offline no asume sincronizacion silenciosa prolongada en segundo plano en iOS.
+- La sincronizacion se dispara por apertura, reconexion y acciones del usuario.
+- El sistema debe exponer estados de sincronizacion visibles:
+  `Local`, `Pendiente de envio`, `Sincronizando`, `Sincronizado`, `Error`, `Conflicto`.
+- La primera iteracion no replica la DB completa en cliente.
 
 ## Nota de alcance
 
