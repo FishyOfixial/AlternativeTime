@@ -22,6 +22,60 @@ La ruta recomendada es:
 - Prioridad: reducir riesgo y evitar sobrecomplicar primera iteracion.
 - El backend sigue siendo fuente de verdad.
 - Se permite evolucionar contratos backend sin romper compatibilidad principal.
+- El cliente principal opera en ecosistema Apple, por lo que iPhone/iPad son
+  plataforma prioritaria para el diseno PWA.
+- El contexto real de uso es multi-device dentro del ecosistema Apple:
+  iPhone, iPad y Mac.
+
+# Consideraciones Especificas para iOS / Apple
+
+- Debe asumirse uso cruzado entre iPhone, iPad y Mac sobre la misma cuenta y
+  mismos datos operativos; no se debe disenar como experiencia monodispositivo.
+- La instalacion depende de "Agregar a pantalla de inicio"; debe existir guia
+  de instalacion y soporte UX para usuarios no tecnicos.
+- En iOS/iPadOS, un sitio agregado puede quedar como web app o como bookmark;
+  no debe asumirse modo app nativo siempre.
+- El `Web App Manifest` sigue siendo obligatorio para identidad consistente:
+  nombre, iconos, `display`, `scope` y branding.
+- El `Service Worker` debe resolver shell offline, cache y control de red, pero
+  no debe asumirse sincronizacion silenciosa prolongada en segundo plano como en
+  una app nativa.
+- `Web Push` solo debe considerarse para web apps instaladas y tras permiso
+  explicito del usuario; queda fuera del MVP.
+- `Badging API` puede evaluarse para pendientes/conflictos, pero no debe ser
+  requisito critico del flujo inicial.
+- El almacenamiento local en iOS es suficiente para una PWA seria, pero puede
+  sufrir cuota y eviccion; no debe tratarse como replica completa del backend.
+- Debe existir manejo explicito de errores de almacenamiento, limpieza de cache
+  y politica de retencion local.
+- La lectura offline entra antes; la escritura offline debe entrar por etapas.
+- Inventario transaccional, ventas, apartados y finanzas permanecen fuera del
+  offline inicial hasta tener idempotencia, versionado y conflictos resueltos.
+- La UX debe exponer conectividad, ultima sincronizacion, pendientes, errores y
+  conflictos.
+- La UX tambien debe dejar claro cuando un cambio local aun no se ha propagado
+  a otros dispositivos del ecosistema Apple.
+- Debe definirse estrategia clara de actualizacion de `Service Worker`,
+  versionado e invalidacion de cache.
+
+# Estados de Sincronizacion
+
+- `Local (no sincronizado)`: cambio creado solo en el dispositivo actual.
+- `Pendiente de envio`: operacion en cola esperando oportunidad de sync.
+- `Sincronizando`: operacion actualmente en proceso de envio o reconciliacion.
+- `Sincronizado`: cambio confirmado por backend y ya elegible para verse en los
+  otros dispositivos.
+- `Error`: fallo recuperable o no recuperable que impide completar sync.
+- `Conflicto`: el backend rechazo o cuestiono la operacion por diferencia de
+  version, estado o concurrencia.
+
+# Decisiones Clave
+
+- No depender de `background sync` en iOS como pieza central del sistema.
+- No replicar completamente la base de datos en cliente.
+- No permitir offline en modulos criticos en el MVP.
+- Disparar sincronizacion por eventos visibles y confiables:
+  apertura de app, reconexion y acciones del usuario.
 
 # Clasificacion de Modulos por Riesgo
 
@@ -35,6 +89,8 @@ La ruta recomendada es:
 
 - Clientes (alta/edicion con sync diferido)
 - Inventario en modo lectura offline
+- Uso multi-device de clientes/listados con riesgo de drift temporal entre Mac,
+  iPhone e iPad
 
 ## Alto riesgo
 
@@ -67,6 +123,8 @@ Infraestructura PWA basica y UX de conectividad.
 - Service Worker con cache de assets estaticos.
 - Offline fallback de app shell.
 - Indicador visual de estado de red (online/offline).
+- Guia UX de instalacion para iPhone/iPad ("Agregar a pantalla de inicio").
+- Consideraciones de instalacion/uso tambien para Safari en Mac.
 
 ### No incluye
 
@@ -74,12 +132,17 @@ Infraestructura PWA basica y UX de conectividad.
 - Escritura offline.
 - Cola de sincronizacion.
 - Resolucion de conflictos.
+- Asumir background sync silencioso prolongado en iOS.
 
 ### Frontend
 
 - Integracion PWA en Vite.
 - UI de conectividad global.
 - Manejo de actualizacion de service worker.
+- Deteccion y copy especifico para instalacion manual en Safari iOS.
+- Definicion de copy para distinguir "guardado local", "sincronizado" y
+  "visible en otros dispositivos".
+- Base visual para estados de sincronizacion definidos en este documento.
 
 ### Backend
 
@@ -90,11 +153,15 @@ Infraestructura PWA basica y UX de conectividad.
 
 - Cache stale tras despliegues.
 - Confusion de usuarios (instalable != operacion completa offline).
+- Usuarios iOS pueden agregar el sitio como bookmark y no como web app.
+- Usuarios pueden asumir que iPhone/iPad/Mac comparten estado en tiempo real
+  aun cuando un dispositivo siga offline.
 
 ### Dependencias
 
 - Definir estrategia de versionado/invalidez del SW.
 - Checklist de release para cache busting.
+- Definir soporte UX/documental para instalacion en Apple.
 
 ### Definicion de terminado
 
@@ -118,6 +185,9 @@ Lectura local cacheada con marca de antiguedad de datos.
 - Cache de GET para dashboard, clientes e inventario (solo consulta).
 - TTL simple + refresh al reconectar.
 - Indicador de "ultima sincronizacion".
+- Politica de retencion y limpieza local para evitar problemas de cuota/eviccion
+  en iOS.
+- Base para mostrar freshness por dispositivo, no solo por sesion.
 
 ### No incluye
 
@@ -130,20 +200,28 @@ Lectura local cacheada con marca de antiguedad de datos.
 - Capa de repositorio local para lectura offline.
 - Fallback a ultimo snapshot disponible.
 - UI de datos stale.
+- Manejo explicito de errores de almacenamiento local.
+- Base para mostrar `Sincronizado` / `Error` a nivel de snapshots cacheados si
+  aplica en la UX final.
 
 ### Backend
 
 - Recomendado: consistencia en `updated_at` y orden estable de listados.
+- Recomendado: timestamps confiables por entidad para facilitar reconciliacion
+  entre dispositivos Apple.
 
 ### Riesgos
 
 - Toma de decisiones con datos desactualizados.
 - Complejidad de invalidacion por endpoint.
+- Eviccion de almacenamiento local en dispositivos Apple con poca cuota.
+- Diferencias temporales entre el estado visto en Mac, iPhone e iPad.
 
 ### Dependencias
 
 - Definir politica de expiracion por modulo.
 - Alinear copy UX de offline/stale.
+- Definir tamano maximo de cache local por modulo.
 
 ### Definicion de terminado
 
@@ -166,6 +244,10 @@ Mutaciones diferidas para clientes.
 - Crear/editar cliente offline.
 - Reintentos con backoff al reconectar.
 - Estado visible por operacion.
+- Sincronizacion disparada al abrir la app o recuperar conectividad, sin
+  depender de background sync prolongado.
+- Señalizacion clara de que un cambio local aun puede no estar disponible en
+  los otros dispositivos del usuario.
 
 ### No incluye
 
@@ -179,16 +261,22 @@ Mutaciones diferidas para clientes.
 - Motor de cola de escrituras.
 - UI de pendientes y errores de sincronizacion.
 - Reconciliacion de IDs temporales.
+- UX concreta para `Local`, `Pendiente de envio`, `Sincronizando`,
+  `Sincronizado`, `Error` y `Conflicto`.
 
 ### Backend
 
 - Idempotencia para create/update de clientes.
 - Mensajes de error consistentes para remapeo.
+- Preparacion para reconciliar escrituras originadas desde varios dispositivos
+  del mismo usuario.
 
 ### Riesgos
 
 - Duplicados por reintento.
 - Conflictos de edicion concurrente.
+- Expectativa incorrecta de que iOS sincronizara solo "en segundo plano".
+- Ediciones del mismo cliente desde Mac y iPhone antes de sincronizar.
 
 ### Dependencias
 
@@ -217,6 +305,8 @@ Delta sync + versionado + contrato de conflicto.
 - Control de version por recurso (`version` o `updated_at` estricto).
 - Respuesta de conflicto estandar (`409` + metadata).
 - Trazabilidad de operaciones sincronizadas.
+- Base para reconciliar estado entre iPhone, iPad y Mac sin asumir tiempo real.
+- Contrato backend suficiente para mapear estados de sync de frontend.
 
 ### No incluye
 
@@ -228,17 +318,26 @@ Delta sync + versionado + contrato de conflicto.
 - Sync engine con push/pull incremental.
 - Gestion de estado `conflict`.
 - Reconciliacion de cambios locales vs servidor.
+- UX para mostrar si un cambio ya fue propagado al servidor y por ende puede
+  ser visto desde otros dispositivos.
+- Disparadores de sincronizacion por eventos: apertura, reconexion y acciones
+  del usuario.
 
 ### Backend
 
 - Contratos delta por entidad priorizada.
 - Idempotencia homologada.
 - Validaciones transaccionales mas estrictas.
+- Estrategia de cursores/versionado pensada para clientes Apple con sesiones
+  cortas y reaperturas frecuentes de app.
+- Modelo apto para escenarios multi-device del mismo usuario.
+- Respuestas backend suficientes para mapear `Error` vs `Conflicto`.
 
 ### Riesgos
 
 - Alta complejidad tecnica.
 - Drift de cursores si no se valida bien.
+- Conflictos frecuentes por uso paralelo entre Mac, iPad e iPhone.
 
 ### Dependencias
 
@@ -266,6 +365,8 @@ finanzas.
 - Politicas de seguridad por modulo (no simultaneo).
 - Reglas anti-duplicado para operaciones contables.
 - Resolucion asistida de conflictos en UI.
+- Guardrails para bloquear operaciones criticas cuando el contexto offline no
+  sea suficientemente confiable.
 
 ### No incluye
 
@@ -321,6 +422,7 @@ Calidad operativa y monitoreo del sistema offline-sync.
 
 - Features nuevas de negocio.
 - Push realtime multi-dispositivo.
+- Dependencia de Web Push o background tasks como pieza central del sync.
 
 ### Frontend
 
@@ -356,6 +458,10 @@ Primera entrega sugerida (realista y segura):
 - Offline de lectura para dashboard, clientes e inventario.
 - Estado visual de conectividad + ultima sincronizacion.
 - Opcional: escritura offline solo para clientes.
+- UX de instalacion guiada para iPhone/iPad.
+- Politica de cache local acotada y segura para iOS.
+- Semantica clara de sincronizacion multi-device dentro del ecosistema Apple.
+- Estados de sincronizacion visibles al menos para el flujo offline soportado.
 
 Expresamente fuera del MVP:
 
@@ -371,6 +477,7 @@ Expresamente fuera del MVP:
 - Escritura offline de finanzas.
 - Resolucion automatica avanzada de conflictos.
 - Push notifications y realtime multi-dispositivo.
+- Badging y Web Push como mejoras posteriores, no como dependencia de fase 1.
 
 # Riesgos Globales
 
@@ -379,6 +486,10 @@ Expresamente fuera del MVP:
 - Confusion UX entre "guardado local" y "sincronizado en servidor".
 - Deuda tecnica si no se centraliza la capa de sync.
 - QA insuficiente para reconexiones largas/intermitentes.
+- Tratar iOS como si ofreciera background behavior equivalente a una app nativa.
+- Confiar demasiado en almacenamiento local sin contemplar eviccion.
+- Subestimar el costo de consistencia entre iPhone, iPad y Mac del mismo
+  usuario.
 
 # Recomendacion Final
 
@@ -388,6 +499,7 @@ Implementar offline en ATC POS por iteraciones cortas y controladas:
 2. Escritura offline solo de bajo riesgo.
 3. Sincronizacion robusta antes de modulos criticos.
 4. Inventario/ventas/apartados/finanzas en etapas posteriores con guardrails.
+5. Disenar cada fase validando primero comportamiento real en Safari iPhone/iPad.
 
 Decision clave para primera etapa:
 
