@@ -16,6 +16,7 @@
 
 html {
   min-height: 100%;
+  min-height: 100dvh;
   background:
     linear-gradient(180deg, rgba(179, 143, 73, 0.08), rgba(179, 143, 73, 0.02)),
     #f4efe5;
@@ -25,6 +26,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at top left, rgba(178, 136, 62, 0.08), transparent 25%),
     linear-gradient(180deg, #f7f2e9 0%, #f2ecdf 100%);
@@ -62,6 +64,15 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 .font-serif {
   font-family: inherit !important;
   font-weight: 700;
@@ -70,6 +81,7 @@ a:focus-visible {
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 @layer components {
@@ -83,6 +95,7 @@ a:focus-visible {
 
   .page-shell {
     @apply min-h-screen bg-[#f4efe5] text-[#2a221b];
+    min-height: 100dvh;
   }
 
   .eyebrow {
@@ -98,7 +111,7 @@ a:focus-visible {
   }
 
   .stat-card {
-    @apply rounded-2xl border border-[#ddcfba] bg-[#fcf8f2] p-5;
+    @apply rounded-2xl border border-[#ddcfba] bg-[#fcf8f2] px-4 sm:py-4 py-2;
   }
 
   .gold-button {

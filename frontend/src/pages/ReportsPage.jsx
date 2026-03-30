@@ -65,7 +65,6 @@ export default function ReportsPage() {
   const [selectedRange, setSelectedRange] = useState("month");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedReportType, setSelectedReportType] = useState(reportOptions[0].id);
-  const [exportFormat, setExportFormat] = useState("xlsx");
   const [filters, setFilters] = useState({
     date_from: "",
     date_to: "",
@@ -136,6 +135,25 @@ export default function ReportsPage() {
     };
   }, [accessToken]);
 
+  useEffect(() => {
+    if (selectedReportType !== "sales-by-month") {
+      return;
+    }
+    if (selectedRange === "year" || selectedRange === "lifetime") {
+      return;
+    }
+    setSelectedRange("year");
+  }, [selectedReportType, selectedRange]);
+
+  useEffect(() => {
+    const rangeDates = getRangeDates(selectedRange, selectedYear);
+    setFilters((current) => ({
+      ...current,
+      date_from: rangeDates.date_from,
+      date_to: rangeDates.date_to
+    }));
+  }, [selectedRange, selectedYear]);
+
   function handleFilterChange(event) {
     const { name, value } = event.target;
     setFilters((current) => ({ ...current, [name]: value }));
@@ -150,7 +168,18 @@ export default function ReportsPage() {
         params[key] = value;
       }
     });
-    if (active.includes("date_from") || active.includes("date_to")) {
+    if (selectedReportType === "sales-by-month") {
+      const rangeDates =
+        selectedRange === "lifetime"
+          ? { date_from: "", date_to: "" }
+          : getRangeDates("year", selectedYear);
+      if (rangeDates.date_from) {
+        params.date_from = rangeDates.date_from;
+      }
+      if (rangeDates.date_to) {
+        params.date_to = rangeDates.date_to;
+      }
+    } else if (active.includes("date_from") || active.includes("date_to")) {
       const rangeDates = getRangeDates(selectedRange, selectedYear);
       if (!params.date_from && rangeDates.date_from) {
         params.date_from = rangeDates.date_from;
@@ -172,7 +201,7 @@ export default function ReportsPage() {
       const { blob, filename } = await exportReport(
         accessToken,
         reportType,
-        exportFormat,
+        "xlsx",
         params
       );
       const url = window.URL.createObjectURL(blob);
@@ -198,7 +227,7 @@ export default function ReportsPage() {
   const isLoading = dashboardState.status === "loading";
   const hasError = dashboardState.status === "error";
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-6 xl:overflow-hidden">
       {exportError ? (
         <div className="rounded-xl border border-[#e4c2bc] bg-[#fff1ee] px-4 py-3 text-sm text-[#935849]">
           {exportError}
@@ -240,8 +269,6 @@ export default function ReportsPage() {
         inventoryTagOptions={inventoryTagOptions}
         clients={clients}
         clientsError={clientsState.status === "error"}
-        exportFormat={exportFormat}
-        onExportFormatChange={setExportFormat}
         isExporting={isExporting}
         onGenerate={handleGenerate}
       />

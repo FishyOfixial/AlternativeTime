@@ -254,20 +254,6 @@ export default function FinancePage() {
         formatCurrency={formatCurrency}
       />
 
-      <FinanceFilters
-        rangeOptions={rangeOptions}
-        selectedRange={selectedRange}
-        onRangeChange={setSelectedRange}
-        selectedYear={selectedYear}
-        availableYears={availableYears}
-        onYearChange={setSelectedYear}
-        filterType={filterType}
-        onFilterTypeChange={setFilterType}
-        filterAccount={filterAccount}
-        onFilterAccountChange={setFilterAccount}
-        accountCards={accountCards}
-      />
-
       <FinanceEntriesTable
         entries={entries}
         formatDate={formatDate}
@@ -275,6 +261,21 @@ export default function FinancePage() {
         accountLabels={accountLabels}
         typeLabels={typeLabels}
         conceptLabels={conceptLabels}
+        filters={
+          <FinanceFilters
+            rangeOptions={rangeOptions}
+            selectedRange={selectedRange}
+            onRangeChange={setSelectedRange}
+            selectedYear={selectedYear}
+            availableYears={availableYears}
+            onYearChange={setSelectedYear}
+            filterType={filterType}
+            onFilterTypeChange={setFilterType}
+            filterAccount={filterAccount}
+            onFilterAccountChange={setFilterAccount}
+            accountCards={accountCards}
+          />
+        }
       />
 
       <FinanceEntryModal

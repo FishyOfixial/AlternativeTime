@@ -1,6 +1,6 @@
 ﻿export default function ReportTypeList({ reportOptions, selectedReportType, onSelect }) {
   return (
-    <div className="mt-6 space-y-3">
+    <div className="scrollbar-hidden mt-6 space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-2">
       {reportOptions.map((report) => {
         const isActive = report.id === selectedReportType;
         return (

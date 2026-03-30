@@ -8,7 +8,7 @@ const titles = {
   "/inventory": "Inventario",
   "/sales": "Ventas",
   "/layaways": "Apartados",
-  "/finance": "Finanzas & Flujo de Efectivo",
+  "/finance": "Finanzas",
   "/reports": "Reportes",
   ...(USERS_MODULE_ENABLED ? { "/users": "Usuarios" } : {})
 };

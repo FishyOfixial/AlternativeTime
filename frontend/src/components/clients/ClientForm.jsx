@@ -14,7 +14,8 @@ export default function ClientForm({
   defaultValues = initialValues,
   isSubmitting = false,
   onSubmit,
-  submitLabel = "Guardar cliente"
+  submitLabel = "Guardar cliente",
+  onCancel
 }) {
   const values = {
     ...initialValues,
@@ -85,9 +86,18 @@ export default function ClientForm({
         />
       </label>
 
-      <button className="gold-button w-full py-2.5" disabled={isSubmitting} type="submit">
-        {isSubmitting ? "Guardando..." : submitLabel}
-      </button>
+      <div className="flex flex-row justify-end gap-2 sm:gap-3">
+        <button
+          className="rounded-xl border border-[#dccfb9] px-4 py-2.5 text-sm text-[#7d6751]"
+          onClick={onCancel}
+          type="button"
+        >
+          Cancelar
+        </button>
+        <button className="gold-button px-4 py-2.5 text-xs" disabled={isSubmitting} type="submit">
+          {isSubmitting ? "Guardando..." : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

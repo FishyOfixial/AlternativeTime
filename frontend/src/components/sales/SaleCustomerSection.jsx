@@ -8,7 +8,16 @@ export default function SaleCustomerSection({
 }) {
   return (
     <section className="panel-surface h-full p-5">
-      <h2 className="font-serif text-2xl text-[#2a221b]">Datos del cliente</h2>
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="font-serif text-2xl text-[#2a221b]">Datos del cliente</h2>
+        <button
+          className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-xs text-[#7d6751] transition hover:bg-[#f3ecde]"
+          onClick={onOpenCreateClient}
+          type="button"
+        >
+          Crear cliente
+        </button>
+      </div>
       <div className="mt-4 grid gap-4">
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
@@ -31,16 +40,6 @@ export default function SaleCustomerSection({
             <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.customer}</p>
           ) : null}
         </label>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-xs text-[#7d6751] transition hover:bg-[#f3ecde]"
-            onClick={onOpenCreateClient}
-            type="button"
-          >
-            Crear cliente
-          </button>
-        </div>
       </div>
 
       {formValues.customer ? (
