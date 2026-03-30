@@ -25,16 +25,13 @@ services:
       - key: POSTGRES_SSL_REQUIRE
         value: "True"
       - key: DJANGO_ALLOWED_HOSTS
-        value: 127.0.0.1,localhost
+        value: 127.0.0.1,localhost,alternative-time-api.onrender.com
       - key: DJANGO_CORS_ALLOWED_ORIGINS
-        value: http://localhost:5173
+        value: http://localhost:5173,http://alternative-time-web.onrender.com
       - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        value: http://localhost:5173
+        value: http://localhost:5173,http://alternative-time-web.onrender.com
       - key: FRONTEND_HOST
-        fromService:
-          name: alternative-time-web
-          type: web
-          property: host
+        value: alternative-time-web.onrender.com
 
   - type: web
     name: alternative-time-web
@@ -52,10 +49,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_HOST
-        fromService:
-          name: alternative-time-api
-          type: web
-          property: host
+        value: alternative-time-api.onrender.com
 
 databases:
   - name: alternative-time-db
