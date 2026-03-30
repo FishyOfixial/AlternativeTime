@@ -48,7 +48,7 @@ export default function MobileSidebarDrawer({ isOpen, onClose }) {
 
       <aside className="relative flex h-full max-h-screen w-80 max-w-[84vw] flex-col overflow-y-auto border-r border-[#3c3023] bg-[#211b16]">
         <div className="flex items-center justify-between px-5 pb-4 pt-5">
-          <p className="font-serif text-xl text-[#d9b35f]">Alternative Time Co.</p>
+          <p className="font-brand text-xl text-[#d9b35f]">Alternative Time Co.</p>
           <button
             ref={closeButtonRef}
             aria-label="Cerrar menu"

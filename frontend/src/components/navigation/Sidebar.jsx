@@ -10,7 +10,7 @@ export default function Sidebar({ className = "" }) {
       className={`hidden h-screen w-[var(--sidebar-width)] shrink-0 overflow-y-auto border-r border-[#3c3023] bg-[#211b16] lg:sticky lg:top-0 lg:flex lg:flex-col ${className}`}
     >
       <div className="px-7 pb-6 pt-7">
-        <p className="font-serif text-2xl font-semibold leading-tight text-[#d9b35f]">
+        <p className="font-brand text-2xl leading-tight text-[#d9b35f]">
           Alternative
           <br />
           Time Co.

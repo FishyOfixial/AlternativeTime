@@ -82,6 +82,22 @@ function getDashboardPayload() {
   };
 }
 
+function setupHealthFetch() {
+  global.fetch = vi.fn(async (input) => {
+    const url = String(input);
+
+    if (url.endsWith("/api/health/")) {
+      return mockJsonResponse({
+        status: "ok",
+        message: "API disponible",
+        database: "ok"
+      });
+    }
+
+    return mockJsonResponse({});
+  });
+}
+
 function setupAuthenticatedFetch() {
   global.fetch = vi.fn(async (input, options = {}) => {
     const url = String(input);
@@ -236,11 +252,36 @@ describe("App auth routing", () => {
     vi.restoreAllMocks();
   });
 
+  it("redirects the root route to login for guests", async () => {
+    window.history.pushState({}, "", "/");
+    render(<App />);
+
+    expect(await screen.findByRole("heading", { name: /iniciar sesion/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.location.pathname).toBe("/login");
+    });
+  });
+
+  it("renders the standalone healthcheck page", async () => {
+    setupHealthFetch();
+
+    window.history.pushState({}, "", "/healthcheck/");
+    render(<App />);
+
+    expect(await screen.findByText(/estado actual/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/base de datos/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/api disponible/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: /ver health endpoint/i })).toHaveAttribute(
+      "href",
+      "http://127.0.0.1:8000/api/health/"
+    );
+  });
+
   it("renders the login form route for guests", async () => {
     window.history.pushState({}, "", "/login");
     render(<App />);
 
-    expect(await screen.findByText(/bienvenido/i)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /iniciar sesion/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
   });
 
@@ -248,8 +289,8 @@ describe("App auth routing", () => {
     window.history.pushState({}, "", "/dashboard");
     render(<App />);
 
-    expect(await screen.findByText(/bienvenido/i)).toBeInTheDocument();
-    expect(screen.getByText(/ingresa tus credenciales/i)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /iniciar sesion/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
   });
 
   it("restores a stored session and loads dashboard metrics", async () => {
@@ -313,7 +354,9 @@ describe("App auth routing", () => {
       window.history.pushState({}, "", "/finance");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
-    expect(await screen.findByText(/finanzas & flujo de efectivo/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /finanzas y flujo de efectivo/i })
+    ).toBeInTheDocument();
 
     await act(async () => {
       window.history.pushState({}, "", "/reports");
