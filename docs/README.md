@@ -1,23 +1,34 @@
-﻿# Documentation Index
+# Documentation Index
 
-Esta carpeta es la fuente de verdad funcional y tecnica de Alternative Time.
-La documentacion esta organizada por dominio para facilitar onboarding,
-mantenimiento y trazabilidad.
+Esta carpeta concentra la documentacion funcional, tecnica y operativa de Alternative Time.
+Su objetivo es servir como referencia formal para onboarding, mantenimiento, evolucion del producto y trazabilidad de decisiones.
+
+## Alcance de la Documentacion
+
+La documentacion de este repositorio cubre:
+
+- contexto funcional del producto
+- arquitectura del sistema
+- guias de implementacion por capa
+- roadmap y backlog
+- decisiones tecnicas
+- planes de sprint historicos
+- anexos de especificacion y referencias de soporte
 
 ## Estructura
 
-- `product/`: vision funcional del producto.
-- `architecture/`: arquitectura del sistema.
-- `engineering/`: guias de implementacion por capa (backend/frontend).
-- `planning/`: roadmap, backlog y decisiones tecnicas.
+- `product/`: vision funcional y alcance del producto.
+- `architecture/`: arquitectura del sistema y decisiones estructurales.
+- `engineering/`: guias de implementacion para backend y frontend.
+- `planning/`: roadmap, backlog y decisiones de evolucion.
 - `specification/`: especificacion tecnica oficial y anexos.
-- `sprints/backend/`: planes historicos y operativos de backend.
-- `sprints/frontend/`: planes historicos y operativos de frontend.
-- `assets/ui-mockups/`: mockups y referencias visuales.
+- `sprints/backend/`: planes y registro historico de ejecucion backend.
+- `sprints/frontend/`: planes y registro historico de ejecucion frontend.
+- `assets/ui-mockups/`: referencias visuales y mockups.
 - `reference/srs/`: documentos SRS originales.
-- `reference/db/seed/`: scripts de apoyo para datos de desarrollo.
+- `reference/db/seed/`: scripts de apoyo para escenarios de desarrollo.
 
-## Mapa de lectura recomendado
+## Mapa de Lectura Recomendado
 
 1. [Product Overview](product/product-overview.md)
 2. [System Architecture](architecture/system-architecture.md)
@@ -30,21 +41,23 @@ mantenimiento y trazabilidad.
 9. [Technical Specification](specification/technical-specification.md)
 10. [Technical Specification Addendum v1.1](specification/technical-specification-addendum-v1.1.md)
 
-## Nota de planeacion actual
+## Criterio de Uso
 
-La ruta PWA / offline-first esta documentada como trabajo futuro y considera
-explicitamente el entorno real del cliente en ecosistema Apple multi-device
-(`iPhone`, `iPad`, `Mac`).
+- Los archivos en `reference/` y `assets/` funcionan como material de apoyo.
+- La documentacion activa para desarrollo vive en los `.md` organizados por dominio.
+- Las decisiones vigentes deben consolidarse en `planning/` y `specification/`.
 
-## Convencion de nombres
+## Nota de Planeacion
 
-- Carpetas: `kebab-case` por dominio (`system-architecture`, `ui-mockups`).
+La ruta PWA / offline-first se encuentra documentada como trabajo futuro y contempla el entorno operativo real del cliente en ecosistema Apple multi-device (`iPhone`, `iPad`, `Mac`).
+
+## Convencion de Nombres
+
+- Carpetas: `kebab-case` por dominio.
 - Archivos markdown: nombre descriptivo en ingles y `kebab-case`.
 - Sprints: prefijo de capa + numero + tema.
-  - Ejemplo backend: `backend-sprint-04-finance-reports.md`
-  - Ejemplo frontend: `frontend-sprint-08-layaways-payments-alerts.md`
 
-## Nota
+Ejemplos:
 
-Los artefactos en `reference/` y `assets/` son insumos de apoyo.
-La documentacion activa para desarrollo vive en los `.md` organizados por dominio.
+- `backend-sprint-04-finance-reports.md`
+- `frontend-sprint-08-layaways-payments-alerts.md`

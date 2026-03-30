@@ -1,24 +1,182 @@
-﻿# Alternative Time
+# Alternative Time - Plataforma Empresarial de Operacion Comercial para Relojeria
 
-Workspace base preparado para trabajar con:
+Software empresarial para administracion operativa, comercial y financiera de una relojeria, diseñado para centralizar inventario, clientes, ventas, apartados y reportes en una sola plataforma web.
 
-- Django REST API
-- React + Vite + Tailwind CSS
+## Vision del Sistema
+
+La plataforma integra en un mismo entorno:
+
+- Control de inventario de relojes, costos, estado y antigüedad.
+- Gestión de clientes con historial comercial y contexto operativo.
+- Registro de ventas con trazabilidad financiera.
+- Administración de apartados, pagos parciales y seguimiento.
+- Resumen financiero y reportes de negocio.
+- Autenticación y protección de acceso para operación interna.
+
+El objetivo principal es mantener control integral del ciclo comercial de cada pieza, desde su incorporación a inventario hasta su venta, apartado o seguimiento financiero posterior.
+
+## Propuesta de Valor
+
+Alternative Time está orientado a empresas que requieren:
+
+- visibilidad centralizada del inventario y su rotación
+- continuidad operativa en procesos comerciales
+- trazabilidad de clientes, ventas y movimientos financieros
+- capacidad de supervisión desde una interfaz única
+- soporte para operación diaria y análisis de gestión
+
+La solución busca reducir dispersión operativa, mejorar consistencia de datos y fortalecer el seguimiento comercial del negocio.
+
+## Alcance Funcional
+
+La plataforma cubre de forma integrada:
+
+- inventario de productos
+- base de clientes
+- flujo de ventas
+- apartados y pagos parciales
+- finanzas operativas
+- reportes ejecutivos
+- healthcheck y monitoreo básico del sistema
+
+## Arquitectura de Alto Nivel
+
+La solución está construida con una separación clara entre backend y frontend, siguiendo una organización modular por dominios de negocio.
+
+### Backend Django
+
+Backend empresarial sobre Django REST Framework, organizado por capacidades funcionales:
+
+- `users`: autenticación, sesión y datos del usuario autenticado.
+- `clients`: clientes, datos de contacto, notas e historial comercial.
+- `inventory`: catálogo de relojes, costos, estado y antigüedad.
+- `sales`: ventas, rentabilidad y relación con cliente y producto.
+- `layaways`: apartados, pagos parciales y saldo pendiente.
+- `finance`: movimientos, balances y resumen financiero.
+- `reports`: indicadores, dashboard y exportación de información.
+- `api`: utilidades transversales, healthcheck y endpoints base.
+
+### Frontend React
+
+Frontend SPA construido con React + Vite:
+
+- login protegido con JWT
+- shell autenticado con navegación lateral
+- módulos por dominio de negocio
+- healthcheck público para validación rápida del sistema
+- consumo de API configurable por entorno
+
+## Modulos del Producto
+
+### Clients
+
+Gestión de clientes y contexto comercial:
+
+- datos de contacto
+- notas
+- historial de compra
+- relación con ventas y apartados
+
+### Inventory
+
+Gestión del inventario operativo:
+
+- alta y edición de productos
+- costos y precio de venta
+- antigüedad y estado del reloj
+- importación de inventario por CSV
+
+### Sales
+
+Registro comercial de ventas:
+
+- captura de venta
+- relación con cliente y producto
+- métodos de pago
+- utilidad y margen
+
+### Layaways
+
+Control de apartados:
+
+- alta de apartado
+- pagos parciales
+- saldo pendiente
+- consulta de detalle por apartado
+
+### Finance
+
+Seguimiento financiero:
+
+- resumen financiero
+- balances por cuenta
+- movimientos manuales
+- exportación de flujo y consultas
+
+### Reports
+
+Indicadores y exportación:
+
+- dashboard summary
+- sales summary
+- inventory summary
+- exportación CSV/XLSX
+
+## Componentes Funcionales Clave
+
+- Control de acceso: autenticación JWT y separación entre rutas públicas y protegidas.
+- Inventario como fuente operativa: cada reloj mantiene estado, costo, antigüedad y trazabilidad comercial.
+- Ventas y apartados: soporte para venta directa y esquemas de pago parcial.
+- Finanzas consolidadas: balances, movimientos y resumen financiero del negocio.
+- Reportería operativa: indicadores para dashboard, inventario y ventas.
+- Importación legacy: command para migrar datos históricos desde SQL legacy hacia el modelo actual.
+
+## Integraciones y Continuidad Operativa
+
+La solución está preparada para operar con infraestructura cloud administrada y un modelo de despliegue productivo basado en servicios separados para:
+
+- backend
+- frontend
+- base de datos
+
+Por seguridad y gobierno de datos, este documento no publica credenciales reales, endpoints privados ni información sensible de infraestructura.
+
+## Seguridad y Gobierno de Plataforma
+
+La configuración actual contempla:
+
+- separación entre configuración local y producción
+- variables sensibles por entorno
+- autenticación basada en JWT
+- control de hosts permitidos
+- políticas de CORS y CSRF para frontend productivo
+- despliegue con configuración segura para cookies y HTTPS
+
+## Entorno Tecnologico
+
+- Django 6
+- Django REST Framework
+- Simple JWT
+- React 19
+- Vite
+- Tailwind CSS
+- PostgreSQL en producción
 - SQLite en desarrollo
-- PostgreSQL en produccion
-- variables de entorno centralizadas en `.env`
+- Gunicorn para despliegue WSGI
+- WhiteNoise para manejo de estáticos
+- Render como infraestructura objetivo de despliegue
 
-## Estructura
+## Estructura del Repositorio
 
 ```text
 AlternativeTime/
-|- .env
 |- backend/
 |  |- api/
 |  |- clients/
 |  |- config/
 |  |- finance/
 |  |- inventory/
+|  |- layaways/
 |  |- reports/
 |  |- sales/
 |  |- users/
@@ -27,14 +185,18 @@ AlternativeTime/
 |- frontend/
 |  |- src/
 |  |- package.json
-|  |- tailwind.config.js
 |  `- vite.config.js
-`- docs/
+|- docs/
+|- render.yaml
+|- .env.example
+`- README.md
 ```
 
-## Backend
+## Ejecucion Local
 
-Crear y activar el entorno virtual:
+### Backend
+
+Crear y activar entorno virtual:
 
 ```powershell
 python -m venv .venv
@@ -47,14 +209,14 @@ Instalar dependencias:
 .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 ```
 
-Aplicar migraciones y correr el servidor:
+Aplicar migraciones y levantar backend:
 
 ```powershell
 .\.venv\Scripts\python.exe backend\manage.py migrate
 .\.venv\Scripts\python.exe backend\manage.py runserver
 ```
 
-Validaciones recomendadas del backend:
+Validaciones recomendadas:
 
 ```powershell
 cd backend
@@ -62,79 +224,13 @@ cd backend
 ..\.venv\Scripts\python.exe manage.py test users api clients inventory sales layaways finance reports
 ```
 
-## Valores por defecto para desarrollo
-
-Si quieres dejar la base local con un usuario inicial para probar login del
-backend, puedes crearlo de dos formas.
-
-### Opcion recomendada: crear el usuario con Django
-
-```powershell
-cd backend
-..\.venv\Scripts\python.exe manage.py shell -c "from django.contrib.auth import get_user_model; User=get_user_model(); u, created = User.objects.get_or_create(username='devadmin', defaults={'email':'devadmin@example.com','first_name':'Dev','last_name':'Admin','is_staff':True,'is_superuser':True}); u.set_password('DevAdmin123!'); u.save(); print('created' if created else 'updated', u.username)"
-```
-
-Credenciales de desarrollo:
-
-- usuario: `devadmin`
-- password: `DevAdmin123!`
-
-### Opcion SQL directa para SQLite
-
-Tambien puedes usar el query guardado en:
-
-- `docs/reference/db/seed/insert_devadmin_sqlite.sql`
-
-Ese archivo inserta el mismo usuario de desarrollo directamente en la tabla
-`auth_user` de SQLite.
-
-### Login de prueba contra la API
-
-Una vez levantado el backend, puedes iniciar sesion contra:
-
-```text
-POST http://127.0.0.1:8000/api/auth/login/
-```
-
-Payload:
-
-```json
-{
-  "username": "devadmin",
-  "password": "DevAdmin123!"
-}
-```
-
-API de prueba:
+Healthcheck local:
 
 ```text
 http://127.0.0.1:8000/api/health/
 ```
 
-Endpoints backend disponibles:
-
-```text
-POST /api/auth/login/
-POST /api/auth/refresh/
-GET  /api/auth/me/
-GET|POST /api/clients/
-GET|POST /api/inventory/
-GET|POST /api/sales/
-GET|POST /api/layaways/
-GET /api/layaways/{id}/
-POST /api/layaways/{id}/payments/
-GET /api/notifications/
-GET /api/finance/summary/
-GET /api/finance/balances/
-GET|POST /api/finance/entries/
-PUT|PATCH|DELETE /api/finance/entries/{id}/
-GET /api/reports/sales-summary/
-GET /api/reports/inventory-summary/
-GET /api/reports/dashboard-summary/
-GET /api/reports/{type}/export/?format=csv|xlsx
-```
-
-## Frontend
+### Frontend
 
 Instalar dependencias:
 
@@ -142,7 +238,7 @@ Instalar dependencias:
 npm.cmd install --prefix frontend
 ```
 
-Levantar Vite:
+Levantar frontend:
 
 ```powershell
 npm.cmd run dev --prefix frontend
@@ -154,108 +250,107 @@ Frontend local:
 http://localhost:5173
 ```
 
-Variables opcionales del frontend:
-
-- `frontend/.env.example`
-- `VITE_API_BASE_URL`: URL completa del backend, por ejemplo `https://api.example.com`
-- `VITE_API_HOST`: host del backend sin protocolo, por ejemplo `api.example.com`
-
-Nota de planeacion:
-
-- Existe un roadmap documentado para evolucionar el frontend a PWA con soporte
-  offline-first, pensado especificamente para ecosistema Apple multi-device
-  (`iPhone`, `iPad`, `Mac`), sin implementacion activa todavia.
-- Referencia: `docs/planning/offline-sync-action-plan.md`
-
-Validaciones recomendadas del frontend:
+Validaciones recomendadas:
 
 ```powershell
 npm.cmd run test:run --prefix frontend
 npm.cmd run build --prefix frontend
 ```
 
-Plan operativo del frontend:
+## Variables de Entorno
 
-- `docs/sprints/frontend/frontend-sprint-01-foundations.md` a `docs/sprints/frontend/frontend-sprint-09-hardening-release.md`
+La configuración principal del backend se controla desde `.env` en la raíz del proyecto.
 
-## Variables de entorno
+Archivos de referencia:
 
-El archivo `.env` en la raiz controla el backend.
+- [.env.example](./.env.example)
+- [frontend/.env.example](./frontend/.env.example)
 
-Desarrollo con SQLite:
+Variables importantes de backend:
 
-```env
-DB_ENGINE=sqlite
-SQLITE_NAME=db.sqlite3
-```
+- `APP_ENV`
+- `DJANGO_DEBUG`
+- `DJANGO_SECRET_KEY`
+- `DATABASE_URL`
+- `DJANGO_ALLOWED_HOSTS`
+- `DJANGO_CORS_ALLOWED_ORIGINS`
+- `DJANGO_CSRF_TRUSTED_ORIGINS`
+- `FRONTEND_HOST`
 
-Produccion con PostgreSQL:
+Variables importantes de frontend:
 
-```env
-APP_ENV=production
-DJANGO_DEBUG=False
-DB_ENGINE=postgres
-POSTGRES_DB=alternative_time
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_CONN_MAX_AGE=60
-DJANGO_SECURE_SSL_REDIRECT=True
-DJANGO_SESSION_COOKIE_SECURE=True
-DJANGO_CSRF_COOKIE_SECURE=True
-DJANGO_SECURE_HSTS_SECONDS=3600
-DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS=True
-DJANGO_SECURE_HSTS_PRELOAD=True
-DJANGO_LOG_LEVEL=INFO
-```
-
-Usa `.env.example` como plantilla.
+- `VITE_API_BASE_URL`
+- `VITE_API_HOST`
 
 ## Deploy en Render
 
-El repo ya incluye un Blueprint en:
+El repositorio ya incluye blueprint listo para Render en:
 
-- `render.yaml`
+- [render.yaml](./render.yaml)
 
-Arquitectura preparada para Render:
+Servicios definidos:
 
-- `alternative-time-api`: web service Python para Django
-- `alternative-time-web`: static site para Vite
-- `alternative-time-db`: Postgres administrado por Render
+- `alternative-time-api`: backend Django
+- `alternative-time-web`: static site de frontend
+- `alternative-time-db`: PostgreSQL administrado
 
-Qué hace esta configuracion:
+Capacidades de la configuración actual:
 
-- instala el backend y corre `collectstatic`
-- ejecuta migraciones antes de cada deploy
-- levanta Django con `gunicorn`
-- publica el frontend como static site
-- reescribe `/*` a `index.html` para que `react-router-dom` funcione en produccion
-- conecta el frontend al backend usando variables de Render entre servicios
+- instalación automática del backend
+- `collectstatic`
+- migraciones al arranque del servicio
+- frontend publicado como sitio estático
+- rewrite SPA para `react-router-dom`
+- conexión automática entre frontend, backend y base de datos
 
-Pasos en Render:
+## Operacion y Mantenimiento
 
-1. Crea un nuevo Blueprint desde tu repositorio.
-2. Deja `render.yaml` como archivo de configuracion.
-3. Revisa los nombres de servicios y los planes antes de confirmar.
-4. Espera a que Render cree `alternative-time-db`, `alternative-time-api` y `alternative-time-web`.
-5. Crea un superusuario si lo necesitas:
+Management commands relevantes:
+
+- [import_legacy_data.py](./backend/api/management/commands/import_legacy_data.py)
+- [update_inventory_age.py](./backend/inventory/management/commands/update_inventory_age.py)
+
+Uso típico:
 
 ```powershell
-python backend\manage.py createsuperuser
+.\.venv\Scripts\python.exe backend\manage.py update_inventory_age
 ```
 
-Variables clave para produccion en Render:
+```powershell
+.\.venv\Scripts\python.exe backend\manage.py import_legacy_data --sql-path "C:\ruta\archivo.sql" --username admin --password <password>
+```
 
-- `APP_ENV=production`
-- `DJANGO_DEBUG=False`
-- `DATABASE_URL` desde la base Postgres de Render
-- `FRONTEND_HOST` desde el static site de Render
-- `VITE_API_HOST` desde el web service del backend
+## Documentacion Complementaria
 
-Notas de produccion:
+La documentación funcional y técnica vive en `docs/`.
 
-- Django ahora acepta `DATABASE_URL` para integrarse mejor con Render.
-- El backend sirve estaticos con WhiteNoise, util para admin y browsable API.
-- Si luego agregas dominio propio, conviene actualizar `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS` y `DJANGO_CSRF_TRUSTED_ORIGINS` con tu dominio final.
+Rutas recomendadas:
 
+- `docs/product/`
+- `docs/architecture/`
+- `docs/engineering/`
+- `docs/planning/`
+- `docs/specification/`
+- `docs/sprints/`
+
+Especialmente útiles:
+
+- [docs/architecture/system-architecture.md](./docs/architecture/system-architecture.md)
+- [docs/engineering/backend-guide.md](./docs/engineering/backend-guide.md)
+- [docs/engineering/frontend-guide.md](./docs/engineering/frontend-guide.md)
+- [docs/planning/roadmap.md](./docs/planning/roadmap.md)
+- [docs/planning/offline-sync-action-plan.md](./docs/planning/offline-sync-action-plan.md)
+
+## Estado del Producto
+
+Producto activo en evolución continua, con enfoque en control operativo, visibilidad comercial y estabilidad del flujo de trabajo para una operación empresarial de relojería.
+
+## Autor
+
+Ivan Ramos de la Torre  
+Ingeniería de Software y Minería de Datos  
+Universidad Autónoma de Guadalajara
+
+## Licencia
+
+Este repositorio no publica una licencia abierta por defecto. El uso, distribución o explotación del software debe sujetarse a la autorización correspondiente del propietario del proyecto.
