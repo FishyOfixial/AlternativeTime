@@ -1,48 +1,63 @@
-# Documentacion del Proyecto
+# Documentation Index
 
-Esta carpeta concentra la documentacion funcional y tecnica de Alternative Time.
-El objetivo es que un desarrollador nuevo pueda entender rapidamente que problema
-resuelve el sistema, como esta organizado el repositorio, que decisiones ya se
-tomaron y cual es el orden recomendado para continuar la implementacion.
+Esta carpeta concentra la documentacion funcional, tecnica y operativa de Alternative Time.
+Su objetivo es servir como referencia formal para onboarding, mantenimiento, evolucion del producto y trazabilidad de decisiones.
 
-## Mapa de documentos
+## Alcance de la Documentacion
 
-- [product-overview.md](product-overview.md): vision funcional del producto,
-  modulos principales y flujo general del negocio.
-- [architecture.md](architecture.md): arquitectura tecnica actual,
-  responsabilidades por capa y decisiones de stack.
-- [backend.md](backend.md): organizacion del backend Django REST API y
-  convenciones sugeridas para crecer.
-- [frontend.md](frontend.md): organizacion del frontend React + Vite + Tailwind
-  y patron recomendado para la integracion con la API.
-- [roadmap.md](roadmap.md): fases de implementacion propuestas para construir el
-  producto de forma incremental.
-- [backlog.md](backlog.md): tareas tecnicas iniciales listas para ejecutar.
-- [decisions.md](decisions.md): registro de decisiones tecnicas aceptadas.
+La documentacion de este repositorio cubre:
 
-## Artefactos fuente existentes
+- contexto funcional del producto
+- arquitectura del sistema
+- guias de implementacion por capa
+- roadmap y backlog
+- decisiones tecnicas
+- planes de sprint historicos
+- anexos de especificacion y referencias de soporte
 
-- `SRS_AlternativeTime_v1.0.pdf`
-- `SRS_AlternativeTime_v1.0.docx`
-- `design/`
+## Estructura
 
-Los archivos del SRS y los mockups visuales en `design/` se consideran insumos
-de referencia. La documentacion Markdown de esta carpeta los resume y los conecta
-con la implementacion real del repositorio.
+- `product/`: vision funcional y alcance del producto.
+- `architecture/`: arquitectura del sistema y decisiones estructurales.
+- `engineering/`: guias de implementacion para backend y frontend.
+- `planning/`: roadmap, backlog y decisiones de evolucion.
+- `specification/`: especificacion tecnica oficial y anexos.
+- `sprints/backend/`: planes y registro historico de ejecucion backend.
+- `sprints/frontend/`: planes y registro historico de ejecucion frontend.
+- `assets/ui-mockups/`: referencias visuales y mockups.
+- `reference/srs/`: documentos SRS originales.
+- `reference/db/seed/`: scripts de apoyo para escenarios de desarrollo.
 
-## Orden recomendado de lectura
+## Mapa de Lectura Recomendado
 
-1. [product-overview.md](product-overview.md)
-2. [architecture.md](architecture.md)
-3. [backend.md](backend.md)
-4. [frontend.md](frontend.md)
-5. [roadmap.md](roadmap.md)
-6. [backlog.md](backlog.md)
-7. [decisions.md](decisions.md)
+1. [Product Overview](product/product-overview.md)
+2. [System Architecture](architecture/system-architecture.md)
+3. [Backend Guide](engineering/backend-guide.md)
+4. [Frontend Guide](engineering/frontend-guide.md)
+5. [Roadmap](planning/roadmap.md)
+6. [Backlog](planning/backlog.md)
+7. [Decisions Log](planning/decisions-log.md)
+8. [Offline Sync Action Plan](planning/offline-sync-action-plan.md)
+9. [Technical Specification](specification/technical-specification.md)
+10. [Technical Specification Addendum v1.1](specification/technical-specification-addendum-v1.1.md)
 
-## Uso esperado de `docs/`
+## Criterio de Uso
 
-- Fuente principal de verdad tecnica del proyecto.
-- Lugar para registrar decisiones estables del sistema.
-- Punto de entrada para onboarding del equipo.
-- Espacio para mantener trazabilidad entre vision funcional y ejecucion tecnica.
+- Los archivos en `reference/` y `assets/` funcionan como material de apoyo.
+- La documentacion activa para desarrollo vive en los `.md` organizados por dominio.
+- Las decisiones vigentes deben consolidarse en `planning/` y `specification/`.
+
+## Nota de Planeacion
+
+La ruta PWA / offline-first se encuentra documentada como trabajo futuro y contempla el entorno operativo real del cliente en ecosistema Apple multi-device (`iPhone`, `iPad`, `Mac`).
+
+## Convencion de Nombres
+
+- Carpetas: `kebab-case` por dominio.
+- Archivos markdown: nombre descriptivo en ingles y `kebab-case`.
+- Sprints: prefijo de capa + numero + tema.
+
+Ejemplos:
+
+- `backend-sprint-04-finance-reports.md`
+- `frontend-sprint-08-layaways-payments-alerts.md`
