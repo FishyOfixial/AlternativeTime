@@ -181,10 +181,10 @@ class InventoryItem(TimestampedSoftDeleteModel):
 
     @property
     def utilidad(self):
-        total_cost = self.total_purchase_cost
-        if total_cost <= 0:
+        sale_price = self.price or Decimal("0.00")
+        if sale_price <= 0:
             return Decimal("0.00")
-        return (self.estimated_profit / total_cost) * Decimal("100")
+        return (self.estimated_profit / sale_price) * Decimal("100")
 
     def clean_runtime_state(self):
         if not self.purchase_date:

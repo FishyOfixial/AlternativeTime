@@ -1,4 +1,4 @@
-import { apiJson } from "./http";
+import { apiJson, resolveApiUrl } from "./http";
 
 export function getFinanceSummary(accessToken) {
   return apiJson("/api/finance/summary/", {
@@ -34,7 +34,7 @@ export function listFinanceEntries(accessToken, filters = {}) {
 }
 
 export async function createFinanceEntry(accessToken, payload) {
-  const response = await fetch("/api/finance/entries/", {
+  const response = await fetch(resolveApiUrl("/api/finance/entries/"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,

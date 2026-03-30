@@ -1,4 +1,4 @@
-import { apiJson } from "./http";
+import { apiJson, resolveApiUrl } from "./http";
 
 function authHeaders(accessToken, extraHeaders = {}) {
   return {
@@ -27,7 +27,7 @@ export function getLayaway(accessToken, layawayId) {
 }
 
 export async function createLayaway(accessToken, payload) {
-  const response = await fetch("/api/layaways/", {
+  const response = await fetch(resolveApiUrl("/api/layaways/"), {
     method: "POST",
     headers: authHeaders(accessToken, {
       "Content-Type": "application/json",
@@ -49,7 +49,7 @@ export async function createLayaway(accessToken, payload) {
 }
 
 export async function createLayawayPayment(accessToken, layawayId, payload) {
-  const response = await fetch(`/api/layaways/${layawayId}/payments/`, {
+  const response = await fetch(resolveApiUrl(`/api/layaways/${layawayId}/payments/`), {
     method: "POST",
     headers: authHeaders(accessToken, {
       "Content-Type": "application/json",
