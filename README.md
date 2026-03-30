@@ -154,6 +154,12 @@ Frontend local:
 http://localhost:5173
 ```
 
+Variables opcionales del frontend:
+
+- `frontend/.env.example`
+- `VITE_API_BASE_URL`: URL completa del backend, por ejemplo `https://api.example.com`
+- `VITE_API_HOST`: host del backend sin protocolo, por ejemplo `api.example.com`
+
 Nota de planeacion:
 
 - Existe un roadmap documentado para evolucionar el frontend a PWA con soporte
@@ -205,4 +211,51 @@ DJANGO_LOG_LEVEL=INFO
 ```
 
 Usa `.env.example` como plantilla.
+
+## Deploy en Render
+
+El repo ya incluye un Blueprint en:
+
+- `render.yaml`
+
+Arquitectura preparada para Render:
+
+- `alternative-time-api`: web service Python para Django
+- `alternative-time-web`: static site para Vite
+- `alternative-time-db`: Postgres administrado por Render
+
+Qué hace esta configuracion:
+
+- instala el backend y corre `collectstatic`
+- ejecuta migraciones antes de cada deploy
+- levanta Django con `gunicorn`
+- publica el frontend como static site
+- reescribe `/*` a `index.html` para que `react-router-dom` funcione en produccion
+- conecta el frontend al backend usando variables de Render entre servicios
+
+Pasos en Render:
+
+1. Crea un nuevo Blueprint desde tu repositorio.
+2. Deja `render.yaml` como archivo de configuracion.
+3. Revisa los nombres de servicios y los planes antes de confirmar.
+4. Espera a que Render cree `alternative-time-db`, `alternative-time-api` y `alternative-time-web`.
+5. Crea un superusuario si lo necesitas:
+
+```powershell
+python backend\manage.py createsuperuser
+```
+
+Variables clave para produccion en Render:
+
+- `APP_ENV=production`
+- `DJANGO_DEBUG=False`
+- `DATABASE_URL` desde la base Postgres de Render
+- `FRONTEND_HOST` desde el static site de Render
+- `VITE_API_HOST` desde el web service del backend
+
+Notas de produccion:
+
+- Django ahora acepta `DATABASE_URL` para integrarse mejor con Render.
+- El backend sirve estaticos con WhiteNoise, util para admin y browsable API.
+- Si luego agregas dominio propio, conviene actualizar `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS` y `DJANGO_CSRF_TRUSTED_ORIGINS` con tu dominio final.
 

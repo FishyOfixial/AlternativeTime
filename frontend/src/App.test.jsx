@@ -273,7 +273,7 @@ describe("App auth routing", () => {
     expect(screen.getAllByText(/api disponible/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: /ver health endpoint/i })).toHaveAttribute(
       "href",
-      "http://127.0.0.1:8000/api/health/"
+      "/api/health/"
     );
   });
 

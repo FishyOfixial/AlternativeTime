@@ -1,5 +1,27 @@
+function trimTrailingSlash(value) {
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+}
+
+export function resolveApiUrl(path) {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  const explicitBaseUrl = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || "");
+  if (explicitBaseUrl) {
+    return `${explicitBaseUrl}${path}`;
+  }
+
+  const apiHost = trimTrailingSlash(import.meta.env.VITE_API_HOST || "");
+  if (apiHost) {
+    return `https://${apiHost}${path}`;
+  }
+
+  return path;
+}
+
 export async function apiRequest(path, options = {}) {
-  const response = await fetch(path, {
+  const response = await fetch(resolveApiUrl(path), {
     headers: {
       Accept: "application/json",
       ...options.headers

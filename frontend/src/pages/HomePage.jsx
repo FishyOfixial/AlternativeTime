@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
 import { getHealth } from "../services/health";
+import { resolveApiUrl } from "../services/http";
 
 const initialHealth = {
   status: "loading",
@@ -40,6 +41,7 @@ function getStatusAccent(status) {
 export default function HomePage() {
   const [health, setHealth] = useState(initialHealth);
   const accent = getStatusAccent(health.status);
+  const healthEndpointUrl = resolveApiUrl("/api/health/");
 
   useEffect(() => {
     let active = true;
@@ -162,7 +164,7 @@ export default function HomePage() {
                 </NavLink>
                 <a
                   className="inline-flex items-center justify-center rounded-lg border border-[#ddcfba] bg-[#fcf8f2] px-5 py-3 text-sm font-semibold text-[#7d6751] transition hover:bg-[#f3ecde]"
-                  href="http://127.0.0.1:8000/api/health/"
+                  href={healthEndpointUrl}
                   rel="noreferrer"
                   target="_blank"
                 >
