@@ -13,17 +13,15 @@ services:
         - .env.example
     envVars:
       - key: APP_ENV
-        value: production
+        value: staging
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: alternative-time-db-dev
-          property: connectionString
-      - key: POSTGRES_SSL_REQUIRE
-        value: "True"
+      - key: DB_ENGINE
+        value: sqlite
+      - key: SQLITE_NAME
+        value: db.dev.sqlite3
       - key: DJANGO_ALLOWED_HOSTS
         value: 127.0.0.1,localhost,alternative-time-api-dev.onrender.com
       - key: DJANGO_CORS_ALLOWED_ORIGINS
@@ -50,7 +48,3 @@ services:
     envVars:
       - key: VITE_API_HOST
         value: alternative-time-api-dev.onrender.com
-
-databases:
-  - name: alternative-time-db-dev
-    plan: free
