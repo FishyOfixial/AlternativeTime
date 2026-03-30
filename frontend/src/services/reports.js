@@ -1,4 +1,4 @@
-import { apiJson } from "./http";
+import { apiJson, resolveApiUrl } from "./http";
 
 export function getSalesSummary(accessToken) {
   return apiJson("/api/reports/sales-summary/", {
@@ -48,7 +48,7 @@ export async function exportReport(accessToken, reportType, format, params = {})
   }
   const query = searchParams.toString();
   const response = await fetch(
-    `/api/reports/${reportType}/export/${query ? `?${query}` : ""}`,
+    resolveApiUrl(`/api/reports/${reportType}/export/${query ? `?${query}` : ""}`),
     {
       headers: {
         Authorization: `Bearer ${accessToken}`

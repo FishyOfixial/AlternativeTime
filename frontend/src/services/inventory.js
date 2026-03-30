@@ -1,4 +1,4 @@
-import { apiJson, apiRequest } from "./http";
+import { apiJson, apiRequest, resolveApiUrl } from "./http";
 
 function authHeaders(accessToken, extraHeaders = {}) {
   return {
@@ -75,7 +75,7 @@ export function getInventoryItem(accessToken, itemId) {
 }
 
 export function createInventoryItem(accessToken, payload) {
-  return fetch("/api/inventory/", {
+  return fetch(resolveApiUrl("/api/inventory/"), {
     method: "POST",
     headers: authHeaders(accessToken, {
       Accept: "application/json",
@@ -86,7 +86,7 @@ export function createInventoryItem(accessToken, payload) {
 }
 
 export function updateInventoryItem(accessToken, itemId, payload) {
-  return fetch(`/api/inventory/${itemId}/`, {
+  return fetch(resolveApiUrl(`/api/inventory/${itemId}/`), {
     method: "PATCH",
     headers: authHeaders(accessToken, {
       Accept: "application/json",
@@ -107,7 +107,7 @@ export async function importInventoryCsv(accessToken, file) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch("/api/inventory/import-csv/", {
+  const response = await fetch(resolveApiUrl("/api/inventory/import-csv/"), {
     method: "POST",
     headers: authHeaders(accessToken),
     body: formData

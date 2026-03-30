@@ -1,4 +1,4 @@
-import { apiJson } from "./http";
+import { apiJson, resolveApiUrl } from "./http";
 
 function authHeaders(accessToken, extraHeaders = {}) {
   return {
@@ -23,7 +23,7 @@ export function listSales(accessToken, filters = {}) {
 }
 
 export async function createSale(accessToken, payload) {
-  const response = await fetch("/api/sales/", {
+  const response = await fetch(resolveApiUrl("/api/sales/"), {
     method: "POST",
     headers: authHeaders(accessToken, {
       "Content-Type": "application/json",
