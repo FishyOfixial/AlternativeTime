@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import InventoryForm from "../components/inventory/InventoryForm";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
@@ -8,6 +8,7 @@ import {
   createInventoryItem,
   deleteInventoryItem,
   getInventoryItem,
+  listInventory,
   updateInventoryItem
 } from "../services/inventory";
 
@@ -23,8 +24,22 @@ export default function InventoryFormPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [existingProductIds, setExistingProductIds] = useState([]);
+  const emptyDefaultValues = useMemo(() => ({}), []);
 
   useEffect(() => {
+    async function loadExistingIds() {
+      try {
+        const items = await listInventory(accessToken);
+        setExistingProductIds(items.map((item) => item.product_id).filter(Boolean));
+      } catch {
+        setExistingProductIds([]);
+      }
+    }
+
+    loadExistingIds();
+
     if (!isEdit) {
       return;
     }
@@ -47,11 +62,10 @@ export default function InventoryFormPage() {
     loadItem();
   }, [accessToken, isEdit, itemId]);
 
-  const title = useMemo(() => (isEdit ? "Editar reloj" : "Nuevo producto"), [isEdit]);
-
   async function handleSubmit(payload) {
     setIsSaving(true);
     setSubmitError("");
+    setFieldErrors({});
 
     try {
       if (isEdit) {
@@ -61,8 +75,33 @@ export default function InventoryFormPage() {
       }
 
       navigate("/inventory", { replace: true });
-    } catch {
-      setSubmitError("No pudimos guardar el reloj. Revisa la informacion e intenta de nuevo.");
+    } catch (error) {
+      const apiErrors = error?.data || {};
+      const hasFieldErrors = Object.keys(apiErrors).length > 0;
+
+      if (hasFieldErrors) {
+        const normalizedFieldErrors = {};
+        function assignErrors(source, prefix = "") {
+          Object.entries(source).forEach(([key, value]) => {
+            const fieldKey = prefix ? `${prefix}.${key}` : key;
+            if (Array.isArray(value)) {
+              normalizedFieldErrors[fieldKey] = value.join(" ");
+              return;
+            }
+            if (value && typeof value === "object") {
+              assignErrors(value, fieldKey);
+              return;
+            }
+            normalizedFieldErrors[fieldKey] = String(value);
+          });
+        }
+        assignErrors(apiErrors);
+        setFieldErrors(normalizedFieldErrors);
+        const firstMessage = Object.values(normalizedFieldErrors)[0];
+        setSubmitError(firstMessage || "Revisa los campos marcados.");
+      } else {
+        setSubmitError("No pudimos guardar el reloj. Revisa la informacion e intenta de nuevo.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -94,34 +133,18 @@ export default function InventoryFormPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="flex flex-wrap items-start justify-between gap-4">
-        <h1 className="font-serif text-4xl tracking-tight text-[#2a221b]">{title}</h1>
-        <div className="flex flex-wrap gap-3">
-          <NavLink className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-sm text-[#7d6751]" to="/inventory">
-            Cancelar
-          </NavLink>
-          {isEdit ? (
-            <button
-              className="rounded-md border border-[#dec5bd] bg-[#fff4f1] px-4 py-2 text-sm text-[#8d5b4d]"
-              disabled={isDeleting}
-              onClick={handleDelete}
-              type="button"
-            >
-              {isDeleting ? "Eliminando..." : "Eliminar"}
-            </button>
-          ) : null}
-        </div>
-      </section>
-
-      <InventoryForm
-        defaultValues={pageState.item || {}}
-        isEdit={isEdit}
-        isSubmitting={isSaving}
-        onSubmit={handleSubmit}
-        submitError={submitError}
-        submitLabel={isEdit ? "Guardar reloj" : "Guardar reloj →"}
-      />
-    </div>
+    <InventoryForm
+      defaultValues={pageState.item || emptyDefaultValues}
+      existingProductIds={existingProductIds}
+      isEdit={isEdit}
+      fieldErrors={fieldErrors}
+      isSubmitting={isSaving}
+      isDeleting={isDeleting}
+      onDelete={handleDelete}
+      onSubmit={handleSubmit}
+      submitError={submitError}
+      submitLabel={isEdit ? "Guardar reloj" : "Guardar reloj"}
+      cancelPath="/inventory"
+    />
   );
 }

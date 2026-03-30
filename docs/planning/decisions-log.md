@@ -179,3 +179,30 @@ release. Reduce riesgo operativo antes de habilitar nuevas capacidades.
 **Estado**
 
 Aprobada.
+
+## DEC-010 Estrategia offline-first por fases (sin implementacion inmediata)
+
+**Decision**
+
+Adoptar una estrategia offline-first en fases, iniciando por planeacion tecnica
+y PWA base antes de habilitar escrituras offline en flujos criticos.
+
+**Contexto**
+
+Existe interes de negocio por operacion con conectividad limitada, pero los
+modulos actuales (ventas, apartados, finanzas, inventario) tienen reglas
+transaccionales sensibles y alto riesgo de conflicto/duplicados.
+El contexto real del cliente es multi-device dentro del ecosistema Apple
+(`iPhone`, `iPad`, `Mac`), con restricciones reales de Safari/PWA en iOS.
+
+**Impacto**
+
+Permite avanzar con riesgo controlado: primero base PWA + lectura cacheada, y
+despues sincronizacion de escrituras con idempotencia y resolucion de
+conflictos.
+Tambien obliga a no depender de `background sync` como si fuera app nativa, a
+usar sincronizacion por eventos visibles y a modelar estados de sync en la UX.
+
+**Estado**
+
+Aprobada.

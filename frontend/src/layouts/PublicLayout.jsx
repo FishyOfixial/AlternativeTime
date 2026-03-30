@@ -6,7 +6,7 @@ export default function PublicLayout() {
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
         <header className="mb-8 flex items-center justify-between gap-6 border-b border-[#dacdb8] pb-6">
           <div>
-            <p className="eyebrow">Alternative Time Co.</p>
+            <p className="eyebrow font-brand !tracking-[0.2em]">Alternative Time Co.</p>
             <h1 className="mt-3 font-serif text-2xl tracking-tight text-[#2a221b] sm:text-3xl">
               Vintage · Classic · Timeless
             </h1>

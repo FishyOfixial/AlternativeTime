@@ -67,7 +67,7 @@ export const rangeOptions = [
 ];
 
 export const reportFilterMap = {
-  "sales-by-month": ["date_from", "date_to", "brand", "channel", "payment_method"],
+  "sales-by-month": ["brand", "channel", "payment_method"],
   "profit-by-period": ["date_from", "date_to"],
   "sales-by-brand": ["date_from", "date_to", "brand", "channel", "payment_method"],
   "top-products": ["date_from", "date_to", "brand", "channel", "payment_method"],

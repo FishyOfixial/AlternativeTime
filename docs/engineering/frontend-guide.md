@@ -73,6 +73,31 @@ La suite cubre rutas protegidas principales y manejo de errores de servicios.
 - Sprint 1 a 8: implementados
 - Sprint 9: hardening y cierre de release en ejecucion
 
+## Roadmap PWA / offline-first
+
+La implementacion PWA offline-first esta planeada, no iniciada. La referencia
+principal vive en:
+
+- `docs/planning/offline-sync-action-plan.md`
+
+Lineamientos aprobados:
+
+- el backend se mantiene como fuente de verdad
+- el MVP offline prioriza lectura sobre escritura
+- no se habilitan en la primera iteracion `sales`, `layaways`, `finance` ni
+  cambios transaccionales criticos de `inventory`
+- la sincronizacion no debe depender de `background sync` prolongado en iOS
+- el entorno objetivo real es Apple multi-device: `iPhone`, `iPad`, `Mac`
+
+Estados de sincronizacion previstos para UX:
+
+- `Local (no sincronizado)`
+- `Pendiente de envio`
+- `Sincronizando`
+- `Sincronizado`
+- `Error`
+- `Conflicto`
+
 ## Convenciones vigentes
 
 - estados `loading/error/empty/success` reutilizables

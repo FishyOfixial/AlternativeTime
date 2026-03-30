@@ -14,6 +14,13 @@ export const layawayStatusOptions = [
   { value: "cancelled", label: layawayStatusLabels.cancelled }
 ];
 
+export const layawayViewOptions = [
+  { value: "all", label: "Todo" },
+  { value: "active", label: "Activos" },
+  { value: "overdue", label: "Vencidos" },
+  { value: "due_soon", label: "Por vencer" }
+];
+
 export const layawayAccountOptions = Object.entries(accountLabels).map(([value, label]) => ({
   value,
   label
@@ -28,8 +35,8 @@ export function buildInitialLayawayFilters() {
   return {
     status: "all",
     customer: "",
-    date_from: "",
-    date_to: ""
+    query: "",
+    view: "all"
   };
 }
 

@@ -1,15 +1,25 @@
-﻿export default function SaleCustomerSection({
+export default function SaleCustomerSection({
   clients,
   selectedClient,
   formValues,
   onChange,
-  fieldErrors
+  fieldErrors,
+  onOpenCreateClient
 }) {
   return (
-    <section className="panel-surface p-5">
-      <h2 className="font-serif text-2xl text-[#2a221b]">Datos del cliente</h2>
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <label className="block md:col-span-2">
+    <section className="panel-surface h-full p-5">
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="font-serif text-2xl text-[#2a221b]">Datos del cliente</h2>
+        <button
+          className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-xs text-[#7d6751] transition hover:bg-[#f3ecde]"
+          onClick={onOpenCreateClient}
+          type="button"
+        >
+          Crear cliente
+        </button>
+      </div>
+      <div className="mt-4 grid gap-4">
+        <label className="block">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
             Cliente existente
           </span>
@@ -19,13 +29,16 @@
             onChange={onChange}
             value={formValues.customer}
           >
-            <option value="">Crear nuevo cliente</option>
+            <option value="">Selecciona un cliente</option>
             {clients.map((client) => (
               <option key={client.id} value={client.id}>
                 {client.name} - {client.phone || "sin telefono"}
               </option>
             ))}
           </select>
+          {fieldErrors.customer ? (
+            <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.customer}</p>
+          ) : null}
         </label>
       </div>
 
@@ -40,84 +53,18 @@
           <p className="mt-1 text-sm text-[#8c7963]">
             {selectedClient?.phone || "Sin telefono"} - {selectedClient?.instagram_handle || "Sin IG"}
           </p>
+          {selectedClient?.email ? (
+            <p className="mt-1 text-sm text-[#8c7963]">{selectedClient.email}</p>
+          ) : null}
         </div>
       ) : (
-        <div className="mt-5 rounded-xl border border-[#eadfcd] bg-[#fffdf9] p-4">
+        <div className="mt-5 rounded-xl border border-dashed border-[#eadfcd] bg-[#fffdf9] p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-            Datos del nuevo cliente
+            Cliente requerido
           </p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                Nombre del cliente
-              </span>
-              <input
-                className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                name="customer_name"
-                onChange={onChange}
-                placeholder="Nombre del comprador"
-                value={formValues.customer_name}
-              />
-              {fieldErrors.customer_name ? (
-                <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.customer_name}</p>
-              ) : null}
-            </label>
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                Contacto (telefono / Instagram)
-              </span>
-              <input
-                className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                name="customer_contact"
-                onChange={onChange}
-                placeholder="33 1234 5678 / @usuario"
-                value={formValues.customer_contact}
-              />
-              {fieldErrors.customer_contact ? (
-                <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.customer_contact}</p>
-              ) : null}
-            </label>
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                Email
-              </span>
-              <input
-                className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                name="customer_email"
-                onChange={onChange}
-                placeholder="correo@ejemplo.com"
-                type="email"
-                value={formValues.customer_email}
-              />
-              {fieldErrors.customer_email ? (
-                <p className="mt-2 text-xs text-[#9d5c4b]">{fieldErrors.customer_email}</p>
-              ) : null}
-            </label>
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                Direccion
-              </span>
-              <input
-                className="mt-2 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                name="customer_address"
-                onChange={onChange}
-                placeholder="Ciudad / colonia / referencia"
-                value={formValues.customer_address}
-              />
-            </label>
-            <label className="md:col-span-2 block">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">
-                Notas del cliente
-              </span>
-              <textarea
-                className="mt-2 min-h-20 w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3"
-                name="customer_notes"
-                onChange={onChange}
-                placeholder="Preferencias, referencias, etc."
-                value={formValues.customer_notes}
-              />
-            </label>
-          </div>
+          <p className="mt-3 text-sm text-[#8c7963]">
+            Selecciona un cliente existente o crea uno nuevo desde el modal.
+          </p>
         </div>
       )}
     </section>

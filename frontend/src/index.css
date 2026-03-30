@@ -16,6 +16,7 @@
 
 html {
   min-height: 100%;
+  min-height: 100dvh;
   background:
     linear-gradient(180deg, rgba(179, 143, 73, 0.08), rgba(179, 143, 73, 0.02)),
     #f4efe5;
@@ -25,6 +26,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at top left, rgba(178, 136, 62, 0.08), transparent 25%),
     linear-gradient(180deg, #f7f2e9 0%, #f2ecdf 100%);
@@ -46,14 +48,46 @@ select {
   font: inherit;
 }
 
+input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid #b69556;
+  outline-offset: 2px;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 .font-serif {
   font-family: inherit !important;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
+.font-brand {
+  font-family: "Cormorant SC", serif !important;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 @layer components {
@@ -67,6 +101,7 @@ select {
 
   .page-shell {
     @apply min-h-screen bg-[#f4efe5] text-[#2a221b];
+    min-height: 100dvh;
   }
 
   .eyebrow {
@@ -82,7 +117,7 @@ select {
   }
 
   .stat-card {
-    @apply rounded-2xl border border-[#ddcfba] bg-[#fcf8f2] p-5;
+    @apply rounded-2xl border border-[#ddcfba] bg-[#fcf8f2] px-4 sm:py-4 py-2;
   }
 
   .gold-button {

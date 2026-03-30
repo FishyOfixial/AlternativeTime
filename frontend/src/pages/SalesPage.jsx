@@ -12,6 +12,7 @@ import { channelLabels, paymentLabels } from "../constants/sales";
 import { listSales } from "../services/sales";
 import {
   buildMonthOptions,
+  exportSalesSpreadsheet,
   formatCurrency,
   formatDate,
   getBrandFromLabel,
@@ -109,9 +110,22 @@ export default function SalesPage() {
     };
   }, [filteredItems]);
 
+  function handleExport() {
+    exportSalesSpreadsheet({
+      items: filteredItems,
+      formatDate,
+      formatCurrency,
+      channelLabels,
+      paymentLabels
+    });
+  }
+
   return (
     <div className="space-y-6">
-      <SalesHeader />
+      <SalesHeader
+        isExportDisabled={filteredItems.length === 0}
+        onExport={handleExport}
+      />
 
       {successMessage ? (
         <div className="rounded-xl border border-[#d9e5d7] bg-[#edf7ed] px-4 py-3 text-sm text-[#4c6d50]">

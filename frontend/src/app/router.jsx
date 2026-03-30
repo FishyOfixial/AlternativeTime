@@ -4,7 +4,6 @@ import PublicOnlyRoute from "../components/auth/PublicOnlyRoute";
 import ClientDetailPage from "../pages/ClientDetailPage";
 import ClientsPage from "../pages/ClientsPage";
 import AuthenticatedLayout from "../layouts/AuthenticatedLayout";
-import PublicLayout from "../layouts/PublicLayout";
 import DashboardPage from "../pages/DashboardPage";
 import HomePage from "../pages/HomePage";
 import InventoryFormPage from "../pages/InventoryFormPage";
@@ -34,11 +33,12 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/healthcheck" element={<Navigate to="/healthcheck/" replace />} />
+        <Route path="/healthcheck/" element={<HomePage />} />
+
         <Route element={<PublicOnlyRoute />}>
-          <Route element={<PublicLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-          </Route>
+          <Route index element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
         </Route>
 
         <Route element={<ProtectedRoute />}>
@@ -71,7 +71,7 @@ export default function AppRouter() {
           </Route>
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

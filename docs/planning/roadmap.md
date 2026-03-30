@@ -49,6 +49,47 @@
 - reduccion de deuda tecnica y modularizacion
 - checklist de release y validacion final
 
+## Fase 7: offline-first y PWA (planeacion)
+
+**Estado**: Planeada (no iniciada).
+
+- PWA base instalable y cache de shell
+- persistencia local para lectura
+- cola de sincronizacion y estrategia de conflictos
+- hardening transaccional para evitar duplicados y drift de datos
+- soporte prioritario para ecosistema Apple multi-device (`iPhone`, `iPad`, `Mac`)
+
+Ver detalle en `docs/planning/offline-sync-action-plan.md`.
+
+### Estimacion tentativa (planeacion)
+
+> Estimacion para equipo pequeno, alcance controlado y entregas secuenciales.
+> Se revisa al cierre de cada fase (no es compromiso fijo).
+
+| Subfase offline-first | Alcance resumido | Duracion estimada | Riesgo |
+| --- | --- | --- | --- |
+| Fase 7.1 - PWA base | Instalable + app shell offline + conectividad | 1 semana | Bajo |
+| Fase 7.2 - Lectura offline | Cache local de dashboard/clientes/inventario | 2 semanas | Medio |
+| Fase 7.3 - Escritura offline baja | Cola offline para clientes + reintentos | 2 semanas | Medio |
+| Fase 7.4 - Sync robusto | Delta sync + versionado + 409 conflictos | 3 semanas | Medio/Alto |
+| Fase 7.5 - Modulos criticos | Inventario/ventas/apartados/finanzas graduales | 3-5 semanas | Alto |
+| Fase 7.6 - Hardening final | QA offline, telemetria y playbooks | 2 semanas | Medio |
+
+### Criterio de avance entre subfases
+
+- No iniciar subfase siguiente sin cerrar criterios de terminado de la actual.
+- Mantener `sales`, `layaways` y `finance` offline deshabilitados hasta completar 7.4.
+- Liberar por feature flags y smoke tests en entorno controlado.
+- Validar primero comportamiento real en Safari iPhone/iPad y Safari/Chrome en Mac.
+
+### Consideraciones operativas de Fase 7
+
+- El MVP offline no asume sincronizacion silenciosa prolongada en segundo plano en iOS.
+- La sincronizacion se dispara por apertura, reconexion y acciones del usuario.
+- El sistema debe exponer estados de sincronizacion visibles:
+  `Local`, `Pendiente de envio`, `Sincronizando`, `Sincronizado`, `Error`, `Conflicto`.
+- La primera iteracion no replica la DB completa en cliente.
+
 ## Nota de alcance
 
 `Usuarios` y control por roles permanecen ocultos en UI hasta nueva definicion de producto.

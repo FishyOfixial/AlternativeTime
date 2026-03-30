@@ -1,15 +1,14 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import ClientFormModal from "../components/clients/ClientFormModal";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
 import SaleCustomerSection from "../components/sales/SaleCustomerSection";
 import SaleHoldPanel from "../components/sales/SaleHoldPanel";
-import SalePaymentSection from "../components/sales/SalePaymentSection";
 import SaleProductSection from "../components/sales/SaleProductSection";
 import SaleSummaryPanel from "../components/sales/SaleSummaryPanel";
 import SaleTransactionSection from "../components/sales/SaleTransactionSection";
 import SalesFormHeader from "../components/sales/SalesFormHeader";
-import SalesInfoAlert from "../components/sales/SalesInfoAlert";
 import { useAuth } from "../contexts/AuthContext";
 import { buildInitialSaleForm, channelOptions, paymentOptions } from "../constants/sales";
 import { createClient, listClients } from "../services/clients";
@@ -20,6 +19,7 @@ import { formatCurrency } from "../utils/sales";
 export default function SalesFormPage() {
   const { accessToken } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [inventoryState, setInventoryState] = useState({
     status: "loading",
     items: []
@@ -30,9 +30,13 @@ export default function SalesFormPage() {
   });
   const [formValues, setFormValues] = useState(buildInitialSaleForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [clientModalError, setClientModalError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [clientSuccess, setClientSuccess] = useState("");
+  const preselectedCustomer = searchParams.get("customer");
 
   useEffect(() => {
     async function loadInventory() {
@@ -50,7 +54,12 @@ export default function SalesFormPage() {
     async function loadClients() {
       try {
         const items = await listClients(accessToken);
-        setClientsState({ status: "success", items });
+        const sortedItems = [...items].sort((left, right) =>
+          String(left.name || "").localeCompare(String(right.name || ""), "es", {
+            sensitivity: "base"
+          })
+        );
+        setClientsState({ status: "success", items: sortedItems });
       } catch {
         setClientsState({ status: "error", items: [] });
       }
@@ -59,6 +68,29 @@ export default function SalesFormPage() {
     loadInventory();
     loadClients();
   }, [accessToken]);
+
+  useEffect(() => {
+    if (!preselectedCustomer || clientsState.status !== "success") {
+      return;
+    }
+
+    const exists = clientsState.items.some(
+      (client) => String(client.id) === String(preselectedCustomer)
+    );
+    if (!exists) {
+      return;
+    }
+
+    setFormValues((current) => ({
+      ...current,
+      customer: String(preselectedCustomer),
+      customer_name: "",
+      customer_contact: "",
+      customer_email: "",
+      customer_address: "",
+      customer_notes: ""
+    }));
+  }, [clientsState.items, clientsState.status, preselectedCustomer]);
 
   const selectedItem = useMemo(
     () => inventoryState.items.find((item) => String(item.id) === String(formValues.product)),
@@ -85,53 +117,26 @@ export default function SalesFormPage() {
         const nextItem = inventoryState.items.find((item) => String(item.id) === value);
         next.amount_paid = nextItem ? String(nextItem.price || "") : "";
       }
-      if (name === "customer") {
-        if (value) {
-          next.customer_name = "";
-          next.customer_contact = "";
-        }
+      if (name === "customer" && value) {
+        next.customer_name = "";
+        next.customer_contact = "";
       }
       return next;
     });
   }
 
-  function handlePaymentChange(value) {
-    setFormValues((current) => ({ ...current, payment_method: value }));
-  }
-
   function handleRegisterLayaway() {
-    if (!formValues.product) {
+    if (!formValues.product || !formValues.customer) {
       return;
     }
     navigate("/layaways", {
       state: {
         openCreate: true,
         prefillProductId: String(formValues.product),
-        prefillAgreedPrice: formValues.amount_paid || ""
+        prefillAgreedPrice: formValues.amount_paid || "",
+        prefillCustomerId: String(formValues.customer)
       }
     });
-  }
-
-  function buildClientPayload() {
-    const name = formValues.customer_name.trim();
-    const contact = formValues.customer_contact.trim();
-    let phone = "";
-    let instagram_handle = "";
-
-    if (contact.startsWith("@")) {
-      instagram_handle = contact.slice(1);
-    } else {
-      phone = contact;
-    }
-
-    return {
-      name,
-      phone,
-      instagram_handle,
-      email: formValues.customer_email.trim(),
-      address: formValues.customer_address.trim(),
-      notes: formValues.customer_notes.trim()
-    };
   }
 
   function parseValidationError(error) {
@@ -151,28 +156,46 @@ export default function SalesFormPage() {
     return { fields, message };
   }
 
-  function validateNewClientInputs() {
-    const errors = {};
-    const name = formValues.customer_name.trim();
-    const contact = formValues.customer_contact.trim();
-    const email = formValues.customer_email.trim();
+  async function handleCreateClient(payload) {
+    setIsCreatingClient(true);
+    setClientModalError("");
 
-    if (!name) {
-      errors.customer_name = "Debes capturar el nombre del cliente.";
+    try {
+      const newClient = await createClient(accessToken, payload);
+      setClientsState((current) => ({
+        ...current,
+        items: [...current.items, newClient].sort((left, right) =>
+          String(left.name || "").localeCompare(String(right.name || ""), "es", {
+            sensitivity: "base"
+          })
+        )
+      }));
+      setFormValues((current) => ({
+        ...current,
+        customer: String(newClient.id)
+      }));
+      setFieldErrors((current) => {
+        const next = { ...current };
+        delete next.customer;
+        return next;
+      });
+      setClientSuccess(`Cliente creado: ${newClient.name}.`);
+      setIsClientModalOpen(false);
+    } catch {
+      setClientModalError("No pudimos crear el cliente. Revisa la informacion e intenta de nuevo.");
+    } finally {
+      setIsCreatingClient(false);
     }
+  }
 
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.customer_email = "El email no tiene un formato valido.";
-    }
+  function openClientModal() {
+    setClientModalError("");
+    setIsClientModalOpen(true);
+  }
 
-    if (contact && !contact.startsWith("@")) {
-      const phoneLike = contact.replace(/[^\d]/g, "");
-      if (phoneLike.length < 6) {
-        errors.customer_contact = "El telefono debe tener al menos 6 digitos.";
-      }
-    }
-
-    return errors;
+  function closeClientModal() {
+    setClientModalError("");
+    setIsClientModalOpen(false);
   }
 
   async function handleSubmit(event) {
@@ -183,20 +206,13 @@ export default function SalesFormPage() {
     setClientSuccess("");
 
     try {
-      let customerId = formValues.customer ? Number(formValues.customer) : null;
+      const customerId = formValues.customer ? Number(formValues.customer) : null;
 
       if (!customerId) {
-        const validationErrors = validateNewClientInputs();
-        if (Object.keys(validationErrors).length > 0) {
-          setFieldErrors(validationErrors);
-          setSubmitError("Completa los datos del nuevo cliente.");
-          setIsSubmitting(false);
-          return;
-        }
-
-        const newClient = await createClient(accessToken, buildClientPayload());
-        customerId = newClient.id;
-        setClientSuccess(`Cliente creado: ${newClient.name || formValues.customer_name.trim()}.`);
+        setFieldErrors({ customer: "Selecciona un cliente o crea uno nuevo." });
+        setSubmitError("Selecciona un cliente para registrar la venta.");
+        setIsSubmitting(false);
+        return;
       }
 
       await createSale(accessToken, {
@@ -230,12 +246,7 @@ export default function SalesFormPage() {
   }
 
   if (inventoryState.status === "loading") {
-    return (
-      <LoadingState
-        title="Cargando inventario"
-        message="Estamos consultando los relojes disponibles."
-      />
-    );
+    return <LoadingState title="Cargando inventario" message="Estamos consultando los relojes disponibles." />;
   }
 
   if (inventoryState.status === "error") {
@@ -251,8 +262,6 @@ export default function SalesFormPage() {
     <div className="space-y-6">
       <SalesFormHeader />
 
-      <SalesInfoAlert />
-
       {clientSuccess ? (
         <div className="rounded-xl border border-[#d9e5d7] bg-[#edf7ed] px-4 py-3 text-sm text-[#4c6d50]">
           {clientSuccess}
@@ -265,40 +274,34 @@ export default function SalesFormPage() {
         </div>
       ) : null}
 
-      <form
-        className="grid gap-6 xl:grid-cols-[1.2fr_0.5fr]"
-        id="sales-form"
-        onSubmit={handleSubmit}
-      >
+      <form className="grid gap-6 xl:grid-cols-[1.2fr_0.5fr]" id="sales-form" onSubmit={handleSubmit}>
         <div className="space-y-5">
-          <SaleProductSection
-            inventoryItems={inventoryState.items}
-            selectedItem={selectedItem}
-            productValue={formValues.product}
-            onChange={handleChange}
-            formatCurrency={formatCurrency}
-            fieldErrors={fieldErrors}
-          />
+          <div className="grid gap-5 xl:grid-cols-2">
+            <SaleProductSection
+              inventoryItems={inventoryState.items}
+              selectedItem={selectedItem}
+              productValue={formValues.product}
+              onChange={handleChange}
+              formatCurrency={formatCurrency}
+              fieldErrors={fieldErrors}
+            />
 
-          <SaleCustomerSection
-            clients={clientsState.items}
-            selectedClient={selectedClient}
-            formValues={formValues}
-            onChange={handleChange}
-            fieldErrors={fieldErrors}
-          />
+            <SaleCustomerSection
+              clients={clientsState.items}
+              selectedClient={selectedClient}
+              formValues={formValues}
+              onChange={handleChange}
+              fieldErrors={fieldErrors}
+              onOpenCreateClient={openClientModal}
+            />
+          </div>
 
           <SaleTransactionSection
             formValues={formValues}
             onChange={handleChange}
             fieldErrors={fieldErrors}
             channelOptions={channelOptions}
-          />
-
-          <SalePaymentSection
             paymentOptions={paymentOptions}
-            selectedMethod={formValues.payment_method}
-            onSelect={handlePaymentChange}
           />
         </div>
 
@@ -315,14 +318,22 @@ export default function SalesFormPage() {
             canSubmit={Boolean(formValues.product && formValues.amount_paid)}
           />
 
-          <SaleHoldPanel
-            disabled={!formValues.product}
-            onRegister={handleRegisterLayaway}
-          />
+          {selectedItem && selectedClient ? (
+            <SaleHoldPanel disabled={!formValues.product} onRegister={handleRegisterLayaway} />
+          ) : null}
         </div>
       </form>
+
+      <ClientFormModal
+        isOpen={isClientModalOpen}
+        title="Crear cliente"
+        submitLabel="Crear cliente"
+        defaultValues={{}}
+        isSubmitting={isCreatingClient}
+        submitError={clientModalError}
+        onSubmit={handleCreateClient}
+        onClose={closeClientModal}
+      />
     </div>
   );
 }
-
-
