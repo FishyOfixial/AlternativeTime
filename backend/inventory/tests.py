@@ -97,6 +97,7 @@ class TestInventoryApi(TestCase):
         self.assertEqual(response.data["days_in_inventory"], 5)
         self.assertEqual(response.data["total_cost"], "2050.00")
         self.assertEqual(response.data["estimated_profit"], "1150.00")
+        self.assertEqual(response.data["utilidad"], 35.9)
         self.assertEqual(response.data["age_tag"], "new")
 
     def test_inventory_stops_counting_days_after_sale(self):

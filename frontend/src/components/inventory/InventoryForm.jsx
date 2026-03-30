@@ -224,7 +224,7 @@ export default function InventoryForm({
       Number(values.purchase_cost.other_costs || 0);
     const salePrice = Number(values.price || 0);
     const profit = salePrice - purchaseCost;
-    const margin = purchaseCost > 0 ? (profit / purchaseCost) * 100 : 0;
+    const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
 
     return {
       purchaseCost,
