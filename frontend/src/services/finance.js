@@ -19,3 +19,11 @@ export function createFinanceEntry(accessToken, payload) {
     payload
   });
 }
+
+export function updateFinanceEntry(accessToken, entryId, payload) {
+  return submitJson(`/api/finance/entries/${entryId}/`, {
+    accessToken,
+    method: "PATCH",
+    payload
+  });
+}

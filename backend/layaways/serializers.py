@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from clients.models import Client
 from finance.models import FinanceEntry
-from finance.services import recalculate_account_balance
+from finance.services import reconcile_layaway_completion, sync_layaway_payment_finance_entry
 from inventory.models import InventoryItem
 from sales.models import Sale
 
@@ -171,63 +171,6 @@ class LayawayPaymentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"amount": "El abono no puede superar el saldo pendiente."})
         return attrs
 
-    def _create_finance_entry(self, layaway, payment, user):
-        entry = FinanceEntry.objects.create(
-            entry_type=FinanceEntry.TYPE_INCOME,
-            concept=FinanceEntry.CONCEPT_LAYAWAY_PAYMENT,
-            amount=payment.amount,
-            account=payment.account,
-            entry_date=payment.payment_date,
-            is_automatic=True,
-            notes=payment.notes,
-            product=layaway.product,
-            created_by=user,
-            updated_by=user,
-        )
-        recalculate_account_balance(entry.account)
-
-    def _complete_layaway(self, layaway, user, payment_method, payment_date):
-        sale = Sale.objects.create(
-            client=layaway.client,
-            product=layaway.product,
-            sale_date=payment_date,
-            customer_name=layaway.customer_name,
-            customer_contact=layaway.customer_contact,
-            payment_method=payment_method,
-            sales_channel=InventoryItem.CHANNEL_DIRECT,
-            amount_paid=layaway.agreed_price,
-            extras=Decimal("0.00"),
-            sale_shipping_cost=Decimal("0.00"),
-            cost_snapshot=layaway.product.total_purchase_cost,
-            notes=f"Apartado completado #{layaway.id}",
-            created_by=user,
-            updated_by=user,
-        )
-        product = layaway.product
-        product.status = InventoryItem.STATUS_SOLD
-        product.sold_date = payment_date
-        product.sold_at = timezone.now()
-        product.days_to_sell = max((payment_date - product.purchase_date).days, 0)
-        product.updated_by = user
-        product.save(
-            update_fields=[
-                "status",
-                "sold_date",
-                "sold_at",
-                "days_to_sell",
-                "updated_by",
-                "updated_at",
-                "stock",
-                "is_active",
-                "tag",
-            ]
-        )
-
-        layaway.status = Layaway.STATUS_COMPLETED
-        layaway.sale = sale
-        layaway.updated_by = user
-        layaway.save(update_fields=["status", "sale", "updated_by", "updated_at"])
-
     @transaction.atomic
     def create(self, validated_data):
         request = self.context["request"]
@@ -243,14 +186,7 @@ class LayawayPaymentCreateSerializer(serializers.ModelSerializer):
         layaway.save()
         layaway.refresh_from_db()
 
-        self._create_finance_entry(layaway, payment, user)
-
-        if layaway.balance_due <= 0 and layaway.sale_id is None:
-            self._complete_layaway(
-                layaway=layaway,
-                user=user,
-                payment_method=payment.payment_method,
-                payment_date=payment.payment_date,
-            )
+        sync_layaway_payment_finance_entry(payment, user=user)
+        reconcile_layaway_completion(layaway, user)
 
         return payment
