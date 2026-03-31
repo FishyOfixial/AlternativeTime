@@ -304,7 +304,7 @@ export default function LayawaysPage() {
 
         {state.status === "error" ? (
           <div className="p-6">
-            <ErrorState title="No pudimos cargar apartados" message={state.error} />
+            <ErrorState title="No pudimos cargar apartados" message={state.error} networkAware />
           </div>
         ) : null}
 

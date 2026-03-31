@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
+import PwaStatusBanner from "../components/pwa/PwaStatusBanner";
 import { getHealth } from "../services/health";
 import { resolveApiUrl } from "../services/http";
 
@@ -72,6 +73,8 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_top,rgba(177,138,68,0.18),transparent_55%)]" />
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+        <PwaStatusBanner />
+
         <section className="grid overflow-hidden rounded-[28px] border border-[#dacdb8] bg-[#fbf7f0] shadow-[0_20px_60px_rgba(48,35,20,0.08)] lg:grid-cols-[1.05fr_0.95fr]">
           <div
             className={`relative flex min-h-[320px] flex-col justify-between overflow-hidden bg-gradient-to-br ${accent.panel} px-6 py-7 text-[#f5ecdc] sm:px-8 sm:py-8`}
@@ -180,7 +183,7 @@ export default function HomePage() {
         ) : null}
 
         {health.status === "error" ? (
-          <ErrorState message={health.message} />
+          <ErrorState message={health.message} networkAware />
         ) : null}
       </div>
     </div>

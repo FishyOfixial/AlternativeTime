@@ -322,6 +322,7 @@ export default function DashboardPage() {
         <ErrorState
           title="No pudimos cargar el dashboard"
           message="La sesion esta activa, pero fallaron los endpoints agregados del dashboard."
+          networkAware
         />
       ) : null}
 

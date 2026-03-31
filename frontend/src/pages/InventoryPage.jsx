@@ -228,6 +228,7 @@ export default function InventoryPage() {
         <ErrorState
           title="No pudimos cargar inventario"
           message="La API de inventario no respondio como esperabamos."
+          networkAware
         />
       ) : null}
       {inventoryState.status === "success" && filteredItems.length === 0 ? (
