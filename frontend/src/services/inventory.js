@@ -1,11 +1,4 @@
-import { apiJson, apiRequest, resolveApiUrl } from "./http";
-
-function authHeaders(accessToken, extraHeaders = {}) {
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    ...extraHeaders
-  };
-}
+import { apiRequestAuth, apiJsonAuth, buildQueryString, submitFormData, submitJson } from "./serviceUtils";
 
 function buildInventoryPayload(payload) {
   const purchaseCost = payload.purchase_cost || {};
@@ -35,96 +28,46 @@ function buildInventoryPayload(payload) {
   };
 }
 
-async function handleJsonResponse(response, fallbackMessage) {
-  let payload = {};
-  try {
-    payload = await response.json();
-  } catch {
-    payload = {};
-  }
-
-  if (!response.ok) {
-    const error = new Error(fallbackMessage || `HTTP ${response.status}`);
-    error.status = response.status;
-    error.data = payload;
-    throw error;
-  }
-
-  return payload;
-}
-
 export function listInventory(accessToken, filters = {}) {
-  const searchParams = new URLSearchParams();
-
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "" && value !== "all") {
-      searchParams.set(key, value);
-    }
-  });
-
-  const query = searchParams.toString();
-  return apiJson(`/api/inventory/${query ? `?${query}` : ""}`, {
-    headers: authHeaders(accessToken)
-  });
+  return apiJsonAuth(`/api/inventory/${buildQueryString(filters)}`, accessToken);
 }
 
 export function getInventoryItem(accessToken, itemId) {
-  return apiJson(`/api/inventory/${itemId}/`, {
-    headers: authHeaders(accessToken)
-  });
+  return apiJsonAuth(`/api/inventory/${itemId}/`, accessToken);
 }
 
 export function createInventoryItem(accessToken, payload) {
-  return fetch(resolveApiUrl("/api/inventory/"), {
+  return submitJson("/api/inventory/", {
+    accessToken,
     method: "POST",
-    headers: authHeaders(accessToken, {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    }),
-    body: JSON.stringify(buildInventoryPayload(payload))
-  }).then((response) => handleJsonResponse(response, "No pudimos crear el reloj."));
+    payload: buildInventoryPayload(payload),
+    validationErrorMessage: "No pudimos crear el reloj.",
+    errorMessage: "No pudimos crear el reloj."
+  });
 }
 
 export function updateInventoryItem(accessToken, itemId, payload) {
-  return fetch(resolveApiUrl(`/api/inventory/${itemId}/`), {
+  return submitJson(`/api/inventory/${itemId}/`, {
+    accessToken,
     method: "PATCH",
-    headers: authHeaders(accessToken, {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    }),
-    body: JSON.stringify(buildInventoryPayload(payload))
-  }).then((response) => handleJsonResponse(response, "No pudimos actualizar el reloj."));
+    payload: buildInventoryPayload(payload),
+    validationErrorMessage: "No pudimos actualizar el reloj.",
+    errorMessage: "No pudimos actualizar el reloj."
+  });
 }
 
 export async function deleteInventoryItem(accessToken, itemId) {
-  await apiRequest(`/api/inventory/${itemId}/`, {
-    method: "DELETE",
-    headers: authHeaders(accessToken)
-  });
+  await apiRequestAuth(`/api/inventory/${itemId}/`, accessToken, { method: "DELETE" });
 }
 
 export async function importInventoryCsv(accessToken, file) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(resolveApiUrl("/api/inventory/import-csv/"), {
+  return submitFormData("/api/inventory/import-csv/", {
+    accessToken,
     method: "POST",
-    headers: authHeaders(accessToken),
-    body: formData
+    formData,
+    errorMessage: "No pudimos importar el CSV."
   });
-
-  let payload = {};
-  try {
-    payload = await response.json();
-  } catch {
-    payload = {};
-  }
-
-  if (!response.ok) {
-    const error = new Error(payload.detail || "No pudimos importar el CSV.");
-    error.payload = payload;
-    throw error;
-  }
-
-  return payload;
 }

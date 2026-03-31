@@ -1,47 +1,33 @@
-import { apiJson, apiRequest } from "./http";
-
-function authHeaders(accessToken, extraHeaders = {}) {
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    ...extraHeaders
-  };
-}
+import { apiJsonAuth, apiRequestAuth } from "./serviceUtils";
 
 export function listClients(accessToken) {
-  return apiJson("/api/clients/", {
-    headers: authHeaders(accessToken)
-  });
+  return apiJsonAuth("/api/clients/", accessToken);
 }
 
 export function getClient(accessToken, clientId) {
-  return apiJson(`/api/clients/${clientId}/`, {
-    headers: authHeaders(accessToken)
-  });
+  return apiJsonAuth(`/api/clients/${clientId}/`, accessToken);
 }
 
 export function createClient(accessToken, payload) {
-  return apiJson("/api/clients/", {
+  return apiJsonAuth("/api/clients/", accessToken, {
     method: "POST",
-    headers: authHeaders(accessToken, {
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify(payload)
   });
 }
 
 export function updateClient(accessToken, clientId, payload) {
-  return apiJson(`/api/clients/${clientId}/`, {
+  return apiJsonAuth(`/api/clients/${clientId}/`, accessToken, {
     method: "PATCH",
-    headers: authHeaders(accessToken, {
+    headers: {
       "Content-Type": "application/json"
-    }),
+    },
     body: JSON.stringify(payload)
   });
 }
 
 export async function deleteClient(accessToken, clientId) {
-  await apiRequest(`/api/clients/${clientId}/`, {
-    method: "DELETE",
-    headers: authHeaders(accessToken)
-  });
+  await apiRequestAuth(`/api/clients/${clientId}/`, accessToken, { method: "DELETE" });
 }

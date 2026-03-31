@@ -1,58 +1,29 @@
-import { apiJson, resolveApiUrl } from "./http";
+import { resolveApiUrl } from "./http";
+import { apiJsonAuth, authHeaders, buildQueryString } from "./serviceUtils";
 
 export function getSalesSummary(accessToken) {
-  return apiJson("/api/reports/sales-summary/", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
+  return apiJsonAuth("/api/reports/sales-summary/", accessToken);
 }
 
 export function getInventorySummary(accessToken) {
-  return apiJson("/api/reports/inventory-summary/", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
+  return apiJsonAuth("/api/reports/inventory-summary/", accessToken);
 }
 
 export function getDashboardSummary(accessToken, params = {}) {
-  const searchParams = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      searchParams.set(key, value);
-    }
-  });
-
-  const query = searchParams.toString();
-
-  return apiJson(`/api/reports/dashboard-summary/${query ? `?${query}` : ""}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
+  return apiJsonAuth(`/api/reports/dashboard-summary/${buildQueryString(params)}`, accessToken);
 }
 
 export async function exportReport(accessToken, reportType, format, params = {}) {
-  const searchParams = new URLSearchParams();
   const normalizedFormat =
     typeof format === "string" ? format.replace(/^['"]|['"]$/g, "") : format;
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      searchParams.set(key, value);
-    }
+  const query = buildQueryString({
+    ...params,
+    ...(normalizedFormat ? { format: normalizedFormat } : {})
   });
-  if (normalizedFormat) {
-    searchParams.set("format", normalizedFormat);
-  }
-  const query = searchParams.toString();
   const response = await fetch(
-    resolveApiUrl(`/api/reports/${reportType}/export/${query ? `?${query}` : ""}`),
+    resolveApiUrl(`/api/reports/${reportType}/export/${query}`),
     {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      }
+      headers: authHeaders(accessToken)
     }
   );
 
