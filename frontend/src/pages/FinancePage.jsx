@@ -240,7 +240,6 @@ export default function FinancePage() {
         <ErrorState
           title="No pudimos cargar finanzas"
           message="La sesion esta activa, pero el resumen financiero no respondio."
-          networkAware
         />
       ) : null}
 

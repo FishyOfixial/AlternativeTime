@@ -245,7 +245,6 @@ export default function ReportsPage() {
         <ErrorState
           title="No pudimos cargar reportes"
           message="Algunos endpoints agregados no respondieron como esperabamos."
-          networkAware
         />
       ) : null}
 

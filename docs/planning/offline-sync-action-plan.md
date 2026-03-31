@@ -113,25 +113,6 @@ La ruta recomendada es:
 
 Habilitar ATC POS como PWA instalable sin cambios de logica de negocio.
 
-### Estado actual
-
-Implementada como primera capa de infraestructura PWA:
-
-- manifest instalable con iconos y branding
-- `Service Worker` limitado a app shell y assets estaticos
-- banner global de conectividad, instalacion y actualizacion
-- fallback de navegacion para rutas SPA sin cachear `/api/*`
-- guia manual de instalacion para Safari en `iPhone`, `iPad` y `Mac`
-
-Limitaciones vigentes:
-
-- no hay `IndexedDB`
-- no hay snapshots offline de negocio
-- no hay cola de sync
-- no hay escrituras offline
-- si una vista requiere API y no hay red, se muestra un estado offline
-  amigable en lugar de simular datos cacheados
-
 ### Alcance
 
 Infraestructura PWA basica y UX de conectividad.

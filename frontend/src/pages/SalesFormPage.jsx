@@ -254,7 +254,6 @@ export default function SalesFormPage() {
       <ErrorState
         title="Inventario no disponible"
         message="No pudimos cargar los relojes disponibles para venta."
-        networkAware
       />
     );
   }

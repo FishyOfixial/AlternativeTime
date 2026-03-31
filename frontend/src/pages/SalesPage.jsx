@@ -160,7 +160,7 @@ export default function SalesPage() {
       ) : null}
 
       {salesState.status === "error" ? (
-        <ErrorState title="No pudimos cargar ventas" message={salesState.error} networkAware />
+        <ErrorState title="No pudimos cargar ventas" message={salesState.error} />
       ) : null}
 
       {salesState.status === "success" && filteredItems.length === 0 ? (

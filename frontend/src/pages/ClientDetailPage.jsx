@@ -100,7 +100,6 @@ export default function ClientDetailPage() {
       <ErrorState
         message="No encontramos el cliente solicitado o la API no respondio como esperabamos."
         title="Cliente no disponible"
-        networkAware
       />
     );
   }

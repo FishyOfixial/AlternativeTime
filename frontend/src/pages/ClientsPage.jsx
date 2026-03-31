@@ -190,7 +190,7 @@ export default function ClientsPage() {
 
         {clientsState.status === "error" ? (
           <div className="p-6">
-            <ErrorState message={clientsState.error} networkAware title="No pudimos cargar clientes" />
+            <ErrorState message={clientsState.error} title="No pudimos cargar clientes" />
           </div>
         ) : null}
 
