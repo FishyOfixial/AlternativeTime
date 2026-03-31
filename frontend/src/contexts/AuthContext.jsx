@@ -6,8 +6,8 @@ import {
 } from "../services/auth";
 import {
   clearStoredTokens,
-  getStoredTokens,
-  setStoredTokens
+  getStoredSession,
+  setStoredSession
 } from "../services/tokenStorage";
 
 const AuthContext = createContext(null);
@@ -46,6 +46,10 @@ function getRefreshDelay(accessToken) {
   return Math.max(delay, 5_000);
 }
 
+function isOfflineEnvironment() {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
 export function AuthProvider({ children }) {
   const [authState, setAuthState] = useState({
     status: "booting",
@@ -78,7 +82,10 @@ export function AuthProvider({ children }) {
     };
     const user = await getCurrentUser(nextAccessToken);
 
-    setStoredTokens(nextTokens);
+    setStoredSession({
+      ...nextTokens,
+      user
+    });
     setAuthState({
       status: "authenticated",
       user,
@@ -106,6 +113,10 @@ export function AuthProvider({ children }) {
       try {
         await refreshSession(refreshToken);
       } catch {
+        if (isOfflineEnvironment()) {
+          scheduleRefresh(accessToken, refreshToken);
+          return;
+        }
         logout();
       }
     }, delay);
@@ -119,7 +130,10 @@ export function AuthProvider({ children }) {
     };
     const user = await getCurrentUser(tokens.accessToken);
 
-    setStoredTokens(tokens);
+    setStoredSession({
+      ...tokens,
+      user
+    });
     setAuthState({
       status: "authenticated",
       user,
@@ -145,7 +159,7 @@ export function AuthProvider({ children }) {
     let active = true;
 
     async function bootstrapSession() {
-      const { accessToken, refreshToken } = getStoredTokens();
+      const { accessToken, refreshToken, user: storedUser } = getStoredSession();
 
       if (!accessToken || !refreshToken) {
         if (active) {
@@ -160,12 +174,31 @@ export function AuthProvider({ children }) {
         return;
       }
 
+      if (isOfflineEnvironment() && storedUser) {
+        if (active) {
+          setAuthState({
+            status: "authenticated",
+            user: storedUser,
+            accessToken,
+            refreshToken,
+            error: "offline"
+          });
+        }
+        return;
+      }
+
       try {
         const user = await getCurrentUser(accessToken);
 
         if (!active) {
           return;
         }
+
+        setStoredSession({
+          accessToken,
+          refreshToken,
+          user
+        });
 
         setAuthState({
           status: "authenticated",
@@ -175,6 +208,19 @@ export function AuthProvider({ children }) {
           error: null
         });
       } catch {
+        if (isOfflineEnvironment() && storedUser) {
+          if (active) {
+            setAuthState({
+              status: "authenticated",
+              user: storedUser,
+              accessToken,
+              refreshToken,
+              error: "offline"
+            });
+          }
+          return;
+        }
+
         try {
           const refreshed = await refreshSession(refreshToken);
           if (!active) {
@@ -190,6 +236,18 @@ export function AuthProvider({ children }) {
             error: null
           }));
         } catch {
+          if (isOfflineEnvironment() && storedUser) {
+            if (active) {
+              setAuthState({
+                status: "authenticated",
+                user: storedUser,
+                accessToken,
+                refreshToken,
+                error: "offline"
+              });
+            }
+            return;
+          }
           if (active) {
             logout();
           }
@@ -204,6 +262,41 @@ export function AuthProvider({ children }) {
       clearRefreshTimer();
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || authState.status !== "authenticated") {
+      return undefined;
+    }
+
+    async function revalidateSession() {
+      if (!authState.accessToken || !authState.refreshToken) {
+        return;
+      }
+
+      try {
+        const user = await getCurrentUser(authState.accessToken);
+        setStoredSession({
+          accessToken: authState.accessToken,
+          refreshToken: authState.refreshToken,
+          user
+        });
+        setAuthState((current) => ({
+          ...current,
+          user,
+          error: null
+        }));
+      } catch {
+        try {
+          await refreshSession(authState.refreshToken);
+        } catch {
+          logout();
+        }
+      }
+    }
+
+    window.addEventListener("online", revalidateSession);
+    return () => window.removeEventListener("online", revalidateSession);
+  }, [authState.accessToken, authState.refreshToken, authState.status]);
 
   useEffect(() => {
     if (authState.status === "authenticated") {

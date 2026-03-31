@@ -241,6 +241,11 @@ function enableStoredSession() {
   window.localStorage.setItem("at.frontend.refresh", "refresh-token");
 }
 
+function enableStoredOfflineSession() {
+  enableStoredSession();
+  window.localStorage.setItem("at.frontend.user", JSON.stringify(getMockUser()));
+}
+
 describe("App auth routing", () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -305,6 +310,24 @@ describe("App auth routing", () => {
     expect(await screen.findByText(/desglose mensual/i)).toBeInTheDocument();
     expect(await screen.findByText(/marcas mas vendidas/i)).toBeInTheDocument();
     expect(screen.queryByText(/^usuarios$/i)).not.toBeInTheDocument();
+  });
+
+  it("keeps protected navigation available offline when a stored session exists", async () => {
+    enableStoredOfflineSession();
+    Object.defineProperty(window.navigator, "onLine", {
+      configurable: true,
+      value: false
+    });
+    global.fetch = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+
+    window.history.pushState({}, "", "/clients");
+    render(<App />);
+
+    expect(await screen.findByText(/^clientes$/i)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /iniciar sesion/i })).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe("/clients");
   });
 
   it("loads clients module", async () => {

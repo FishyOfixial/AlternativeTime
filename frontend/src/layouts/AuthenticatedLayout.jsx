@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import HeaderBar from "../components/navigation/HeaderBar";
 import MobileSidebarDrawer from "../components/navigation/MobileSidebarDrawer";
 import PwaStatusBanner from "../components/pwa/PwaStatusBanner";
@@ -7,6 +7,7 @@ import Sidebar from "../components/navigation/Sidebar";
 
 export default function AuthenticatedLayout() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="page-shell">
@@ -20,7 +21,7 @@ export default function AuthenticatedLayout() {
             </div>
           </div>
           <main className="h-[calc(100dvh-4.6rem)] overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
-            <div className="mx-auto w-full max-w-[1500px]">
+            <div className="mx-auto w-full max-w-[1500px]" key={location.pathname}>
               <Outlet />
             </div>
           </main>

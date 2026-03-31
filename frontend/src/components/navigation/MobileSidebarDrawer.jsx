@@ -1,11 +1,25 @@
 import { useEffect, useRef } from "react";
-import { NavLink } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { navigationLinks } from "../../constants/navigation";
 
 export default function MobileSidebarDrawer({ isOpen, onClose }) {
   const { logout, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const closeButtonRef = useRef(null);
+
+  function isLinkActive(path) {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  }
+
+  function handleNavigate(to) {
+    return (event) => {
+      event.preventDefault();
+      onClose();
+      navigate(to);
+    };
+  }
 
   useEffect(() => {
     if (!isOpen) {
@@ -64,14 +78,14 @@ export default function MobileSidebarDrawer({ isOpen, onClose }) {
           <p className="text-[10px] uppercase tracking-[0.28em] text-[#6f5c49]">Navegacion</p>
           <nav className="mt-4 flex flex-col gap-2">
             {navigationLinks.map((link) => (
-              <NavLink
+              <button
                 key={link.to}
-                to={link.to}
-                className={({ isActive }) => `nav-link ${isActive ? "nav-link-active" : ""}`}
-                onClick={onClose}
+                className={`nav-link text-left ${isLinkActive(link.to) ? "nav-link-active" : ""}`}
+                onClick={handleNavigate(link.to)}
+                type="button"
               >
                 <span>{link.label}</span>
-              </NavLink>
+              </button>
             ))}
           </nav>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ClientFormModal from "../components/clients/ClientFormModal";
 import ClientsFilters from "../components/clients/ClientsFilters";
 import ClientsSummaryCards from "../components/clients/ClientsSummaryCards";
@@ -6,17 +6,17 @@ import ClientsTable from "../components/clients/ClientsTable";
 import EmptyState from "../components/feedback/EmptyState";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
+import OfflineSnapshotStatus from "../components/pwa/OfflineSnapshotStatus";
+import { OFFLINE_DATASETS, buildOfflineCacheKey } from "../constants/offlineCache";
 import { useAuth } from "../contexts/AuthContext";
+import { usePwaStatus } from "../contexts/PwaContext";
+import { useOfflineSnapshotResource } from "../hooks/useOfflineSnapshotResource";
 import { createClient, listClients } from "../services/clients";
 import { formatCurrency, formatLastPurchase, getClientInitials } from "../utils/clients";
 
 export default function ClientsPage() {
   const { accessToken } = useAuth();
-  const [clientsState, setClientsState] = useState({
-    status: "loading",
-    clients: [],
-    error: ""
-  });
+  const { setDatasetStatus, clearDatasetStatus } = usePwaStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -26,32 +26,45 @@ export default function ClientsPage() {
     field: "name",
     direction: "asc"
   });
+  const clientsDataset = OFFLINE_DATASETS.clientsList;
+  const clientsCacheKey = buildOfflineCacheKey(clientsDataset.datasetId);
 
-  async function loadClients() {
-    try {
-      const clients = await listClients(accessToken);
-      setClientsState({
-        status: "success",
-        clients,
-        error: ""
-      });
-    } catch {
-      setClientsState({
-        status: "error",
-        clients: [],
-        error: "No pudimos cargar los clientes desde la API."
-      });
-    }
-  }
+  const fetchClients = useCallback(
+    () =>
+      listClients(accessToken).catch(() => {
+        throw new Error("No pudimos cargar los clientes desde la API.");
+      }),
+    [accessToken]
+  );
+
+  const clientsState = useOfflineSnapshotResource({
+    cacheKey: clientsCacheKey,
+    datasetId: clientsDataset.datasetId,
+    ttlMs: clientsDataset.ttlMs,
+    fetcher: fetchClients
+  });
+  const clients = clientsState.data ?? [];
 
   useEffect(() => {
-    loadClients();
-  }, [accessToken]);
+    setDatasetStatus(clientsDataset.datasetId, {
+      ...clientsState.freshness,
+      label: clientsDataset.label
+    });
+    return () => {
+      clearDatasetStatus(clientsDataset.datasetId);
+    };
+  }, [
+    clearDatasetStatus,
+    clientsDataset.datasetId,
+    clientsDataset.label,
+    clientsState.freshness,
+    setDatasetStatus
+  ]);
 
   const filteredClients = useMemo(() => {
     const normalizedTerm = searchTerm.trim().toLowerCase();
 
-    return clientsState.clients.filter((client) => {
+    return clients.filter((client) => {
       const matchesTerm = normalizedTerm
         ? [client.name, client.phone, client.instagram_handle]
             .filter(Boolean)
@@ -72,7 +85,7 @@ export default function ClientsPage() {
 
       return true;
     });
-  }, [clientsState.clients, filter, searchTerm]);
+  }, [clients, filter, searchTerm]);
 
   const sortedClients = useMemo(() => {
     const items = [...filteredClients];
@@ -119,7 +132,7 @@ export default function ClientsPage() {
     });
   }
 
-  const recurringClients = clientsState.clients.filter((client) => client.purchases_count >= 2).length;
+  const recurringClients = clients.filter((client) => client.purchases_count >= 2).length;
 
   async function handleCreateClient(payload) {
     setIsSaving(true);
@@ -128,7 +141,7 @@ export default function ClientsPage() {
     try {
       await createClient(accessToken, payload);
       setIsCreateOpen(false);
-      await loadClients();
+      await clientsState.refresh();
     } catch {
       setSubmitError("No pudimos crear el cliente. Revisa la informacion e intenta de nuevo.");
     } finally {
@@ -157,9 +170,16 @@ export default function ClientsPage() {
   return (
     <div className="space-y-6">
       <ClientsSummaryCards
-        total={clientsState.clients.length}
-        active={clientsState.clients.filter((client) => client.is_active).length}
+        total={clients.length}
+        active={clients.filter((client) => client.is_active).length}
         recurring={recurringClients}
+      />
+
+      <OfflineSnapshotStatus
+        isStale={clientsState.isStale}
+        label={clientsDataset.label}
+        savedAt={clientsState.savedAt}
+        source={clientsState.source}
       />
 
       <ClientFormModal

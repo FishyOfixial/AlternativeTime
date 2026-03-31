@@ -1,9 +1,22 @@
-import { NavLink } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { navigationLinks } from "../../constants/navigation";
 
 export default function Sidebar({ className = "" }) {
   const { logout, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  function isLinkActive(path) {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  }
+
+  function handleNavigate(to) {
+    return (event) => {
+      event.preventDefault();
+      navigate(to);
+    };
+  }
 
   return (
     <aside
@@ -24,13 +37,14 @@ export default function Sidebar({ className = "" }) {
         <p className="text-[10px] uppercase tracking-[0.28em] text-[#6f5c49]">Navegacion</p>
         <nav className="mt-5 flex flex-col gap-2">
           {navigationLinks.map((link) => (
-            <NavLink
+            <button
               key={link.to}
-              to={link.to}
-              className={({ isActive }) => `nav-link ${isActive ? "nav-link-active" : ""}`}
+              className={`nav-link text-left ${isLinkActive(link.to) ? "nav-link-active" : ""}`}
+              onClick={handleNavigate(link.to)}
+              type="button"
             >
               <span>{link.label}</span>
-            </NavLink>
+            </button>
           ))}
         </nav>
       </div>

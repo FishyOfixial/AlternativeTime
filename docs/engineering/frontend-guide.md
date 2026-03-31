@@ -106,6 +106,16 @@ Limites actuales de Fase 1:
 - las vistas que dependen de API muestran un estado offline explicito cuando no
   hay red
 
+Estado actual de Fase 2:
+
+- `dashboard`, `clientes` e `inventario` ya pueden usar snapshots locales de
+  lectura
+- la persistencia de snapshots vive en `IndexedDB`
+- el shell muestra freshness global y cada vista soportada muestra su ultimo
+  sync
+- `sales`, `layaways`, `finance`, formularios, detalles y exportaciones siguen
+  fuera del offline de lectura oficial
+
 Estados de sincronizacion previstos para UX:
 
 - `Local (no sincronizado)`

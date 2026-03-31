@@ -1,15 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import EmptyState from "../components/feedback/EmptyState";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
+import OfflineSnapshotStatus from "../components/pwa/OfflineSnapshotStatus";
+import { OFFLINE_DATASETS, buildOfflineCacheKey } from "../constants/offlineCache";
 import { useAuth } from "../contexts/AuthContext";
+import { usePwaStatus } from "../contexts/PwaContext";
+import { useOfflineSnapshotResource } from "../hooks/useOfflineSnapshotResource";
 import { listNotifications } from "../services/layaways";
 import { getDashboardSummary } from "../services/reports";
-
-const initialState = {
-  status: "loading",
-  data: null
-};
 
 const rangeOptions = [
   { value: "month", label: "Mes" },
@@ -193,7 +192,7 @@ function RentabilityTable({ brands }) {
 
 export default function DashboardPage() {
   const { accessToken } = useAuth();
-  const [dashboardState, setDashboardState] = useState(initialState);
+  const { isOnline, setDatasetStatus, clearDatasetStatus } = usePwaStatus();
   const [notificationsState, setNotificationsState] = useState({
     status: "loading",
     data: null
@@ -201,48 +200,45 @@ export default function DashboardPage() {
   const [selectedRange, setSelectedRange] = useState("month");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [chartMode, setChartMode] = useState("sales");
+  const dashboardDataset = OFFLINE_DATASETS.dashboardSummary;
+  const dashboardCacheKey = buildOfflineCacheKey(
+    dashboardDataset.datasetId,
+    `${selectedRange}:${selectedYear}`
+  );
+
+  const fetchDashboardSummary = useCallback(
+    () =>
+      getDashboardSummary(accessToken, {
+        range: selectedRange,
+        year: selectedYear
+      }).catch(() => {
+        throw new Error("No pudimos cargar el dashboard.");
+      }),
+    [accessToken, selectedRange, selectedYear]
+  );
+
+  const dashboardState = useOfflineSnapshotResource({
+    cacheKey: dashboardCacheKey,
+    datasetId: dashboardDataset.datasetId,
+    ttlMs: dashboardDataset.ttlMs,
+    fetcher: fetchDashboardSummary
+  });
 
   useEffect(() => {
-    let active = true;
-
-    async function loadDashboard() {
-      setDashboardState((current) => ({
-        ...current,
-        status: "loading"
-      }));
-
-      try {
-        const data = await getDashboardSummary(accessToken, {
-          range: selectedRange,
-          year: selectedYear
-        });
-
-        if (!active) {
-          return;
-        }
-
-        setDashboardState({
-          status: "success",
-          data
-        });
-      } catch {
-        if (!active) {
-          return;
-        }
-
-        setDashboardState({
-          status: "error",
-          data: null
-        });
-      }
-    }
-
-    loadDashboard();
-
+    setDatasetStatus(dashboardDataset.datasetId, {
+      ...dashboardState.freshness,
+      label: dashboardDataset.label
+    });
     return () => {
-      active = false;
+      clearDatasetStatus(dashboardDataset.datasetId);
     };
-  }, [accessToken, selectedRange, selectedYear]);
+  }, [
+    clearDatasetStatus,
+    dashboardDataset.datasetId,
+    dashboardDataset.label,
+    dashboardState.freshness,
+    setDatasetStatus
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -310,6 +306,13 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      <OfflineSnapshotStatus
+        isStale={dashboardState.isStale}
+        label={dashboardDataset.label}
+        savedAt={dashboardState.savedAt}
+        source={dashboardState.source}
+      />
 
       {dashboardState.status === "loading" ? (
         <LoadingState
@@ -416,7 +419,11 @@ export default function DashboardPage() {
                   <p className="mt-4 text-sm text-[#8a775f]">Cargando alertas...</p>
                 ) : null}
                 {notificationsState.status === "error" ? (
-                  <p className="mt-4 text-sm text-[#a55b4f]">No pudimos cargar alertas.</p>
+                  <p className={`mt-4 text-sm ${isOnline ? "text-[#a55b4f]" : "text-[#8a775f]"}`}>
+                    {isOnline
+                      ? "No pudimos cargar alertas."
+                      : "Alertas y pendientes siguen siendo un bloque solo en linea en esta fase."}
+                  </p>
                 ) : null}
                 {notificationsState.status === "success" ? (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">

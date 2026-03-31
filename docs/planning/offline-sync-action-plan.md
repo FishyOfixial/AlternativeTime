@@ -194,6 +194,31 @@ Infraestructura PWA basica y UX de conectividad.
 
 Habilitar offline de lectura para modulos de bajo riesgo.
 
+### Estado actual
+
+Implementada parcialmente para:
+
+- `dashboard-summary`
+- `clients-list`
+- `inventory-list`
+
+Capacidades activas:
+
+- snapshots locales en `IndexedDB`
+- fallback a ultimo snapshot si no hay red
+- TTL por dataset con marcado `stale`
+- refresh automatico al reconectar
+- indicador global de freshness
+- indicador por vista del ultimo sync
+
+Limites vigentes:
+
+- `reports` sigue fuera
+- `notifications` del dashboard siguen siendo online-only
+- no hay detalle offline de clientes
+- no hay formularios offline de inventario
+- no hay escrituras offline ni sync de mutaciones
+
 ### Alcance
 
 Lectura local cacheada con marca de antiguedad de datos.

@@ -1,6 +1,11 @@
+import { mkdirSync } from "node:fs";
+import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+
+const pwaDevTempDir = resolve(__dirname, ".vite", "pwa-dev");
+mkdirSync(pwaDevTempDir, { recursive: true });
 
 export default defineConfig({
   plugins: [
@@ -48,11 +53,13 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "/index.html",
+        navigateFallbackAllowlist: [/^(?!\/api\/).*/],
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: []
       },
       devOptions: {
-        enabled: true
+        enabled: true,
+        resolveTempFolder: async () => pwaDevTempDir
       }
     })
   ],

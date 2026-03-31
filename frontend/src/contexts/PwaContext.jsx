@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useServiceWorkerRegistration } from "../pwa/serviceWorker";
 
 const PwaContext = createContext(null);
@@ -53,6 +53,7 @@ export function PwaProvider({ children }) {
   const [connectionBanner, setConnectionBanner] = useState(null);
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [isStandalone, setIsStandalone] = useState(() => detectStandaloneMode());
+  const [datasetStatuses, setDatasetStatuses] = useState({});
   const [isInstallGuideDismissed, setIsInstallGuideDismissed] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -139,7 +140,7 @@ export function PwaProvider({ children }) {
     };
   }, []);
 
-  async function promptInstall() {
+  const promptInstall = useCallback(async () => {
     if (!installPromptEvent) {
       return null;
     }
@@ -152,18 +153,57 @@ export function PwaProvider({ children }) {
     }
 
     return result;
-  }
+  }, [installPromptEvent]);
 
-  function dismissInstallGuide() {
+  const dismissInstallGuide = useCallback(() => {
     setIsInstallGuideDismissed(true);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(INSTALL_GUIDE_DISMISSED_KEY, "true");
     }
-  }
+  }, []);
 
-  async function applyAppUpdate() {
+  const applyAppUpdate = useCallback(async () => {
     await updateServiceWorker(true);
-  }
+  }, [updateServiceWorker]);
+
+  const setDatasetStatus = useCallback((datasetId, nextStatus) => {
+    if (!datasetId) {
+      return;
+    }
+
+    setDatasetStatuses((current) => {
+      const nextEntry = {
+        ...current[datasetId],
+        ...nextStatus
+      };
+
+      const previousEntry = current[datasetId];
+      const isUnchanged = JSON.stringify(previousEntry || null) === JSON.stringify(nextEntry);
+      if (isUnchanged) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [datasetId]: nextEntry
+      };
+    });
+  }, []);
+
+  const clearDatasetStatus = useCallback((datasetId) => {
+    if (!datasetId) {
+      return;
+    }
+
+    setDatasetStatuses((current) => {
+      if (!(datasetId in current)) {
+        return current;
+      }
+      const nextStatuses = { ...current };
+      delete nextStatuses[datasetId];
+      return nextStatuses;
+    });
+  }, []);
 
   const shouldShowManualInstallGuide =
     !isStandalone &&
@@ -171,23 +211,51 @@ export function PwaProvider({ children }) {
     appleEnvironment.supportsManualInstallGuide &&
     !isInstallGuideDismissed;
 
+  const freshnessEntries = Object.values(datasetStatuses).filter(
+    (entry) => entry?.savedAt || entry?.source
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      isOnline,
+      connectionBanner,
+      needRefresh,
+      offlineReady,
+      isStandalone,
+      canPromptInstall: Boolean(installPromptEvent) && !isStandalone,
+      shouldShowManualInstallGuide,
+      installInstructionLabel: appleEnvironment.instructionLabel,
+      installInstructionHint: appleEnvironment.instructionHint,
+      datasetStatuses,
+      freshnessEntries,
+      setDatasetStatus,
+      clearDatasetStatus,
+      promptInstall,
+      applyAppUpdate,
+      dismissInstallGuide
+    }),
+    [
+      appleEnvironment.instructionHint,
+      appleEnvironment.instructionLabel,
+      applyAppUpdate,
+      clearDatasetStatus,
+      connectionBanner,
+      datasetStatuses,
+      dismissInstallGuide,
+      freshnessEntries,
+      installPromptEvent,
+      isOnline,
+      isStandalone,
+      needRefresh,
+      offlineReady,
+      promptInstall,
+      setDatasetStatus,
+      shouldShowManualInstallGuide
+    ]
+  );
+
   return (
-    <PwaContext.Provider
-      value={{
-        isOnline,
-        connectionBanner,
-        needRefresh,
-        offlineReady,
-        isStandalone,
-        canPromptInstall: Boolean(installPromptEvent) && !isStandalone,
-        shouldShowManualInstallGuide,
-        installInstructionLabel: appleEnvironment.instructionLabel,
-        installInstructionHint: appleEnvironment.instructionHint,
-        promptInstall,
-        applyAppUpdate,
-        dismissInstallGuide
-      }}
-    >
+    <PwaContext.Provider value={contextValue}>
       {children}
     </PwaContext.Provider>
   );
@@ -204,6 +272,10 @@ export function usePwaStatus() {
     shouldShowManualInstallGuide: false,
     installInstructionLabel: "Instalar app",
     installInstructionHint: "",
+    datasetStatuses: {},
+    freshnessEntries: [],
+    setDatasetStatus: () => undefined,
+    clearDatasetStatus: () => undefined,
     promptInstall: async () => null,
     applyAppUpdate: async () => undefined,
     dismissInstallGuide: () => undefined

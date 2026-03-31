@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import { usePwaStatus } from "../../contexts/PwaContext";
 
 function bannerStyle(variant) {
@@ -18,6 +19,7 @@ function bannerStyle(variant) {
 }
 
 export default function PwaStatusBanner() {
+  const { isAuthenticated } = useAuth();
   const {
     isOnline,
     connectionBanner,
@@ -27,37 +29,58 @@ export default function PwaStatusBanner() {
     shouldShowManualInstallGuide,
     installInstructionLabel,
     installInstructionHint,
+    freshnessEntries,
     promptInstall,
     applyAppUpdate,
     dismissInstallGuide
   } = usePwaStatus();
   const [isInstalling, setIsInstalling] = useState(false);
+  const [hideSessionInfoBanners, setHideSessionInfoBanners] = useState(false);
 
   let variant = null;
+  let bannerKind = null;
   let title = "";
   let message = "";
   let actionLabel = "";
   let action = null;
   let secondaryActionLabel = "";
   let secondaryAction = null;
+  const latestFreshnessEntry = [...freshnessEntries].sort(
+    (left, right) => Number(right.savedAt || 0) - Number(left.savedAt || 0)
+  )[0];
+
+  function formatSnapshotTime(value) {
+    if (!value) {
+      return "sin sincronizacion previa";
+    }
+
+    return new Intl.DateTimeFormat("es-MX", {
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date(value));
+  }
 
   if (needRefresh) {
     variant = "update";
+    bannerKind = "update";
     title = "Nueva version disponible";
     message = "Hay una actualizacion lista para activar. Recargala para usar la version mas reciente.";
     actionLabel = "Actualizar ahora";
     action = applyAppUpdate;
   } else if (!isOnline && connectionBanner === "offline") {
     variant = "offline";
+    bannerKind = "offline";
     title = "Sin conexion";
     message =
       "La app sigue abierta desde cache, pero las vistas con datos en linea pueden fallar hasta que vuelva internet.";
   } else if (connectionBanner === "restored") {
     variant = "restored";
+    bannerKind = "connection";
     title = "Conexion restaurada";
     message = "La red ya regreso. Puedes seguir operando y refrescar vistas que dependan de la API.";
   } else if (canPromptInstall) {
     variant = "install";
+    bannerKind = "install";
     title = "Instalar app";
     message =
       "Instala ATC POS para abrirlo como app independiente. En esta fase el shell abre offline, pero los datos siguen requiriendo conexion.";
@@ -72,18 +95,51 @@ export default function PwaStatusBanner() {
     };
   } else if (shouldShowManualInstallGuide) {
     variant = "install";
+    bannerKind = "install";
     title = installInstructionLabel;
     message =
       `${installInstructionHint} En esta fase la app se puede instalar y abrir sin red, pero los datos en vivo siguen necesitando conexion.`;
     secondaryActionLabel = "Ocultar";
     secondaryAction = dismissInstallGuide;
+  } else if (latestFreshnessEntry) {
+    variant = latestFreshnessEntry.source === "cache" || latestFreshnessEntry.isStale ? "update" : "restored";
+    bannerKind = "freshness";
+    title =
+      latestFreshnessEntry.source === "cache" || latestFreshnessEntry.isStale
+        ? "Datos offline disponibles"
+        : "Ultima sincronizacion lista";
+    message =
+      latestFreshnessEntry.source === "cache" || latestFreshnessEntry.isStale
+        ? `${latestFreshnessEntry.label || "Esta vista"} muestra el ultimo snapshot local. Ultima sincronizacion: ${formatSnapshotTime(latestFreshnessEntry.savedAt)}.`
+        : `${latestFreshnessEntry.label || "Esta vista"} se sincronizo a las ${formatSnapshotTime(latestFreshnessEntry.savedAt)} y puede consultarse sin red.`;
   } else if (offlineReady) {
     variant = "restored";
+    bannerKind = "ready";
     title = "Modo instalable listo";
     message = "El shell de la app ya puede abrir desde cache cuando no tengas conexion.";
   }
 
-  if (!variant) {
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHideSessionInfoBanners(false);
+      return undefined;
+    }
+
+    setHideSessionInfoBanners(false);
+
+    const timeoutId = window.setTimeout(() => {
+      setHideSessionInfoBanners(true);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isAuthenticated]);
+
+  const shouldAutoHide =
+    hideSessionInfoBanners && (bannerKind === "connection" || bannerKind === "freshness" || bannerKind === "ready");
+
+  if (!variant || shouldAutoHide) {
     return null;
   }
 

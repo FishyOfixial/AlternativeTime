@@ -7,20 +7,21 @@ import InventoryFilters from "../components/inventory/InventoryFilters";
 import InventoryStatusTabs from "../components/inventory/InventoryStatusTabs";
 import InventoryTable from "../components/inventory/InventoryTable";
 import InventoryViewToggle from "../components/inventory/InventoryViewToggle";
+import OfflineSnapshotStatus from "../components/pwa/OfflineSnapshotStatus";
 import { useAuth } from "../contexts/AuthContext";
+import { usePwaStatus } from "../contexts/PwaContext";
+import { useOfflineSnapshotResource } from "../hooks/useOfflineSnapshotResource";
+import { OFFLINE_DATASETS, buildOfflineCacheKey } from "../constants/offlineCache";
 import { statusClasses, statusLabels, tagClasses, tagLabels } from "../constants/inventory";
 import { importInventoryCsv, listInventory } from "../services/inventory";
 import { formatCurrency } from "../utils/inventory";
 
 export default function InventoryPage() {
   const { accessToken } = useAuth();
+  const { setDatasetStatus, clearDatasetStatus } = usePwaStatus();
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(min-width: 1024px)").matches : true
   );
-  const [inventoryState, setInventoryState] = useState({
-    status: "loading",
-    items: []
-  });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -32,25 +33,40 @@ export default function InventoryPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [importFeedback, setImportFeedback] = useState(null);
   const fileInputRef = useRef(null);
+  const inventoryDataset = OFFLINE_DATASETS.inventoryList;
+  const inventoryCacheKey = buildOfflineCacheKey(inventoryDataset.datasetId);
 
-  const loadItems = useCallback(async () => {
-    try {
-      const items = await listInventory(accessToken);
-      setInventoryState({
-        status: "success",
-        items
-      });
-    } catch {
-      setInventoryState({
-        status: "error",
-        items: []
-      });
-    }
-  }, [accessToken]);
+  const fetchInventory = useCallback(
+    () =>
+      listInventory(accessToken).catch(() => {
+        throw new Error("La API de inventario no respondio como esperabamos.");
+      }),
+    [accessToken]
+  );
+
+  const inventoryState = useOfflineSnapshotResource({
+    cacheKey: inventoryCacheKey,
+    datasetId: inventoryDataset.datasetId,
+    ttlMs: inventoryDataset.ttlMs,
+    fetcher: fetchInventory
+  });
+  const inventoryItems = inventoryState.data ?? [];
 
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    setDatasetStatus(inventoryDataset.datasetId, {
+      ...inventoryState.freshness,
+      label: inventoryDataset.label
+    });
+    return () => {
+      clearDatasetStatus(inventoryDataset.datasetId);
+    };
+  }, [
+    clearDatasetStatus,
+    inventoryDataset.datasetId,
+    inventoryDataset.label,
+    inventoryState.freshness,
+    setDatasetStatus
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -71,25 +87,25 @@ export default function InventoryPage() {
   }, []);
 
   const brands = useMemo(
-    () => [...new Set(inventoryState.items.map((item) => item.brand).filter(Boolean))].sort(),
-    [inventoryState.items]
+    () => [...new Set(inventoryItems.map((item) => item.brand).filter(Boolean))].sort(),
+    [inventoryItems]
   );
 
   const counts = useMemo(() => {
-    const available = inventoryState.items.filter((item) => item.status === "available").length;
-    const reserved = inventoryState.items.filter((item) => item.status === "reserved").length;
-    const sold = inventoryState.items.filter((item) => item.status === "sold").length;
+    const available = inventoryItems.filter((item) => item.status === "available").length;
+    const reserved = inventoryItems.filter((item) => item.status === "reserved").length;
+    const sold = inventoryItems.filter((item) => item.status === "sold").length;
 
     return {
-      all: inventoryState.items.length,
+      all: inventoryItems.length,
       available,
       reserved,
       sold
     };
-  }, [inventoryState.items]);
+  }, [inventoryItems]);
 
   const filteredItems = useMemo(() => {
-    return inventoryState.items.filter((item) => {
+    return inventoryItems.filter((item) => {
       const normalizedTerm = searchTerm.trim().toLowerCase();
       const matchesTerm = normalizedTerm
         ? [item.product_id, item.brand, item.model_name, item.display_name]
@@ -119,7 +135,7 @@ export default function InventoryPage() {
 
       return matchesTerm && matchesStatus && matchesBrand && matchesPrice && matchesDays;
     });
-  }, [inventoryState.items, searchTerm, selectedStatus, selectedBrand, selectedPrice, selectedDays]);
+  }, [inventoryItems, searchTerm, selectedStatus, selectedBrand, selectedPrice, selectedDays]);
 
   function handleImportClick() {
     fileInputRef.current?.click();
@@ -145,7 +161,7 @@ export default function InventoryPage() {
             : `Importacion completa: ${result.created} relojes creados.`,
         errors: result.errors || []
       });
-      await loadItems();
+      await inventoryState.refresh();
     } catch (error) {
       setImportFeedback({
         type: "error",
@@ -216,6 +232,13 @@ export default function InventoryPage() {
         onPriceChange={setSelectedPrice}
         selectedDays={selectedDays}
         onDaysChange={setSelectedDays}
+      />
+
+      <OfflineSnapshotStatus
+        isStale={inventoryState.isStale}
+        label={inventoryDataset.label}
+        savedAt={inventoryState.savedAt}
+        source={inventoryState.source}
       />
 
       {inventoryState.status === "loading" ? (
