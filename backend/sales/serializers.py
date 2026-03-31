@@ -5,22 +5,10 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from clients.models import Client
-from finance.models import FinanceEntry
-from finance.services import recalculate_account_balance
+from finance.services import infer_destination_account, sync_sale_finance_entry
 from inventory.models import InventoryItem
 
 from .models import Sale
-
-
-def infer_destination_account(payment_method):
-    mapping = {
-        "cash": FinanceEntry.ACCOUNT_CASH,
-        "transfer": FinanceEntry.ACCOUNT_BBVA,
-        "card": FinanceEntry.ACCOUNT_CREDIT,
-        "msi": FinanceEntry.ACCOUNT_CREDIT,
-        "consignment": FinanceEntry.ACCOUNT_AMEX,
-    }
-    return mapping.get(payment_method, FinanceEntry.ACCOUNT_CASH)
 
 
 class SaleSerializer(serializers.ModelSerializer):
@@ -125,25 +113,6 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             )
         return attrs
 
-    def _sync_sale_finance_entry(self, sale):
-        finance_entry, _ = FinanceEntry.all_objects.update_or_create(
-            sale=sale,
-            concept=FinanceEntry.CONCEPT_SALE,
-            defaults={
-                "entry_type": FinanceEntry.TYPE_INCOME,
-                "amount": sale.amount_paid,
-                "account": infer_destination_account(sale.payment_method),
-                "entry_date": sale.sale_date,
-                "product": sale.product,
-                "notes": sale.notes,
-                "created_by": sale.created_by,
-                "updated_by": sale.updated_by,
-                "is_automatic": True,
-                "is_deleted": False,
-            },
-        )
-        recalculate_account_balance(finance_entry.account)
-
     @transaction.atomic
     def create(self, validated_data):
         request = self.context["request"]
@@ -165,7 +134,7 @@ class SaleCreateSerializer(serializers.ModelSerializer):
         product.updated_by = user
         product.save()
 
-        self._sync_sale_finance_entry(sale)
+        sync_sale_finance_entry(sale)
         sale.refresh_from_db()
         return sale
 

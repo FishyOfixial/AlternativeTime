@@ -120,6 +120,13 @@ class LayawayPayment(TimestampedSoftDeleteModel):
         choices=FinanceEntry.ACCOUNT_CHOICES,
         default=FinanceEntry.ACCOUNT_CASH,
     )
+    finance_entry = models.OneToOneField(
+        "finance.FinanceEntry",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="layaway_payment",
+    )
     notes = models.TextField(blank=True)
 
     class Meta:
