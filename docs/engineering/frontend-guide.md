@@ -75,8 +75,8 @@ La suite cubre rutas protegidas principales y manejo de errores de servicios.
 
 ## Roadmap PWA / offline-first
 
-La implementacion PWA offline-first esta planeada, no iniciada. La referencia
-principal vive en:
+La implementacion PWA offline-first ya arranco con una Fase 1 controlada. La
+referencia principal vive en:
 
 - `docs/planning/offline-sync-action-plan.md`
 
@@ -88,6 +88,23 @@ Lineamientos aprobados:
   cambios transaccionales criticos de `inventory`
 - la sincronizacion no debe depender de `background sync` prolongado en iOS
 - el entorno objetivo real es Apple multi-device: `iPhone`, `iPad`, `Mac`
+
+Capacidades activas de Fase 1:
+
+- `Web App Manifest` con branding instalable
+- `Service Worker` para app shell y assets estaticos
+- banner global de conectividad, instalacion y actualizacion
+- fallback de shell offline para rutas SPA
+- guia manual de instalacion para Safari en `iPhone`, `iPad` y `Mac`
+
+Limites actuales de Fase 1:
+
+- no hay cache de `/api/*`
+- no hay `IndexedDB`
+- no hay lectura offline real de datos de negocio
+- no hay escritura offline ni cola de sincronizacion
+- las vistas que dependen de API muestran un estado offline explicito cuando no
+  hay red
 
 Estados de sincronizacion previstos para UX:
 
