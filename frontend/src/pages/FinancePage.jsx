@@ -12,7 +12,8 @@ import {
   createFinanceEntry,
   getFinanceBalances,
   getFinanceSummary,
-  listFinanceEntries
+  listFinanceEntries,
+  updateFinanceEntry
 } from "../services/finance";
 import { exportReport } from "../services/reports";
 import {
@@ -38,6 +39,7 @@ export default function FinancePage() {
   const [filterType, setFilterType] = useState("all");
   const [filterAccount, setFilterAccount] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
   const [entryForm, setEntryForm] = useState(initialEntryForm);
   const [entryError, setEntryError] = useState("");
   const [entryFieldErrors, setEntryFieldErrors] = useState({});
@@ -118,6 +120,18 @@ export default function FinancePage() {
     });
     setEntryError("");
     setEntryFieldErrors({});
+    setEditingEntry(null);
+  }
+
+  function buildEntryFormFromEntry(entry) {
+    return {
+      entry_date: entry.entry_date || new Date().toISOString().slice(0, 10),
+      entry_type: entry.entry_type || "income",
+      concept: entry.concept || "sale",
+      amount: entry.amount || "",
+      account: entry.account || "cash",
+      notes: entry.notes || ""
+    };
   }
 
   function parseEntryErrors(error) {
@@ -137,21 +151,27 @@ export default function FinancePage() {
     return { fields, message };
   }
 
-  async function handleCreateEntry(event) {
+  async function handleSubmitEntry(event) {
     event.preventDefault();
     setIsSavingEntry(true);
     setEntryError("");
     setEntryFieldErrors({});
 
+    const payload = {
+      entry_date: entryForm.entry_date,
+      entry_type: entryForm.entry_type,
+      concept: entryForm.concept,
+      amount: entryForm.amount,
+      account: entryForm.account,
+      notes: entryForm.notes.trim()
+    };
+
     try {
-      await createFinanceEntry(accessToken, {
-        entry_date: entryForm.entry_date,
-        entry_type: entryForm.entry_type,
-        concept: entryForm.concept,
-        amount: entryForm.amount,
-        account: entryForm.account,
-        notes: entryForm.notes.trim()
-      });
+      if (editingEntry?.id) {
+        await updateFinanceEntry(accessToken, editingEntry.id, payload);
+      } else {
+        await createFinanceEntry(accessToken, payload);
+      }
       resetEntryForm();
       setIsModalOpen(false);
       await loadSummary();
@@ -172,6 +192,19 @@ export default function FinancePage() {
   function handleNewMovement() {
     resetEntryForm();
     setIsModalOpen(true);
+  }
+
+  function handleEditMovement(entry) {
+    setEditingEntry(entry);
+    setEntryForm(buildEntryFormFromEntry(entry));
+    setEntryError("");
+    setEntryFieldErrors({});
+    setIsModalOpen(true);
+  }
+
+  function handleCloseModal() {
+    setIsModalOpen(false);
+    resetEntryForm();
   }
 
   async function handleExport() {
@@ -261,6 +294,7 @@ export default function FinancePage() {
         accountLabels={accountLabels}
         typeLabels={typeLabels}
         conceptLabels={conceptLabels}
+        onEdit={handleEditMovement}
         filters={
           <FinanceFilters
             rangeOptions={rangeOptions}
@@ -280,10 +314,12 @@ export default function FinancePage() {
 
       <FinanceEntryModal
         isOpen={isModalOpen}
+        mode={editingEntry ? "edit" : "create"}
+        isAutomatic={Boolean(editingEntry?.is_automatic)}
         entryForm={entryForm}
         onChange={handleEntryChange}
-        onSubmit={handleCreateEntry}
-        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmitEntry}
+        onClose={handleCloseModal}
         isSaving={isSavingEntry}
         entryError={entryError}
         entryFieldErrors={entryFieldErrors}

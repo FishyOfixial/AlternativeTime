@@ -3,8 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework import serializers
 
-from finance.models import FinanceEntry
-from finance.services import recalculate_account_balance
+from finance.services import sync_purchase_finance_entry
 
 from .models import InventoryItem, PurchaseCost
 
@@ -127,23 +126,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             setattr(purchase_cost, field, value)
         purchase_cost.purchase_date = product.purchase_date
         purchase_cost.save()
-
-        finance_entry, _ = FinanceEntry.all_objects.update_or_create(
-            product=product,
-            concept=FinanceEntry.CONCEPT_PURCHASE,
-            defaults={
-                "entry_type": FinanceEntry.TYPE_EXPENSE,
-                "amount": purchase_cost.total_pagado,
-                "account": purchase_cost.source_account,
-                "entry_date": purchase_cost.purchase_date,
-                "notes": purchase_cost.notes,
-                "is_automatic": True,
-                "created_by": product.created_by,
-                "updated_by": product.updated_by,
-                "is_deleted": False,
-            },
-        )
-        recalculate_account_balance(finance_entry.account)
+        sync_purchase_finance_entry(product)
         return purchase_cost
 
     @transaction.atomic

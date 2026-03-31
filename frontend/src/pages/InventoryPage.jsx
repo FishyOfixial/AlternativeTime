@@ -4,7 +4,6 @@ import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
 import InventoryCards from "../components/inventory/InventoryCards";
 import InventoryFilters from "../components/inventory/InventoryFilters";
-import InventoryHeader from "../components/inventory/InventoryHeader";
 import InventoryStatusTabs from "../components/inventory/InventoryStatusTabs";
 import InventoryTable from "../components/inventory/InventoryTable";
 import InventoryViewToggle from "../components/inventory/InventoryViewToggle";

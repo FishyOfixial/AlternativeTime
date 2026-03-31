@@ -1,60 +1,29 @@
-import { apiJson } from "./http";
+import { apiJsonAuth, buildQueryString, submitJson } from "./serviceUtils";
 
 export function getFinanceSummary(accessToken) {
-  return apiJson("/api/finance/summary/", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
+  return apiJsonAuth("/api/finance/summary/", accessToken);
 }
 
 export function getFinanceBalances(accessToken) {
-  return apiJson("/api/finance/balances/", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
+  return apiJsonAuth("/api/finance/balances/", accessToken);
 }
 
 export function listFinanceEntries(accessToken, filters = {}) {
-  const searchParams = new URLSearchParams();
+  return apiJsonAuth(`/api/finance/entries/${buildQueryString(filters)}`, accessToken);
+}
 
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "" && value !== "all") {
-      searchParams.set(key, value);
-    }
-  });
-
-  const query = searchParams.toString();
-  return apiJson(`/api/finance/entries/${query ? `?${query}` : ""}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+export function createFinanceEntry(accessToken, payload) {
+  return submitJson("/api/finance/entries/", {
+    accessToken,
+    method: "POST",
+    payload
   });
 }
 
-export async function createFinanceEntry(accessToken, payload) {
-  const response = await fetch("/api/finance/entries/", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    },
-    body: JSON.stringify(payload)
+export function updateFinanceEntry(accessToken, entryId, payload) {
+  return submitJson(`/api/finance/entries/${entryId}/`, {
+    accessToken,
+    method: "PATCH",
+    payload
   });
-
-  if (response.ok) {
-    return response.json();
-  }
-
-  if (response.status === 400) {
-    const data = await response.json();
-    const error = new Error("VALIDATION_ERROR");
-    error.status = response.status;
-    error.data = data;
-    throw error;
-  }
-
-  throw new Error(`HTTP ${response.status}`);
 }

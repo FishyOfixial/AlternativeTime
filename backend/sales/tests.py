@@ -79,6 +79,7 @@ class TestSalesApi(TestCase):
         self.assertEqual(sale.product, self.item)
         self.assertEqual(str(sale.cost_snapshot), "19000.00")
         self.assertEqual(str(sale.gross_profit), "4700.00")
+        self.assertEqual(str(sale.profit_percentage), "0.1880")
         self.assertEqual(self.item.status, InventoryItem.STATUS_SOLD)
         self.assertEqual(self.item.days_to_sell, 10)
         self.assertEqual(finance_entry.entry_type, FinanceEntry.TYPE_INCOME)

@@ -13,7 +13,8 @@ function FinanceEntryMobileCard({
   formatCurrency,
   accountLabels,
   typeLabels,
-  conceptLabels
+  conceptLabels,
+  onEdit
 }) {
   return (
     <article className="rounded-2xl border border-[#eadfcd] bg-[#fffdf9] p-3">
@@ -44,6 +45,18 @@ function FinanceEntryMobileCard({
           Nota: {entry.notes || "-"}
         </p>
       </div>
+
+      {onEdit ? (
+        <div className="mt-3">
+          <button
+            className="rounded-lg border border-[#dccfb9] bg-[#fcf8f2] px-3 py-2 text-xs font-semibold text-[#7d6751] transition hover:bg-[#f2e9d9]"
+            onClick={() => onEdit(entry)}
+            type="button"
+          >
+            Editar movimiento
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -55,7 +68,8 @@ export default function FinanceEntriesTable({
   accountLabels,
   typeLabels,
   conceptLabels,
-  filters
+  filters,
+  onEdit
 }) {
   return (
     <section className="space-y-4">
@@ -80,10 +94,11 @@ export default function FinanceEntriesTable({
                 accountLabels={accountLabels}
                 typeLabels={typeLabels}
                 conceptLabels={conceptLabels}
+                onEdit={onEdit}
               />
             ))}
             desktopContent={
-              <table className="w-full min-w-[920px] border-collapse text-left lg:min-w-[980px]">
+              <table className="w-full min-w-[980px] border-collapse text-left lg:min-w-[1040px]">
                 <thead className="sticky top-0 z-10 border-b border-[#eadfcd] bg-[#f6f0e5] text-xs uppercase tracking-[0.16em] text-[#b4a085]">
                   <tr>
                     <th className="w-[120px] px-4 py-3">Fecha</th>
@@ -93,6 +108,7 @@ export default function FinanceEntriesTable({
                     <th className="w-[120px] px-4 py-3">Cuenta</th>
                     <th className="hidden w-[90px] px-4 py-3 lg:table-cell">Reloj</th>
                     <th className="min-w-[220px] px-4 py-3">Notas</th>
+                    <th className="w-[130px] px-4 py-3 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -118,6 +134,19 @@ export default function FinanceEntriesTable({
                         <p className="truncate" title={entry.notes || "-"}>
                           {entry.notes || "-"}
                         </p>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        {onEdit ? (
+                          <button
+                            className="rounded-lg border border-[#dccfb9] bg-[#fcf8f2] px-3 py-2 text-xs font-semibold text-[#7d6751] transition hover:bg-[#f2e9d9]"
+                            onClick={() => onEdit(entry)}
+                            type="button"
+                          >
+                            Editar
+                          </button>
+                        ) : (
+                          <span className="text-xs text-[#b4a085]">-</span>
+                        )}
                       </td>
                     </tr>
                   ))}

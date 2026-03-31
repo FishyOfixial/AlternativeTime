@@ -13,23 +13,36 @@ export default function FinanceEntryModal({
   entryError,
   entryFieldErrors,
   conceptOptions,
-  accountCards
+  accountCards,
+  mode = "create",
+  isAutomatic = false
 }) {
   if (!isOpen) {
     return null;
   }
 
+  const isEditing = mode === "edit";
+
   return (
     <AppModal isOpen={isOpen} maxWidthClass="max-w-xl" onClose={onClose}>
       <div>
         <div>
-          <p className="eyebrow">Nuevo movimiento</p>
-          <h2 className="mt-2 font-serif text-2xl text-[#2a221b] sm:text-3xl">Agregar movimiento</h2>
+          <p className="eyebrow">{isEditing ? "Editar movimiento" : "Nuevo movimiento"}</p>
+          <h2 className="mt-2 font-serif text-2xl text-[#2a221b] sm:text-3xl">
+            {isEditing ? "Actualizar movimiento" : "Agregar movimiento"}
+          </h2>
         </div>
 
         {entryError ? (
           <div className="mt-4 rounded-xl border border-[#e4c2bc] bg-[#fff1ee] px-4 py-3 text-sm text-[#935849]">
             {entryError}
+          </div>
+        ) : null}
+
+        {isEditing && isAutomatic ? (
+          <div className="mt-4 rounded-xl border border-[#ddcfba] bg-[#fcf8f2] px-4 py-3 text-sm text-[#7d6751]">
+            Este movimiento viene de una venta, compra o abono. Puedes ajustar fecha, cuenta, monto y notas;
+            el sistema sincronizara el origen automaticamente.
           </div>
         ) : null}
 
@@ -49,6 +62,7 @@ export default function FinanceEntryModal({
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">Tipo</span>
             <select
               className={fieldClassName}
+              disabled={isAutomatic}
               name="entry_type"
               onChange={onChange}
               value={entryForm.entry_type}
@@ -62,6 +76,7 @@ export default function FinanceEntryModal({
             <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">Concepto</span>
             <select
               className={fieldClassName}
+              disabled={isAutomatic}
               name="concept"
               onChange={onChange}
               value={entryForm.concept}
@@ -126,7 +141,7 @@ export default function FinanceEntryModal({
               Cancelar
             </button>
             <button className="gold-button px-4 py-2.5 text-xs" disabled={isSaving} type="submit">
-              {isSaving ? "Guardando..." : "Guardar movimiento"}
+              {isSaving ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar movimiento"}
             </button>
           </div>
         </form>

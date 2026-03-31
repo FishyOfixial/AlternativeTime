@@ -81,8 +81,8 @@ class Sale(TimestampedSoftDeleteModel):
             - (self.extras or Decimal("0.00"))
             - (self.sale_shipping_cost or Decimal("0.00"))
         )
-        if self.cost_snapshot and self.cost_snapshot > 0:
-            self.profit_percentage = self.gross_profit / self.cost_snapshot
+        if self.amount_paid and self.amount_paid > 0:
+            self.profit_percentage = self.gross_profit / self.amount_paid
         else:
             self.profit_percentage = Decimal("0.0000")
 
