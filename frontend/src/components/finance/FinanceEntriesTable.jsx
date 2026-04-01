@@ -14,8 +14,12 @@ function FinanceEntryMobileCard({
   accountLabels,
   typeLabels,
   conceptLabels,
-  onEdit
+  onEdit,
+  onDelete,
+  isDeleting
 }) {
+  const canDelete = onDelete && entry.concept !== "purchase";
+
   return (
     <article className="rounded-2xl border border-[#eadfcd] bg-[#fffdf9] p-3">
       <div className="flex items-start justify-between gap-3">
@@ -46,15 +50,27 @@ function FinanceEntryMobileCard({
         </p>
       </div>
 
-      {onEdit ? (
-        <div className="mt-3">
-          <button
-            className="rounded-lg border border-[#dccfb9] bg-[#fcf8f2] px-3 py-2 text-xs font-semibold text-[#7d6751] transition hover:bg-[#f2e9d9]"
-            onClick={() => onEdit(entry)}
-            type="button"
-          >
-            Editar movimiento
-          </button>
+      {onEdit || canDelete ? (
+        <div className="mt-3 flex gap-2">
+          {onEdit ? (
+            <button
+              className="rounded-lg border border-[#dccfb9] bg-[#fcf8f2] px-3 py-2 text-xs font-semibold text-[#7d6751] transition hover:bg-[#f2e9d9]"
+              onClick={() => onEdit(entry)}
+              type="button"
+            >
+              Editar movimiento
+            </button>
+          ) : null}
+          {canDelete ? (
+            <button
+              className="rounded-lg border border-[#e4c2bc] bg-[#fff1ee] px-3 py-2 text-xs font-semibold text-[#935849] transition hover:bg-[#ffe7e2]"
+              disabled={isDeleting}
+              onClick={() => onDelete(entry)}
+              type="button"
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </article>
@@ -69,7 +85,9 @@ export default function FinanceEntriesTable({
   typeLabels,
   conceptLabels,
   filters,
-  onEdit
+  onEdit,
+  onDelete,
+  deletingEntryId
 }) {
   return (
     <section className="space-y-4">
@@ -95,6 +113,8 @@ export default function FinanceEntriesTable({
                 typeLabels={typeLabels}
                 conceptLabels={conceptLabels}
                 onEdit={onEdit}
+                onDelete={onDelete}
+                isDeleting={deletingEntryId === entry.id}
               />
             ))}
             desktopContent={
@@ -112,7 +132,9 @@ export default function FinanceEntriesTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {entries.map((entry) => (
+                  {entries.map((entry) => {
+                    const canDelete = onDelete && entry.concept !== "purchase";
+                    return (
                     <tr key={entry.id} className="border-t border-[#eee2cd] text-sm text-[#5d5144]">
                       <td className="px-4 py-4">{formatDate(entry.entry_date)}</td>
                       <td className="px-4 py-4">
@@ -136,20 +158,34 @@ export default function FinanceEntriesTable({
                         </p>
                       </td>
                       <td className="px-4 py-4 text-right">
-                        {onEdit ? (
-                          <button
-                            className="rounded-lg border border-[#dccfb9] bg-[#fcf8f2] px-3 py-2 text-xs font-semibold text-[#7d6751] transition hover:bg-[#f2e9d9]"
-                            onClick={() => onEdit(entry)}
-                            type="button"
-                          >
-                            Editar
-                          </button>
-                        ) : (
-                          <span className="text-xs text-[#b4a085]">-</span>
-                        )}
+                        <div className="flex justify-end gap-2">
+                          {onEdit ? (
+                            <button
+                              className="rounded-lg border border-[#dccfb9] bg-[#fcf8f2] px-3 py-2 text-xs font-semibold text-[#7d6751] transition hover:bg-[#f2e9d9]"
+                              onClick={() => onEdit(entry)}
+                              type="button"
+                            >
+                              Editar
+                            </button>
+                          ) : null}
+                          {canDelete ? (
+                            <button
+                              className="rounded-lg border border-[#e4c2bc] bg-[#fff1ee] px-3 py-2 text-xs font-semibold text-[#935849] transition hover:bg-[#ffe7e2]"
+                              disabled={deletingEntryId === entry.id}
+                              onClick={() => onDelete(entry)}
+                              type="button"
+                            >
+                              {deletingEntryId === entry.id ? "Eliminando..." : "Eliminar"}
+                            </button>
+                          ) : null}
+                          {!onEdit && !canDelete ? (
+                            <span className="text-xs text-[#b4a085]">-</span>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             }
