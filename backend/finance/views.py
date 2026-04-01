@@ -13,6 +13,9 @@ from sales.models import Sale
 from .models import FinanceEntry
 from .serializers import FinanceEntrySerializer, FinanceEntryWriteSerializer
 from .services import (
+    delete_layaway_payment_relationship,
+    delete_purchase_relationship,
+    delete_sale_relationship,
     infer_payment_method_from_account,
     recalculate_account_balance,
     reconcile_layaway_completion,
@@ -240,6 +243,16 @@ class FinanceEntryViewSet(viewsets.ModelViewSet):
         reconcile_layaway_completion(layaway, self.request.user)
         return True
 
+    def _find_or_link_layaway_payment_for_destroy(self, instance):
+        payment = getattr(instance, "layaway_payment", None)
+        if payment is not None:
+            return payment
+
+        if instance.concept != FinanceEntry.CONCEPT_LAYAWAY_PAYMENT:
+            return None
+
+        return self._find_layaway_payment(instance)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -270,9 +283,21 @@ class FinanceEntryViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        if instance.concept == FinanceEntry.CONCEPT_PURCHASE:
+            raise PermissionDenied("Las compras de relojes no se pueden eliminar desde finanzas.")
         if instance.is_automatic:
-            raise PermissionDenied("No se pueden eliminar movimientos automáticos.")
+            if self._find_or_link_layaway_payment_for_destroy(instance) and delete_layaway_payment_relationship(
+                instance, request.user
+            ):
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            if delete_sale_relationship(instance, request.user):
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            if delete_purchase_relationship(instance, request.user):
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            raise PermissionDenied("No se pudo eliminar la relacion automatica de este movimiento.")
+
         instance.is_deleted = True
-        instance.save(update_fields=["is_deleted", "updated_at"])
+        instance.updated_by = request.user
+        instance.save(update_fields=["is_deleted", "updated_by", "updated_at"])
         recalculate_account_balance(instance.account)
         return Response(status=status.HTTP_204_NO_CONTENT)

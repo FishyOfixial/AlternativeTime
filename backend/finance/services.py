@@ -220,3 +220,82 @@ def reconcile_layaway_completion(layaway, user):
     layaway.updated_by = user
     layaway.save(update_fields=["status", "sale", "updated_by", "updated_at"])
     return layaway
+
+
+def delete_sale_relationship(finance_entry, user):
+    from inventory.models import InventoryItem
+
+    sale = finance_entry.sale
+    if sale is None:
+        return False
+
+    product = sale.product
+    sale.is_deleted = True
+    sale.updated_by = user
+    sale.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+
+    if product is not None:
+        product.status = InventoryItem.STATUS_AVAILABLE
+        product.sold_date = None
+        product.sold_at = None
+        product.days_to_sell = None
+        product.updated_by = user
+        product.save(
+            update_fields=[
+                "status",
+                "sold_date",
+                "sold_at",
+                "days_to_sell",
+                "updated_by",
+                "updated_at",
+                "stock",
+                "is_active",
+                "tag",
+            ]
+        )
+
+    finance_entry.is_deleted = True
+    finance_entry.updated_by = user
+    finance_entry.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+    recalculate_account_balance(finance_entry.account)
+    return True
+
+
+def delete_purchase_relationship(finance_entry, user):
+    product = finance_entry.product
+    purchase_cost = getattr(product, "purchase_cost", None) if product else None
+    if purchase_cost is None:
+        return False
+
+    purchase_cost.delete()
+    finance_entry.is_deleted = True
+    finance_entry.updated_by = user
+    finance_entry.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+
+    if product is not None:
+        product.updated_by = user
+        product.save(update_fields=["updated_by", "updated_at"])
+
+    recalculate_account_balance(finance_entry.account)
+    return True
+
+
+def delete_layaway_payment_relationship(finance_entry, user):
+    payment = getattr(finance_entry, "layaway_payment", None)
+    if payment is None:
+        return False
+
+    layaway = payment.layaway
+    payment.is_deleted = True
+    payment.updated_by = user
+    payment.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+
+    finance_entry.is_deleted = True
+    finance_entry.updated_by = user
+    finance_entry.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+
+    layaway.updated_by = user
+    layaway.save()
+    reconcile_layaway_completion(layaway, user)
+    recalculate_account_balance(finance_entry.account)
+    return True

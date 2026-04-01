@@ -27,3 +27,10 @@ export function updateFinanceEntry(accessToken, entryId, payload) {
     payload
   });
 }
+
+export function deleteFinanceEntry(accessToken, entryId) {
+  return submitJson(`/api/finance/entries/${entryId}/`, {
+    accessToken,
+    method: "DELETE"
+  });
+}

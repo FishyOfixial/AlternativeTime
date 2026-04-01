@@ -10,6 +10,7 @@ import FinanceSummaryCards from "../components/finance/FinanceSummaryCards";
 import { useAuth } from "../contexts/AuthContext";
 import {
   createFinanceEntry,
+  deleteFinanceEntry,
   getFinanceBalances,
   getFinanceSummary,
   listFinanceEntries,
@@ -44,6 +45,7 @@ export default function FinancePage() {
   const [entryError, setEntryError] = useState("");
   const [entryFieldErrors, setEntryFieldErrors] = useState({});
   const [isSavingEntry, setIsSavingEntry] = useState(false);
+  const [deletingEntryId, setDeletingEntryId] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
 
@@ -207,6 +209,36 @@ export default function FinancePage() {
     resetEntryForm();
   }
 
+  async function handleDeleteMovement(entryToDelete = editingEntry) {
+    if (!entryToDelete?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Se eliminara este movimiento y, si aplica, tambien su relacion origen. ¿Quieres continuar?"
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingEntryId(entryToDelete.id);
+    setEntryError("");
+
+    try {
+      await deleteFinanceEntry(accessToken, entryToDelete.id);
+      if (editingEntry?.id === entryToDelete.id) {
+        handleCloseModal();
+      }
+      await loadSummary();
+      await loadEntries();
+    } catch (error) {
+      const detail = error?.data?.detail;
+      setEntryError(detail || "No pudimos eliminar el movimiento.");
+    } finally {
+      setDeletingEntryId(null);
+    }
+  }
+
   async function handleExport() {
     setIsExporting(true);
     setExportError("");
@@ -295,6 +327,8 @@ export default function FinancePage() {
         typeLabels={typeLabels}
         conceptLabels={conceptLabels}
         onEdit={handleEditMovement}
+        onDelete={handleDeleteMovement}
+        deletingEntryId={deletingEntryId}
         filters={
           <FinanceFilters
             rangeOptions={rangeOptions}
@@ -321,10 +355,12 @@ export default function FinancePage() {
         onSubmit={handleSubmitEntry}
         onClose={handleCloseModal}
         isSaving={isSavingEntry}
+        isDeleting={deletingEntryId === editingEntry?.id}
         entryError={entryError}
         entryFieldErrors={entryFieldErrors}
         conceptOptions={conceptOptions}
         accountCards={accountCards}
+        onDelete={() => handleDeleteMovement(editingEntry)}
       />
     </div>
   );

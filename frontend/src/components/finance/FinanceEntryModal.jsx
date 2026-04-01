@@ -15,13 +15,16 @@ export default function FinanceEntryModal({
   conceptOptions,
   accountCards,
   mode = "create",
-  isAutomatic = false
+  isAutomatic = false,
+  onDelete,
+  isDeleting = false
 }) {
   if (!isOpen) {
     return null;
   }
 
   const isEditing = mode === "edit";
+  const canDelete = isEditing && onDelete && entryForm.concept !== "purchase";
 
   return (
     <AppModal isOpen={isOpen} maxWidthClass="max-w-xl" onClose={onClose}>
@@ -133,6 +136,16 @@ export default function FinanceEntryModal({
           </label>
 
           <div className="col-span-2 flex flex-row justify-end gap-2 sm:gap-3">
+            {canDelete ? (
+              <button
+                className="rounded-xl border border-[#e4c2bc] bg-[#fff1ee] px-4 py-2.5 text-sm font-semibold text-[#935849]"
+                disabled={isDeleting}
+                onClick={onDelete}
+                type="button"
+              >
+                {isDeleting ? "Eliminando..." : "Eliminar"}
+              </button>
+            ) : null}
             <button
               className="rounded-xl border border-[#dccfb9] px-4 py-2.5 text-sm text-[#7d6751]"
               onClick={onClose}

@@ -395,3 +395,110 @@ class TestFinanceSummaryApi(TestCase):
         self.assertEqual(payment.account, FinanceEntry.ACCOUNT_BBVA)
         self.assertEqual(str(layaway.amount_paid), "130.00")
         self.assertEqual(str(layaway.balance_due), "120.00")
+
+    def test_deleting_automatic_entries_deletes_related_records(self):
+        self.client.force_authenticate(user=self.user)
+
+        sale = Sale.objects.create(
+            client=self.customer,
+            product=self.product,
+            sale_date=timezone.localdate(),
+            payment_method="cash",
+            sales_channel="direct",
+            amount_paid=Decimal("220.00"),
+            cost_snapshot=Decimal("50.00"),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.product.status = InventoryItem.STATUS_SOLD
+        self.product.sold_date = timezone.localdate()
+        self.product.save()
+        sale_entry = FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("220.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            sale=sale,
+            product=self.product,
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=True,
+        )
+
+        sale_delete = self.client.delete(f"/api/finance/entries/{sale_entry.id}/")
+
+        self.assertEqual(sale_delete.status_code, 204)
+        sale.refresh_from_db()
+        sale_entry.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertTrue(sale.is_deleted)
+        self.assertTrue(sale_entry.is_deleted)
+        self.assertEqual(self.product.status, InventoryItem.STATUS_AVAILABLE)
+
+        purchase_entry = FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_EXPENSE,
+            concept=FinanceEntry.CONCEPT_PURCHASE,
+            amount=Decimal("50.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=self.product.purchase_date,
+            product=self.product,
+            notes="Compra original",
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=True,
+        )
+
+        purchase_delete = self.client.delete(f"/api/finance/entries/{purchase_entry.id}/")
+
+        self.assertEqual(purchase_delete.status_code, 403)
+        purchase_entry.refresh_from_db()
+        self.assertFalse(purchase_entry.is_deleted)
+        self.assertTrue(PurchaseCost.objects.filter(product=self.product).exists())
+
+        layaway = Layaway.objects.create(
+            product=self.product,
+            client=self.customer,
+            agreed_price=Decimal("250.00"),
+            start_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.product.status = InventoryItem.STATUS_RESERVED
+        self.product.save()
+        payment = LayawayPayment.objects.create(
+            layaway=layaway,
+            payment_date=timezone.localdate(),
+            amount=Decimal("100.00"),
+            payment_method="cash",
+            account=FinanceEntry.ACCOUNT_CASH,
+            notes="Abono",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        payment_entry = FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_LAYAWAY_PAYMENT,
+            amount=Decimal("100.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=timezone.localdate(),
+            product=self.product,
+            notes="Abono",
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=True,
+        )
+        payment.finance_entry = payment_entry
+        payment.save(update_fields=["finance_entry"])
+        layaway.save()
+
+        layaway_delete = self.client.delete(f"/api/finance/entries/{payment_entry.id}/")
+
+        self.assertEqual(layaway_delete.status_code, 204)
+        payment.refresh_from_db()
+        payment_entry.refresh_from_db()
+        layaway.refresh_from_db()
+        self.assertTrue(payment.is_deleted)
+        self.assertTrue(payment_entry.is_deleted)
+        self.assertEqual(str(layaway.amount_paid), "0.00")
+        self.assertEqual(str(layaway.balance_due), "250.00")
