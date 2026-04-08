@@ -25,6 +25,9 @@ export default function FinanceEntryModal({
 
   const isEditing = mode === "edit";
   const canDelete = isEditing && onDelete && entryForm.concept !== "purchase";
+  const availableConceptOptions = isEditing
+    ? conceptOptions
+    : conceptOptions.filter((option) => option.value !== "purchase");
 
   return (
     <AppModal isOpen={isOpen} maxWidthClass="max-w-xl" onClose={onClose}>
@@ -84,7 +87,7 @@ export default function FinanceEntryModal({
               onChange={onChange}
               value={entryForm.concept}
             >
-              {conceptOptions.map((option) => (
+              {availableConceptOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

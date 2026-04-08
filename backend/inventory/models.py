@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Sum
 from django.utils import timezone
 
 from api.model_mixins import TimestampedSoftDeleteModel
@@ -167,6 +168,9 @@ class InventoryItem(TimestampedSoftDeleteModel):
 
     @property
     def total_purchase_cost(self):
+        line_total = self.purchase_cost_lines.filter(is_deleted=False).aggregate(total=Sum("amount"))["total"]
+        if line_total is not None:
+            return line_total
         if hasattr(self, "purchase_cost"):
             return self.purchase_cost.total_pagado
         return (
@@ -277,6 +281,62 @@ class PurchaseCost(models.Model):
         self.recalculate_total()
         if self.purchase_date != self.product.purchase_date:
             self.purchase_date = self.product.purchase_date
+        super().save(*args, **kwargs)
+
+
+class PurchaseCostLine(TimestampedSoftDeleteModel):
+    TYPE_WATCH = "watch"
+    TYPE_SHIPPING = "shipping"
+    TYPE_MAINTENANCE = "maintenance"
+    TYPE_OTHER = "other"
+    TYPE_CHOICES = [
+        (TYPE_WATCH, "Reloj"),
+        (TYPE_SHIPPING, "Envio"),
+        (TYPE_MAINTENANCE, "Mantenimiento"),
+        (TYPE_OTHER, "Otro"),
+    ]
+
+    product = models.ForeignKey(
+        InventoryItem,
+        on_delete=models.CASCADE,
+        related_name="purchase_cost_lines",
+    )
+    cost_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default=TYPE_OTHER)
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
+    )
+    account = models.CharField(
+        max_length=20,
+        choices=ACCOUNT_CHOICES,
+        default="cash",
+    )
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_CHOICES,
+        default="cash",
+    )
+    cost_date = models.DateField()
+    notes = models.TextField(blank=True)
+    finance_entry = models.OneToOneField(
+        "finance.FinanceEntry",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="purchase_cost_line",
+    )
+
+    class Meta:
+        ordering = ["cost_date", "created_at", "id"]
+
+    def __str__(self):
+        return f"{self.get_cost_type_display()} {self.product.display_name}"
+
+    def save(self, *args, **kwargs):
+        if not self.cost_date:
+            self.cost_date = self.product.purchase_date
         super().save(*args, **kwargs)
 
 

@@ -7,6 +7,7 @@ class FinanceEntrySerializer(serializers.ModelSerializer):
     product_code = serializers.CharField(source="product.product_id", read_only=True)
     product_label = serializers.CharField(source="product.display_name", read_only=True)
     sale_id = serializers.IntegerField(source="sale.id", read_only=True)
+    purchase_cost_line_id = serializers.IntegerField(source="purchase_cost_line.id", read_only=True)
     created_by_id = serializers.IntegerField(source="created_by.id", read_only=True)
     updated_by_id = serializers.IntegerField(source="updated_by.id", read_only=True)
     concept_label = serializers.CharField(source="get_concept_display", read_only=True)
@@ -27,6 +28,7 @@ class FinanceEntrySerializer(serializers.ModelSerializer):
             "product_label",
             "sale",
             "sale_id",
+            "purchase_cost_line_id",
             "is_automatic",
             "created_by_id",
             "updated_by_id",

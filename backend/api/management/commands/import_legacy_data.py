@@ -12,8 +12,8 @@ from django.utils import timezone
 
 from clients.models import Client
 from finance.models import AccountBalance, FinanceEntry
-from finance.services import recalculate_account_balance
-from inventory.models import InventoryItem, PurchaseCost
+from finance.services import recalculate_account_balance, sync_purchase_cost_line_finance_entry
+from inventory.models import InventoryItem, PurchaseCost, PurchaseCostLine
 from sales.models import Sale
 
 
@@ -215,6 +215,7 @@ class Command(BaseCommand):
                 notes="Importado desde legacy",
             )
             purchase.save()
+            self._create_purchase_cost_lines(product, purchase, user=None)
             inserted += 1
         self.stdout.write(f"Costos de compra importados: {inserted}")
 
@@ -244,8 +245,32 @@ class Command(BaseCommand):
                 notes=self._clean_text(row["notes"]),
             )
             purchase.save()
+            self._create_purchase_cost_lines(product, purchase, user=None)
             inserted += 1
         self.stdout.write(f"Costos de compra importados: {inserted}")
+
+    def _create_purchase_cost_lines(self, product, purchase, user):
+        for field_name, cost_type in [
+            ("watch_cost", PurchaseCostLine.TYPE_WATCH),
+            ("shipping_cost", PurchaseCostLine.TYPE_SHIPPING),
+            ("maintenance_cost", PurchaseCostLine.TYPE_MAINTENANCE),
+            ("other_costs", PurchaseCostLine.TYPE_OTHER),
+        ]:
+            amount = getattr(purchase, field_name) or Decimal("0.00")
+            if amount <= 0:
+                continue
+            cost_line = PurchaseCostLine.objects.create(
+                product=product,
+                cost_type=cost_type,
+                amount=amount,
+                account=purchase.source_account,
+                payment_method=purchase.payment_method,
+                cost_date=purchase.purchase_date,
+                notes=purchase.notes,
+                created_by=user,
+                updated_by=user,
+            )
+            sync_purchase_cost_line_finance_entry(cost_line)
 
     def _import_sales(self, conn, inventory_map, user):
         inserted = 0
@@ -414,6 +439,8 @@ class Command(BaseCommand):
                 concept=concept,
                 entry_type=entry_type,
             )
+            if concept == FinanceEntry.CONCEPT_PURCHASE and product and product.purchase_cost_lines.exists():
+                continue
 
             FinanceEntry.objects.create(
                 entry_type=entry_type,
@@ -460,6 +487,8 @@ class Command(BaseCommand):
                 concept=concept,
                 entry_type=entry_type,
             )
+            if concept == FinanceEntry.CONCEPT_PURCHASE and product and product.purchase_cost_lines.exists():
+                continue
 
             FinanceEntry.objects.create(
                 entry_type=entry_type,

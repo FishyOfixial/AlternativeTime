@@ -85,6 +85,14 @@ export default function InventoryFormPage() {
           Object.entries(source).forEach(([key, value]) => {
             const fieldKey = prefix ? `${prefix}.${key}` : key;
             if (Array.isArray(value)) {
+              if (value.some((item) => item && typeof item === "object")) {
+                value.forEach((item, index) => {
+                  if (item && typeof item === "object") {
+                    assignErrors(item, `${fieldKey}.${index}`);
+                  }
+                });
+                return;
+              }
               normalizedFieldErrors[fieldKey] = value.join(" ");
               return;
             }

@@ -13,7 +13,7 @@ from rest_framework.renderers import BaseRenderer, BrowsableAPIRenderer, JSONRen
 from rest_framework.views import APIView
 
 from finance.models import FinanceEntry
-from inventory.models import InventoryItem, PurchaseCost
+from inventory.models import InventoryItem, PurchaseCostLine
 from sales.models import Sale
 
 
@@ -102,7 +102,7 @@ def compute_summary(sales_queryset, inventory_queryset):
 
     inventory_capital = Decimal("0.00")
     stock_by_brand_map = {}
-    for item in inventory_queryset.select_related("purchase_cost"):
+    for item in inventory_queryset.prefetch_related("purchase_cost_lines"):
         inventory_capital += item.total_purchase_cost
         stock_by_brand_map[item.brand] = stock_by_brand_map.get(item.brand, 0) + 1
 
@@ -497,7 +497,7 @@ class ExportReportView(APIView):
         return headers, rows
 
     def report_inventory_current(self, params):
-        queryset = InventoryItem.objects.select_related("purchase_cost")
+        queryset = InventoryItem.objects.prefetch_related("purchase_cost_lines")
         status_value = params.get("status")
         if status_value:
             queryset = queryset.filter(status=status_value)
@@ -534,33 +534,35 @@ class ExportReportView(APIView):
 
     def report_purchase_cost(self, params):
         date_from, date_to = self.parse_date_range(params)
-        queryset = PurchaseCost.objects.select_related("product")
+        queryset = PurchaseCostLine.objects.select_related("product")
         if date_from:
-            queryset = queryset.filter(purchase_date__gte=date_from)
+            queryset = queryset.filter(cost_date__gte=date_from)
         if date_to:
-            queryset = queryset.filter(purchase_date__lte=date_to)
+            queryset = queryset.filter(cost_date__lte=date_to)
         payment_method = params.get("payment_method")
         if payment_method:
             queryset = queryset.filter(payment_method=payment_method)
         headers = [
-            "Fecha compra",
+            "Fecha costo",
             "ID",
             "Marca",
             "Modelo",
-            "Total pagado",
+            "Tipo costo",
+            "Monto",
             "Metodo pago",
             "Cuenta",
             "Notas",
         ]
         rows = [
             [
-                str(cost.purchase_date),
+                str(cost.cost_date),
                 cost.product.product_id if cost.product else "",
                 cost.product.brand if cost.product else "",
                 cost.product.model_name if cost.product else "",
-                str(cost.total_pagado),
+                cost.cost_type,
+                str(cost.amount),
                 cost.payment_method,
-                cost.source_account,
+                cost.account,
                 cost.notes,
             ]
             for cost in queryset

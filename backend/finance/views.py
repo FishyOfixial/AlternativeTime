@@ -20,6 +20,7 @@ from .services import (
     recalculate_account_balance,
     reconcile_layaway_completion,
     sync_layaway_payment_finance_entry,
+    sync_purchase_cost_line_finance_entry,
     sync_purchase_finance_entry,
     sync_sale_finance_entry,
 )
@@ -67,7 +68,7 @@ class AccountBalanceView(APIView):
 
 
 class FinanceEntryViewSet(viewsets.ModelViewSet):
-    queryset = FinanceEntry.objects.select_related("product", "sale", "layaway_payment")
+    queryset = FinanceEntry.objects.select_related("product", "sale", "layaway_payment", "purchase_cost_line")
 
     def get_serializer_class(self):
         if self.action in {"create", "update", "partial_update"}:
@@ -101,6 +102,8 @@ class FinanceEntryViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
+        if serializer.validated_data.get("concept") == FinanceEntry.CONCEPT_PURCHASE:
+            raise ValidationError({"concept": "Las compras deben crearse desde los costos del reloj."})
         serializer.save(
             created_by=self.request.user,
             updated_by=self.request.user,
@@ -125,6 +128,25 @@ class FinanceEntryViewSet(viewsets.ModelViewSet):
         return True
 
     def _update_purchase_entry(self, instance, validated_data):
+        cost_line = getattr(instance, "purchase_cost_line", None)
+        if cost_line is not None:
+            next_cost_date = validated_data.get("entry_date", cost_line.cost_date)
+            if cost_line.product.sold_date and next_cost_date > cost_line.product.sold_date:
+                raise ValidationError(
+                    {"entry_date": "El costo no puede quedar despues de la fecha de venta del reloj."}
+                )
+            if Decimal(str(validated_data.get("amount", cost_line.amount))) <= 0:
+                raise ValidationError({"amount": "El monto debe ser mayor a 0."})
+
+            cost_line.cost_date = next_cost_date
+            cost_line.amount = Decimal(str(validated_data.get("amount", cost_line.amount)))
+            cost_line.account = validated_data.get("account", cost_line.account)
+            cost_line.notes = validated_data.get("notes", cost_line.notes)
+            cost_line.updated_by = self.request.user
+            cost_line.save()
+            sync_purchase_cost_line_finance_entry(cost_line)
+            return True
+
         product = instance.product
         purchase_cost = getattr(product, "purchase_cost", None) if product else None
         if product is None or purchase_cost is None:

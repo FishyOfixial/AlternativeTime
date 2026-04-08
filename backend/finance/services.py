@@ -72,6 +72,13 @@ def sync_sale_finance_entry(sale):
 
 
 def sync_purchase_finance_entry(product):
+    from inventory.models import PurchaseCostLine
+
+    existing_lines = product.purchase_cost_lines.filter(is_deleted=False)
+    if existing_lines.exists():
+        entries = [sync_purchase_cost_line_finance_entry(cost_line) for cost_line in existing_lines]
+        return entries[0] if entries else None
+
     purchase_cost = getattr(product, "purchase_cost", None)
     if purchase_cost is None:
         raise serializers.ValidationError({"product": "El reloj no tiene costos de compra asociados."})
@@ -95,28 +102,89 @@ def sync_purchase_finance_entry(product):
     return finance_entry
 
 
+def sync_purchase_cost_line_finance_entry(cost_line):
+    old_account = cost_line.finance_entry.account if cost_line.finance_entry_id else None
+
+    if cost_line.amount <= 0:
+        if cost_line.finance_entry_id:
+            finance_entry = cost_line.finance_entry
+            finance_entry.is_deleted = True
+            finance_entry.updated_by = cost_line.updated_by
+            finance_entry.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+            recalculate_account_balance(finance_entry.account)
+        return None
+
+    defaults = {
+        "entry_type": FinanceEntry.TYPE_EXPENSE,
+        "concept": FinanceEntry.CONCEPT_PURCHASE,
+        "amount": cost_line.amount,
+        "account": cost_line.account,
+        "entry_date": cost_line.cost_date,
+        "notes": cost_line.notes,
+        "product": cost_line.product,
+        "is_automatic": True,
+        "created_by": cost_line.created_by or cost_line.product.created_by,
+        "updated_by": cost_line.updated_by or cost_line.product.updated_by,
+        "is_deleted": False,
+    }
+
+    if cost_line.finance_entry_id:
+        finance_entry = cost_line.finance_entry
+        for field, value in defaults.items():
+            setattr(finance_entry, field, value)
+        finance_entry.save()
+    else:
+        finance_entry = FinanceEntry.objects.create(**defaults)
+        cost_line.finance_entry = finance_entry
+        cost_line.save(update_fields=["finance_entry", "updated_at"])
+
+    if old_account and old_account != finance_entry.account:
+        recalculate_account_balance(old_account)
+    recalculate_account_balance(finance_entry.account)
+    return finance_entry
+
+
+def delete_purchase_cost_line_relationship(cost_line, user):
+    finance_entry = cost_line.finance_entry
+    cost_line.is_deleted = True
+    cost_line.updated_by = user
+    cost_line.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+
+    if finance_entry is not None:
+        finance_entry.is_deleted = True
+        finance_entry.updated_by = user
+        finance_entry.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+        recalculate_account_balance(finance_entry.account)
+
+    return True
+
+
 def sync_layaway_payment_finance_entry(payment, user=None):
     from layaways.models import LayawayPayment
 
     if not isinstance(payment, LayawayPayment):
         raise TypeError("payment must be a LayawayPayment instance")
 
-    finance_entry, _ = FinanceEntry.all_objects.update_or_create(
-        layaway_payment=payment,
-        defaults={
-            "entry_type": FinanceEntry.TYPE_INCOME,
-            "concept": FinanceEntry.CONCEPT_LAYAWAY_PAYMENT,
-            "amount": payment.amount,
-            "account": payment.account,
-            "entry_date": payment.payment_date,
-            "is_automatic": True,
-            "notes": payment.notes,
-            "product": payment.layaway.product,
-            "created_by": payment.created_by,
-            "updated_by": user or payment.updated_by,
-            "is_deleted": False,
-        },
-    )
+    defaults = {
+        "entry_type": FinanceEntry.TYPE_INCOME,
+        "concept": FinanceEntry.CONCEPT_LAYAWAY_PAYMENT,
+        "amount": payment.amount,
+        "account": payment.account,
+        "entry_date": payment.payment_date,
+        "is_automatic": True,
+        "notes": payment.notes,
+        "product": payment.layaway.product,
+        "created_by": payment.created_by,
+        "updated_by": user or payment.updated_by,
+        "is_deleted": False,
+    }
+    if payment.finance_entry_id:
+        finance_entry = payment.finance_entry
+        for field, value in defaults.items():
+            setattr(finance_entry, field, value)
+        finance_entry.save()
+    else:
+        finance_entry = FinanceEntry.objects.create(**defaults)
     if payment.finance_entry_id != finance_entry.id:
         payment.finance_entry = finance_entry
         payment.save(update_fields=["finance_entry"])
@@ -262,6 +330,10 @@ def delete_sale_relationship(finance_entry, user):
 
 
 def delete_purchase_relationship(finance_entry, user):
+    cost_line = getattr(finance_entry, "purchase_cost_line", None)
+    if cost_line is not None:
+        return delete_purchase_cost_line_relationship(cost_line, user)
+
     product = finance_entry.product
     purchase_cost = getattr(product, "purchase_cost", None) if product else None
     if purchase_cost is None:

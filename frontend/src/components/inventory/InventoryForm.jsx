@@ -5,6 +5,20 @@ function getTodayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function newTempId(prefix = "cost") {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `${prefix}-${Date.now()}-${Math.random()}`;
+}
+
+const defaultCostLines = [
+  { cost_type: "watch", label: "Reloj" },
+  { cost_type: "shipping", label: "Envio" },
+  { cost_type: "maintenance", label: "Mantenimiento" },
+  { cost_type: "other", label: "Otro" }
+];
+
 const initialValues = {
   brand: "",
   model_name: "",
@@ -17,15 +31,15 @@ const initialValues = {
   price: "0.00",
   status: "available",
   sales_channel: "marketplace",
-  purchase_cost: {
-    watch_cost: "0.00",
-    shipping_cost: "0.00",
-    maintenance_cost: "0.00",
-    other_costs: "0.00",
+  purchase_costs: defaultCostLines.map((line) => ({
+    temp_id: newTempId(line.cost_type),
+    cost_type: line.cost_type,
+    amount: "0.00",
+    account: "cash",
     payment_method: "cash",
-    source_account: "cash",
+    cost_date: getTodayIsoDate(),
     notes: ""
-  }
+  }))
 };
 
 function formatCurrency(value) {
@@ -97,7 +111,9 @@ function buildProductIdPreview(values, defaultValues, isEdit, existingProductIds
 }
 
 function buildFormState(defaultValues = {}) {
-  const purchaseCost = defaultValues.purchase_cost || {};
+  const purchaseCosts = defaultValues.purchase_costs?.length
+    ? defaultValues.purchase_costs
+    : legacyPurchaseCostToLines(defaultValues.purchase_cost, defaultValues.purchase_date);
 
   return {
     ...initialValues,
@@ -105,16 +121,35 @@ function buildFormState(defaultValues = {}) {
     condition_score: String(defaultValues.condition_score ?? initialValues.condition_score),
     price: String(defaultValues.price ?? initialValues.price),
     purchase_date: defaultValues.purchase_date || initialValues.purchase_date,
-    purchase_cost: {
-      ...initialValues.purchase_cost,
-      ...Object.fromEntries(
-        Object.entries(purchaseCost).map(([key, value]) => [
-          key,
-          value === null || value === undefined ? "" : String(value)
-        ])
-      )
-    }
+    purchase_costs: purchaseCosts.map((cost) => ({
+      temp_id: cost.id || newTempId(cost.cost_type),
+      id: cost.id,
+      cost_type: cost.cost_type || "other",
+      amount: String(cost.amount ?? "0.00"),
+      account: cost.account || cost.source_account || "cash",
+      payment_method: cost.payment_method || "cash",
+      cost_date: cost.cost_date || defaultValues.purchase_date || initialValues.purchase_date,
+      notes: cost.notes || ""
+    }))
   };
+}
+
+function legacyPurchaseCostToLines(purchaseCost = {}, purchaseDate = getTodayIsoDate()) {
+  const legacyMap = [
+    ["watch_cost", "watch"],
+    ["shipping_cost", "shipping"],
+    ["maintenance_cost", "maintenance"],
+    ["other_costs", "other"]
+  ];
+
+  return legacyMap.map(([field, costType]) => ({
+    cost_type: costType,
+    amount: purchaseCost[field] ?? "0.00",
+    account: purchaseCost.source_account || "cash",
+    payment_method: purchaseCost.payment_method || "cash",
+    cost_date: purchaseDate,
+    notes: purchaseCost.notes || ""
+  }));
 }
 
 const labelClassName = "text-[10px] font-semibold uppercase tracking-[0.06em] lg:tracking-[0.16em] text-[#b09a7e]";
@@ -157,9 +192,9 @@ export default function InventoryForm({
 
     const firstKey = keys[0];
     const lastSegment = firstKey.split(".").at(-1);
-    const isPurchaseCostField = firstKey.startsWith("purchase_cost.");
+    const isPurchaseCostField = firstKey.startsWith("purchase_costs.");
     const selector = isPurchaseCostField
-      ? `[name="${lastSegment}"][data-group="purchase_cost"]`
+      ? `[name="${lastSegment}"][data-group="purchase_costs"]`
       : `[name="${lastSegment}"]`;
     const target = document.querySelector(selector);
 
@@ -179,14 +214,41 @@ export default function InventoryForm({
     }));
   }
 
-  function handlePurchaseCostChange(event) {
+  function handlePurchaseCostChange(index, event) {
     const { name, value } = event.target;
     setValues((current) => ({
       ...current,
-      purchase_cost: {
-        ...current.purchase_cost,
-        [name]: value
-      }
+      purchase_costs: current.purchase_costs.map((cost, costIndex) =>
+        costIndex === index ? { ...cost, [name]: value } : cost
+      )
+    }));
+  }
+
+  function handleAddCostLine() {
+    setValues((current) => ({
+      ...current,
+      purchase_costs: [
+        ...current.purchase_costs,
+        {
+          temp_id: newTempId("other"),
+          cost_type: "other",
+          amount: "0.00",
+          account: "cash",
+          payment_method: "cash",
+          cost_date: current.purchase_date || getTodayIsoDate(),
+          notes: ""
+        }
+      ]
+    }));
+  }
+
+  function handleRemoveCostLine(index) {
+    if (values.purchase_costs[index]?.cost_type === "watch") {
+      return;
+    }
+    setValues((current) => ({
+      ...current,
+      purchase_costs: current.purchase_costs.filter((_, costIndex) => costIndex !== index)
     }));
   }
 
@@ -218,10 +280,7 @@ export default function InventoryForm({
 
   const summary = useMemo(() => {
     const purchaseCost =
-      Number(values.purchase_cost.watch_cost || 0) +
-      Number(values.purchase_cost.shipping_cost || 0) +
-      Number(values.purchase_cost.maintenance_cost || 0) +
-      Number(values.purchase_cost.other_costs || 0);
+      values.purchase_costs.reduce((total, cost) => total + Number(cost.amount || 0), 0);
     const salePrice = Number(values.price || 0);
     const profit = salePrice - purchaseCost;
     const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;
@@ -232,7 +291,7 @@ export default function InventoryForm({
       profit,
       margin
     };
-  }, [values.price, values.purchase_cost]);
+  }, [values.price, values.purchase_costs]);
 
   const productIdPreview = useMemo(
     () => buildProductIdPreview(values, defaultValues, isEdit, existingProductIds),
@@ -254,15 +313,15 @@ export default function InventoryForm({
       price: values.price,
       status: values.status,
       sales_channel: values.sales_channel,
-      purchase_cost: {
-        watch_cost: values.purchase_cost.watch_cost,
-        shipping_cost: values.purchase_cost.shipping_cost,
-        maintenance_cost: values.purchase_cost.maintenance_cost,
-        other_costs: values.purchase_cost.other_costs,
-        payment_method: values.purchase_cost.payment_method,
-        source_account: values.purchase_cost.source_account,
-        notes: values.purchase_cost.notes.trim()
-      }
+      purchase_costs: values.purchase_costs.map((cost) => ({
+        id: cost.id,
+        cost_type: cost.cost_type,
+        amount: cost.amount,
+        account: cost.account,
+        payment_method: cost.payment_method,
+        cost_date: cost.cost_date || values.purchase_date || null,
+        notes: cost.notes.trim()
+      }))
     });
   }
 
@@ -345,42 +404,117 @@ export default function InventoryForm({
           <p className="eyebrow">Adquisicion</p>
           <h2 className="mt-1 font-serif text-2xl text-[#2a221b]">Costos y origen</h2>
 
+          <div className="mt-4 space-y-3">
+            {values.purchase_costs.map((cost, index) => (
+              <div key={cost.temp_id} className="rounded-lg border border-[#e4d9c7] bg-[#fffdf9] p-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
+                  <Field label="Tipo">
+                    {cost.cost_type === "watch" ? (
+                      <div className={`${fieldClassName} bg-[#f3ede3] font-semibold text-[#5d5144]`}>
+                        Reloj
+                      </div>
+                    ) : (
+                      <select
+                        className={getInputClass("cost_type", `purchase_costs.${index}.cost_type`)}
+                        data-group="purchase_costs"
+                        name="cost_type"
+                        onChange={(event) => handlePurchaseCostChange(index, event)}
+                        value={cost.cost_type}
+                      >
+                        <option value="shipping">Envio</option>
+                        <option value="maintenance">Mantenimiento</option>
+                        <option value="other">Otro</option>
+                      </select>
+                    )}
+                  </Field>
+                  <Field label="Monto">
+                    <input
+                      className={getInputClass("amount", `purchase_costs.${index}.amount`)}
+                      data-group="purchase_costs"
+                      min="0"
+                      name="amount"
+                      onChange={(event) => handlePurchaseCostChange(index, event)}
+                      step="0.01"
+                      type="number"
+                      value={cost.amount}
+                    />
+                  </Field>
+                  <Field label="Cuenta">
+                    <select
+                      className={getInputClass("account", `purchase_costs.${index}.account`)}
+                      data-group="purchase_costs"
+                      name="account"
+                      onChange={(event) => handlePurchaseCostChange(index, event)}
+                      value={cost.account}
+                    >
+                      <option value="cash">Efectivo</option>
+                      <option value="bbva">BBVA</option>
+                      <option value="credit">Credito</option>
+                      <option value="amex">Amex</option>
+                    </select>
+                  </Field>
+                  <Field label="Metodo">
+                    <select
+                      className={getInputClass("payment_method", `purchase_costs.${index}.payment_method`)}
+                      data-group="purchase_costs"
+                      name="payment_method"
+                      onChange={(event) => handlePurchaseCostChange(index, event)}
+                      value={cost.payment_method}
+                    >
+                      <option value="cash">Efectivo</option>
+                      <option value="transfer">Transferencia</option>
+                      <option value="card">Tarjeta</option>
+                      <option value="msi">MSI</option>
+                      <option value="consignment">Consigna</option>
+                    </select>
+                  </Field>
+                  <Field label="Fecha">
+                    <input
+                      className={`${getInputClass("cost_date", `purchase_costs.${index}.cost_date`)} appearance-none text-xs sm:text-sm`}
+                      data-group="purchase_costs"
+                      name="cost_date"
+                      onChange={(event) => handlePurchaseCostChange(index, event)}
+                      type="date"
+                      value={cost.cost_date}
+                    />
+                  </Field>
+                  <div className="flex items-end">
+                    {cost.cost_type === "watch" ? (
+                      <div className="w-full rounded-lg border border-[#e4d9c7] bg-[#f3ede3] px-3 py-2.5 text-center text-xs font-semibold text-[#7d6751]">
+                        Fijo
+                      </div>
+                    ) : (
+                      <button
+                        className="w-full rounded-lg border border-[#e4c2bc] bg-[#fff4f1] px-3 py-2.5 text-xs font-semibold text-[#8d5b4d]"
+                        onClick={() => handleRemoveCostLine(index)}
+                        type="button"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </div>
+                  <Field className="col-span-2 sm:col-span-6" label="Notas del costo">
+                    <textarea
+                      className={`${getInputClass("notes", `purchase_costs.${index}.notes`)} min-h-14 resize-none`}
+                      data-group="purchase_costs"
+                      name="notes"
+                      onChange={(event) => handlePurchaseCostChange(index, event)}
+                      value={cost.notes}
+                    />
+                  </Field>
+                </div>
+              </div>
+            ))}
+            <button
+              className="rounded-lg border border-[#dccfb9] bg-[#fffdf9] px-4 py-2.5 text-sm font-semibold text-[#7d6751] transition hover:bg-[#f3ecde]"
+              onClick={handleAddCostLine}
+              type="button"
+            >
+              Agregar costo
+            </button>
+          </div>
+
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Field label="Costo del reloj">
-              <input className={getInputClass("watch_cost", "purchase_cost.watch_cost")} data-group="purchase_cost" min="0" name="watch_cost" onChange={handlePurchaseCostChange} step="0.01" type="number" value={values.purchase_cost.watch_cost} />
-              <FieldError fieldName="watch_cost" nestedPath="purchase_cost.watch_cost" />
-            </Field>
-            <Field label="Costo de envio">
-              <input className={getInputClass("shipping_cost", "purchase_cost.shipping_cost")} data-group="purchase_cost" min="0" name="shipping_cost" onChange={handlePurchaseCostChange} step="0.01" type="number" value={values.purchase_cost.shipping_cost} />
-              <FieldError fieldName="shipping_cost" nestedPath="purchase_cost.shipping_cost" />
-            </Field>
-            <Field label="Mantenimiento / pila">
-              <input className={getInputClass("maintenance_cost", "purchase_cost.maintenance_cost")} data-group="purchase_cost" min="0" name="maintenance_cost" onChange={handlePurchaseCostChange} step="0.01" type="number" value={values.purchase_cost.maintenance_cost} />
-              <FieldError fieldName="maintenance_cost" nestedPath="purchase_cost.maintenance_cost" />
-            </Field>
-            <Field label="Otros costos">
-              <input className={getInputClass("other_costs", "purchase_cost.other_costs")} data-group="purchase_cost" min="0" name="other_costs" onChange={handlePurchaseCostChange} step="0.01" type="number" value={values.purchase_cost.other_costs} />
-              <FieldError fieldName="other_costs" nestedPath="purchase_cost.other_costs" />
-            </Field>
-            <Field label="Metodo de pago compra">
-              <select className={getInputClass("payment_method", "purchase_cost.payment_method")} data-group="purchase_cost" name="payment_method" onChange={handlePurchaseCostChange} value={values.purchase_cost.payment_method}>
-                <option value="cash">Efectivo</option>
-                <option value="transfer">Transferencia</option>
-                <option value="card">Tarjeta</option>
-                <option value="msi">MSI</option>
-                <option value="consignment">Consigna</option>
-              </select>
-              <FieldError fieldName="payment_method" nestedPath="purchase_cost.payment_method" />
-            </Field>
-            <Field label="Cuenta origen">
-              <select className={getInputClass("source_account", "purchase_cost.source_account")} data-group="purchase_cost" name="source_account" onChange={handlePurchaseCostChange} value={values.purchase_cost.source_account}>
-                <option value="cash">Efectivo</option>
-                <option value="bbva">BBVA</option>
-                <option value="credit">Credito</option>
-                <option value="amex">Amex</option>
-              </select>
-              <FieldError fieldName="source_account" nestedPath="purchase_cost.source_account" />
-            </Field>
             <Field label="Fecha de compra">
               <input
                 className={`${getInputClass("purchase_date")} block w-full min-w-0 max-w-full appearance-none text-xs sm:text-sm`}
@@ -400,16 +534,6 @@ export default function InventoryForm({
                 <option value="other">Otro</option>
               </select>
               <FieldError fieldName="sales_channel" />
-            </Field>
-            <Field className="col-span-2 sm:col-span-3" label="Notas de compra">
-              <textarea
-                className={`${getInputClass("notes", "purchase_cost.notes")} min-h-16 resize-none`}
-                data-group="purchase_cost"
-                name="notes"
-                onChange={handlePurchaseCostChange}
-                value={values.purchase_cost.notes}
-              />
-              <FieldError fieldName="notes" nestedPath="purchase_cost.notes" />
             </Field>
           </div>
         </section>

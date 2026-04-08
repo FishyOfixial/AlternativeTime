@@ -2,6 +2,9 @@ import { apiRequestAuth, apiJsonAuth, buildQueryString, submitFormData, submitJs
 
 function buildInventoryPayload(payload) {
   const purchaseCost = payload.purchase_cost || {};
+  const purchaseCosts = (payload.purchase_costs || []).filter(
+    (cost) => cost.id || Number(cost.amount || 0) > 0
+  );
 
   return {
     brand: payload.brand?.trim() || "",
@@ -16,15 +19,28 @@ function buildInventoryPayload(payload) {
     status: payload.status,
     sales_channel: payload.sales_channel,
     image_url: payload.image_url?.trim() || "",
-    purchase_cost: {
-      watch_cost: purchaseCost.watch_cost,
-      shipping_cost: purchaseCost.shipping_cost,
-      maintenance_cost: purchaseCost.maintenance_cost,
-      other_costs: purchaseCost.other_costs,
-      payment_method: purchaseCost.payment_method,
-      source_account: purchaseCost.source_account,
-      notes: purchaseCost.notes?.trim() || ""
-    }
+    purchase_costs: purchaseCosts.length
+      ? purchaseCosts.map((cost) => ({
+          id: cost.id,
+          cost_type: cost.cost_type,
+          amount: cost.amount,
+          account: cost.account,
+          payment_method: cost.payment_method,
+          cost_date: cost.cost_date || payload.purchase_date || null,
+          notes: cost.notes?.trim() || ""
+        }))
+      : undefined,
+    purchase_cost: purchaseCosts.length
+      ? undefined
+      : {
+          watch_cost: purchaseCost.watch_cost,
+          shipping_cost: purchaseCost.shipping_cost,
+          maintenance_cost: purchaseCost.maintenance_cost,
+          other_costs: purchaseCost.other_costs,
+          payment_method: purchaseCost.payment_method,
+          source_account: purchaseCost.source_account,
+          notes: purchaseCost.notes?.trim() || ""
+        }
   };
 }
 

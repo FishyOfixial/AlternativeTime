@@ -5,6 +5,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.db.models import Q
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import serializers, status
@@ -12,15 +13,17 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from .models import InventoryItem
-from .serializers import InventoryItemSerializer
+from finance.services import delete_purchase_cost_line_relationship, sync_purchase_cost_line_finance_entry
+
+from .models import InventoryItem, PurchaseCostLine
+from .serializers import InventoryItemSerializer, PurchaseCostLineSerializer
 
 
 class InventoryItemViewSet(ModelViewSet):
     serializer_class = InventoryItemSerializer
 
     def get_queryset(self):
-        queryset = InventoryItem.objects.select_related("purchase_cost")
+        queryset = InventoryItem.objects.select_related("purchase_cost").prefetch_related("purchase_cost_lines")
         params = self.request.query_params
 
         search = params.get("search", "").strip()
@@ -45,6 +48,63 @@ class InventoryItemViewSet(ModelViewSet):
             queryset = queryset.filter(tag=tag)
 
         return queryset
+
+    @action(detail=True, methods=["get", "post"], url_path="costs")
+    def costs(self, request, pk=None):
+        product = self.get_object()
+        if request.method.lower() == "get":
+            serializer = PurchaseCostLineSerializer(product.purchase_cost_lines.all(), many=True)
+            return Response(serializer.data)
+
+        if (
+            request.data.get("cost_type") == PurchaseCostLine.TYPE_WATCH
+            and product.purchase_cost_lines.filter(cost_type=PurchaseCostLine.TYPE_WATCH, is_deleted=False).exists()
+        ):
+            return Response(
+                {"cost_type": "Este reloj ya tiene costo de reloj. Edita el existente."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = PurchaseCostLineSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            cost_line = serializer.save(
+                product=product,
+                created_by=request.user,
+                updated_by=request.user,
+            )
+            sync_purchase_cost_line_finance_entry(cost_line)
+        output = PurchaseCostLineSerializer(cost_line)
+        return Response(output.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["patch", "delete"], url_path=r"costs/(?P<cost_id>[^/.]+)")
+    def cost_detail(self, request, pk=None, cost_id=None):
+        product = self.get_object()
+        cost_line = product.purchase_cost_lines.filter(id=cost_id).first()
+        if cost_line is None:
+            return Response({"detail": "No encontramos ese costo en este reloj."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method.lower() == "delete":
+            if cost_line.cost_type == PurchaseCostLine.TYPE_WATCH:
+                return Response(
+                    {"detail": "El costo del reloj es fijo y no se puede eliminar."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            with transaction.atomic():
+                delete_purchase_cost_line_relationship(cost_line, request.user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        old_account = cost_line.account
+        serializer = PurchaseCostLineSerializer(cost_line, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            serializer.save(updated_by=request.user)
+            sync_purchase_cost_line_finance_entry(cost_line)
+            if old_account != cost_line.account:
+                from finance.services import recalculate_account_balance
+
+                recalculate_account_balance(old_account)
+        return Response(PurchaseCostLineSerializer(cost_line).data)
 
     @action(
         detail=False,

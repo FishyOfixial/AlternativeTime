@@ -1,13 +1,15 @@
 from decimal import Decimal
+from io import StringIO
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
 from finance.models import FinanceEntry
 
-from .models import InventoryItem, PurchaseCost
+from .models import InventoryItem, PurchaseCost, PurchaseCostLine
 
 
 class TestInventoryApi(TestCase):
@@ -36,7 +38,7 @@ class TestInventoryApi(TestCase):
             "description": "Reloj en excelente estado.",
             "notes": "Sin caja",
             "price": "9200.00",
-            "purchase_date": "2026-03-01",
+            "purchase_date": str(timezone.localdate()),
             "status": "available",
             "sales_channel": "instagram",
             "image_url": "https://example.com/watch.jpg",
@@ -56,13 +58,18 @@ class TestInventoryApi(TestCase):
         self.assertEqual(response.status_code, 201)
         item = InventoryItem.objects.get()
         purchase_cost = PurchaseCost.objects.get(product=item)
-        finance_entry = FinanceEntry.objects.get(product=item)
+        finance_entries = FinanceEntry.objects.filter(product=item, concept=FinanceEntry.CONCEPT_PURCHASE)
         self.assertTrue(item.product_id.startswith("SEI-"))
         self.assertEqual(item.sku, item.product_id)
         self.assertEqual(item.tag, "new")
         self.assertEqual(str(purchase_cost.total_pagado), "6350.00")
-        self.assertEqual(finance_entry.entry_type, FinanceEntry.TYPE_EXPENSE)
-        self.assertEqual(str(finance_entry.amount), "6350.00")
+        self.assertEqual(PurchaseCostLine.objects.filter(product=item).count(), 4)
+        self.assertEqual(finance_entries.count(), 4)
+        self.assertEqual(sum(entry.amount for entry in finance_entries), Decimal("6350.00"))
+        self.assertEqual(
+            set(finance_entries.values_list("entry_type", flat=True)),
+            {FinanceEntry.TYPE_EXPENSE},
+        )
 
     def test_inventory_exposes_metrics_from_purchase_cost(self):
         item = InventoryItem.objects.create(
@@ -159,7 +166,8 @@ class TestInventoryApi(TestCase):
         self.assertEqual(response.data["failed"], 0)
         self.assertEqual(InventoryItem.objects.count(), 2)
         self.assertEqual(PurchaseCost.objects.count(), 2)
-        self.assertEqual(FinanceEntry.objects.filter(concept=FinanceEntry.CONCEPT_PURCHASE).count(), 2)
+        self.assertEqual(PurchaseCostLine.objects.count(), 6)
+        self.assertEqual(FinanceEntry.objects.filter(concept=FinanceEntry.CONCEPT_PURCHASE).count(), 6)
 
     def test_import_csv_returns_row_errors_when_data_is_invalid(self):
         csv_content = (
@@ -177,3 +185,154 @@ class TestInventoryApi(TestCase):
         self.assertEqual(response.data["created"], 1)
         self.assertEqual(response.data["failed"], 1)
         self.assertEqual(len(response.data["errors"]), 1)
+
+    def test_backfill_purchase_cost_lines_command_is_idempotent(self):
+        item = InventoryItem.objects.create(
+            brand="Hamilton",
+            model_name="Khaki",
+            name="Hamilton Khaki",
+            product_id="HAM-001",
+            sku="HAM-001",
+            price="8000.00",
+            purchase_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        purchase_cost = PurchaseCost.objects.create(
+            product=item,
+            purchase_date=item.purchase_date,
+            watch_cost="4500.00",
+            shipping_cost="250.00",
+            maintenance_cost="0.00",
+            other_costs="100.00",
+            payment_method="transfer",
+            source_account=FinanceEntry.ACCOUNT_BBVA,
+            notes="Legacy",
+        )
+        legacy_entry = FinanceEntry.objects.create(
+            product=item,
+            concept=FinanceEntry.CONCEPT_PURCHASE,
+            entry_type=FinanceEntry.TYPE_EXPENSE,
+            amount=purchase_cost.total_pagado,
+            account=FinanceEntry.ACCOUNT_BBVA,
+            entry_date=item.purchase_date,
+            is_automatic=True,
+        )
+
+        output = StringIO()
+        call_command("backfill_purchase_cost_lines", stdout=output)
+        call_command("backfill_purchase_cost_lines", stdout=output)
+
+        legacy_entry.refresh_from_db()
+        self.assertTrue(legacy_entry.is_deleted)
+        self.assertEqual(PurchaseCostLine.objects.filter(product=item).count(), 3)
+        self.assertEqual(
+            FinanceEntry.objects.filter(
+                product=item,
+                concept=FinanceEntry.CONCEPT_PURCHASE,
+                purchase_cost_line__isnull=False,
+            ).count(),
+            3,
+        )
+
+    def test_backfill_purchase_cost_lines_skips_existing_type_even_if_amount_changed(self):
+        item = InventoryItem.objects.create(
+            brand="Longines",
+            model_name="Conquest",
+            name="Longines Conquest",
+            product_id="LON-001",
+            sku="LON-001",
+            price="12000.00",
+            purchase_date=timezone.localdate(),
+        )
+        PurchaseCost.objects.create(
+            product=item,
+            purchase_date=item.purchase_date,
+            watch_cost="9000.00",
+            shipping_cost="0.00",
+            maintenance_cost="0.00",
+            other_costs="0.00",
+            payment_method="transfer",
+            source_account=FinanceEntry.ACCOUNT_BBVA,
+        )
+        PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_WATCH,
+            amount="9100.00",
+            account=FinanceEntry.ACCOUNT_CASH,
+            payment_method="cash",
+            cost_date=item.purchase_date,
+        )
+
+        output = StringIO()
+        call_command("backfill_purchase_cost_lines", stdout=output)
+
+        self.assertEqual(
+            PurchaseCostLine.objects.filter(product=item, cost_type=PurchaseCostLine.TYPE_WATCH).count(),
+            1,
+        )
+
+    def test_inventory_rejects_duplicate_watch_cost_lines(self):
+        payload = {
+            "brand": "Seiko",
+            "model_name": "5 Sports",
+            "price": "5000.00",
+            "purchase_date": str(timezone.localdate()),
+            "purchase_costs": [
+                {
+                    "cost_type": "watch",
+                    "amount": "2500.00",
+                    "account": "cash",
+                    "payment_method": "cash",
+                    "cost_date": str(timezone.localdate()),
+                },
+                {
+                    "cost_type": "watch",
+                    "amount": "2600.00",
+                    "account": "bbva",
+                    "payment_method": "transfer",
+                    "cost_date": str(timezone.localdate()),
+                },
+            ],
+        }
+
+        response = self.client.post("/api/inventory/", payload, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("purchase_costs.1.cost_type", response.data)
+
+    def test_watch_cost_line_cannot_be_added_or_deleted_after_existing(self):
+        item = InventoryItem.objects.create(
+            brand="Casio",
+            model_name="G-Shock",
+            name="Casio G-Shock",
+            product_id="CAS-001",
+            sku="CAS-001",
+            price="4200.00",
+            purchase_date=timezone.localdate(),
+        )
+        watch_line = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_WATCH,
+            amount="2500.00",
+            account=FinanceEntry.ACCOUNT_CASH,
+            payment_method="cash",
+            cost_date=item.purchase_date,
+        )
+
+        add_response = self.client.post(
+            f"/api/inventory/{item.id}/costs/",
+            {
+                "cost_type": "watch",
+                "amount": "2600.00",
+                "account": "bbva",
+                "payment_method": "transfer",
+                "cost_date": str(timezone.localdate()),
+            },
+            format="json",
+        )
+        delete_response = self.client.delete(f"/api/inventory/{item.id}/costs/{watch_line.id}/")
+
+        self.assertEqual(add_response.status_code, 400)
+        self.assertEqual(delete_response.status_code, 400)
+        self.assertFalse(PurchaseCostLine.objects.get(id=watch_line.id).is_deleted)

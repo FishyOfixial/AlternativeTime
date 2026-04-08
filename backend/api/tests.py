@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 
 from clients.models import Client
 from finance.models import FinanceEntry
-from inventory.models import InventoryItem
+from inventory.models import InventoryItem, PurchaseCostLine
 from layaways.models import Layaway, LayawayPayment
 from sales.models import Sale
 
@@ -35,4 +35,5 @@ class TestSeedDemoData(TestCase):
         self.assertEqual(Sale.objects.count(), 1)
         self.assertEqual(Layaway.objects.count(), 1)
         self.assertEqual(LayawayPayment.objects.count(), 1)
-        self.assertEqual(FinanceEntry.objects.count(), 6)
+        self.assertEqual(PurchaseCostLine.objects.count(), 10)
+        self.assertEqual(FinanceEntry.objects.count(), 12)

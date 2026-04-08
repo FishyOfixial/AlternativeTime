@@ -9,8 +9,8 @@ from django.utils import timezone
 
 from clients.models import Client
 from finance.models import FinanceEntry
-from finance.services import recalculate_account_balance
-from inventory.models import InventoryItem, PurchaseCost
+from finance.services import recalculate_account_balance, sync_purchase_cost_line_finance_entry
+from inventory.models import InventoryItem, PurchaseCost, PurchaseCostLine
 from layaways.models import Layaway, LayawayPayment
 from sales.models import Sale
 
@@ -284,21 +284,31 @@ class Command(BaseCommand):
             },
         )
 
-        FinanceEntry.all_objects.update_or_create(
-            product=item,
-            concept=FinanceEntry.CONCEPT_PURCHASE,
-            defaults={
-                "entry_type": FinanceEntry.TYPE_EXPENSE,
-                "amount": purchase_cost.total_pagado,
-                "account": purchase_cost.source_account,
-                "entry_date": purchase_cost.purchase_date,
-                "notes": purchase_cost.notes,
-                "is_automatic": True,
-                "created_by": user,
-                "updated_by": user,
-                "is_deleted": False,
-            },
-        )
+        FinanceEntry.all_objects.filter(product=item, concept=FinanceEntry.CONCEPT_PURCHASE).update(is_deleted=True)
+        for field_name, cost_type in [
+            ("watch_cost", PurchaseCostLine.TYPE_WATCH),
+            ("shipping_cost", PurchaseCostLine.TYPE_SHIPPING),
+            ("maintenance_cost", PurchaseCostLine.TYPE_MAINTENANCE),
+            ("other_costs", PurchaseCostLine.TYPE_OTHER),
+        ]:
+            amount = purchase_cost_data[field_name]
+            if amount <= 0:
+                continue
+            cost_line, _ = PurchaseCostLine.all_objects.update_or_create(
+                product=item,
+                cost_type=cost_type,
+                defaults={
+                    "amount": amount,
+                    "account": purchase_cost_data["source_account"],
+                    "payment_method": purchase_cost_data["payment_method"],
+                    "cost_date": purchase_date,
+                    "notes": purchase_cost_data["notes"],
+                    "created_by": user,
+                    "updated_by": user,
+                    "is_deleted": False,
+                },
+            )
+            sync_purchase_cost_line_finance_entry(cost_line)
 
         return item
 
