@@ -224,14 +224,16 @@ class InventoryItemSerializer(serializers.ModelSerializer):
                     )
                 seen_ids.add(line_id)
                 old_account = cost_line.account
+                had_finance_entry = cost_line.finance_entry_id is not None
                 for field, value in line_data.items():
                     if field != "id":
                         setattr(cost_line, field, value)
                 cost_line.updated_by = user if getattr(user, "is_authenticated", False) else cost_line.updated_by
                 cost_line.is_deleted = False
                 cost_line.save()
-                sync_purchase_cost_line_finance_entry(cost_line)
-                if old_account != cost_line.account:
+                if had_finance_entry:
+                    sync_purchase_cost_line_finance_entry(cost_line)
+                if had_finance_entry and old_account != cost_line.account:
                     from finance.services import recalculate_account_balance
 
                     recalculate_account_balance(old_account)
@@ -252,6 +254,8 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             sync_purchase_cost_line_finance_entry(cost_line)
 
         for cost_line in product.purchase_cost_lines.filter(is_deleted=False).exclude(id__in=seen_ids):
+            if cost_line.finance_entry_id is None:
+                continue
             delete_purchase_cost_line_relationship(cost_line, user)
 
     @transaction.atomic

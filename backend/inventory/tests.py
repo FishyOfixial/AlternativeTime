@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from finance.models import FinanceEntry
+from finance.services import sync_purchase_finance_entry
 
 from .models import InventoryItem, PurchaseCost, PurchaseCostLine
 
@@ -389,6 +390,162 @@ class TestInventoryApi(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("purchase_costs.1.cost_type", response.data)
+
+    def test_update_keeps_imported_cost_lines_from_creating_duplicate_finance_entries(self):
+        item = InventoryItem.objects.create(
+            brand="Omega",
+            model_name="Seamaster",
+            name="Omega Seamaster",
+            product_id="OME-022",
+            sku="OME-022",
+            price="17500.00",
+            purchase_date=timezone.localdate(),
+        )
+        imported_watch_line = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_WATCH,
+            amount=Decimal("10000.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            payment_method="cash",
+            cost_date=item.purchase_date,
+            notes="Costo importado desde Excel",
+        )
+
+        response = self.client.patch(
+            f"/api/inventory/{item.id}/",
+            {
+                "purchase_costs": [
+                    {
+                        "id": imported_watch_line.id,
+                        "cost_type": PurchaseCostLine.TYPE_WATCH,
+                        "amount": "10000.00",
+                        "account": FinanceEntry.ACCOUNT_CASH,
+                        "payment_method": "cash",
+                        "cost_date": str(item.purchase_date),
+                        "notes": "Costo importado desde Excel",
+                    },
+                    {
+                        "cost_type": PurchaseCostLine.TYPE_MAINTENANCE,
+                        "amount": "200.00",
+                        "account": FinanceEntry.ACCOUNT_BBVA,
+                        "payment_method": "transfer",
+                        "cost_date": str(timezone.localdate()),
+                        "notes": "Relojero omega",
+                    },
+                ],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        imported_watch_line.refresh_from_db()
+        self.assertIsNone(imported_watch_line.finance_entry_id)
+        self.assertFalse(imported_watch_line.is_deleted)
+        self.assertEqual(FinanceEntry.objects.filter(product=item).count(), 1)
+        self.assertEqual(
+            FinanceEntry.objects.get(product=item).amount,
+            Decimal("200.00"),
+        )
+
+    def test_purchase_sync_ignores_imported_cost_lines_without_finance_entry(self):
+        item = InventoryItem.objects.create(
+            brand="Omega",
+            model_name="Seamaster",
+            name="Omega Seamaster",
+            product_id="OME-027",
+            sku="OME-027",
+            price="20000.00",
+            purchase_date=timezone.localdate(),
+        )
+        PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_WATCH,
+            amount=Decimal("9000.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            payment_method="cash",
+            cost_date=item.purchase_date,
+            notes="Costo importado desde Excel",
+        )
+
+        result = sync_purchase_finance_entry(item)
+
+        self.assertIsNone(result)
+        self.assertFalse(FinanceEntry.objects.filter(product=item).exists())
+
+    def test_link_purchase_cost_finance_entries_command_links_unique_existing_purchase(self):
+        item = InventoryItem.objects.create(
+            brand="Omega",
+            model_name="Seamaster",
+            name="Omega Seamaster",
+            product_id="OME-022",
+            sku="OME-022",
+            price="17500.00",
+            purchase_date=timezone.localdate(),
+        )
+        cost_line = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_WATCH,
+            amount=Decimal("10000.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            payment_method="cash",
+            cost_date=item.purchase_date,
+        )
+        finance_entry = FinanceEntry.objects.create(
+            product=item,
+            concept=FinanceEntry.CONCEPT_PURCHASE,
+            entry_type=FinanceEntry.TYPE_EXPENSE,
+            amount=Decimal("10000.00"),
+            account=FinanceEntry.ACCOUNT_CASH,
+            entry_date=item.purchase_date,
+            notes="Compra reloj omega",
+            is_automatic=False,
+        )
+        output = StringIO()
+
+        call_command("link_purchase_cost_finance_entries", "--apply", stdout=output)
+
+        cost_line.refresh_from_db()
+        finance_entry.refresh_from_db()
+        self.assertEqual(cost_line.finance_entry_id, finance_entry.id)
+        self.assertEqual(finance_entry.product_id, item.id)
+        self.assertIn("lineas_enlazadas=1", output.getvalue())
+
+    def test_link_purchase_cost_finance_entries_command_skips_ambiguous_matches(self):
+        item = InventoryItem.objects.create(
+            brand="Seiko",
+            model_name="5",
+            name="Seiko 5",
+            product_id="SEI-044",
+            sku="SEI-044",
+            price="2200.00",
+            purchase_date=timezone.localdate(),
+        )
+        cost_line = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_WATCH,
+            amount=Decimal("1300.00"),
+            account=FinanceEntry.ACCOUNT_BBVA,
+            payment_method="transfer",
+            cost_date=item.purchase_date,
+        )
+        for suffix in ["A", "B"]:
+            FinanceEntry.objects.create(
+                product=item,
+                concept=FinanceEntry.CONCEPT_PURCHASE,
+                entry_type=FinanceEntry.TYPE_EXPENSE,
+                amount=Decimal("1300.00"),
+                account=FinanceEntry.ACCOUNT_BBVA,
+                entry_date=item.purchase_date,
+                notes=f"Compra seiko {suffix}",
+                is_automatic=False,
+            )
+        output = StringIO()
+
+        call_command("link_purchase_cost_finance_entries", "--apply", stdout=output)
+
+        cost_line.refresh_from_db()
+        self.assertIsNone(cost_line.finance_entry_id)
+        self.assertIn("lineas_ambiguas=1", output.getvalue())
 
     def test_watch_cost_line_cannot_be_added_or_deleted_after_existing(self):
         item = InventoryItem.objects.create(

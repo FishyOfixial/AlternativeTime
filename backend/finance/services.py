@@ -74,9 +74,9 @@ def sync_sale_finance_entry(sale):
 def sync_purchase_finance_entry(product):
     from inventory.models import PurchaseCostLine
 
-    existing_lines = product.purchase_cost_lines.filter(is_deleted=False)
-    if existing_lines.exists():
-        entries = [sync_purchase_cost_line_finance_entry(cost_line) for cost_line in existing_lines]
+    if product.purchase_cost_lines.filter(is_deleted=False).exists():
+        linked_lines = product.purchase_cost_lines.filter(is_deleted=False, finance_entry__isnull=False)
+        entries = [sync_purchase_cost_line_finance_entry(cost_line) for cost_line in linked_lines]
         return entries[0] if entries else None
 
     purchase_cost = getattr(product, "purchase_cost", None)
