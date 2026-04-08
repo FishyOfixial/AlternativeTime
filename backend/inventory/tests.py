@@ -272,6 +272,95 @@ class TestInventoryApi(TestCase):
             1,
         )
 
+    def test_dedupe_purchase_cost_lines_command_soft_deletes_only_duplicates(self):
+        item = InventoryItem.objects.create(
+            brand="Omega",
+            model_name="Seamaster",
+            name="Omega Seamaster",
+            product_id="OMG-777",
+            sku="OMG-777",
+            price="30000.00",
+            purchase_date=timezone.localdate(),
+        )
+        keep_watch = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_WATCH,
+            amount="20000.00",
+            account=FinanceEntry.ACCOUNT_CASH,
+            payment_method="cash",
+            cost_date=item.purchase_date,
+        )
+        duplicate_watch = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_WATCH,
+            amount="20000.00",
+            account=FinanceEntry.ACCOUNT_CASH,
+            payment_method="cash",
+            cost_date=item.purchase_date,
+        )
+        keep_shipping = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_SHIPPING,
+            amount="250.00",
+            account=FinanceEntry.ACCOUNT_BBVA,
+            payment_method="transfer",
+            cost_date=item.purchase_date,
+            notes="Envio",
+        )
+        duplicate_shipping = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_SHIPPING,
+            amount="250.00",
+            account=FinanceEntry.ACCOUNT_BBVA,
+            payment_method="transfer",
+            cost_date=item.purchase_date,
+            notes="Envio",
+        )
+        real_second_shipping = PurchaseCostLine.objects.create(
+            product=item,
+            cost_type=PurchaseCostLine.TYPE_SHIPPING,
+            amount="300.00",
+            account=FinanceEntry.ACCOUNT_BBVA,
+            payment_method="transfer",
+            cost_date=item.purchase_date,
+            notes="Envio posterior",
+        )
+        duplicate_entry = FinanceEntry.objects.create(
+            product=item,
+            concept=FinanceEntry.CONCEPT_PURCHASE,
+            entry_type=FinanceEntry.TYPE_EXPENSE,
+            amount="250.00",
+            account=FinanceEntry.ACCOUNT_BBVA,
+            entry_date=item.purchase_date,
+            is_automatic=True,
+        )
+        duplicate_shipping.finance_entry = duplicate_entry
+        duplicate_shipping.save(update_fields=["finance_entry"])
+        legacy_entry = FinanceEntry.objects.create(
+            product=item,
+            concept=FinanceEntry.CONCEPT_PURCHASE,
+            entry_type=FinanceEntry.TYPE_EXPENSE,
+            amount="20550.00",
+            account=FinanceEntry.ACCOUNT_BBVA,
+            entry_date=item.purchase_date,
+            is_automatic=True,
+        )
+
+        output = StringIO()
+        call_command("dedupe_purchase_cost_lines", "--apply", stdout=output)
+
+        for line in [keep_watch, keep_shipping, real_second_shipping]:
+            line.refresh_from_db()
+            self.assertFalse(line.is_deleted)
+        for line in [duplicate_watch, duplicate_shipping]:
+            line.refresh_from_db()
+            self.assertTrue(line.is_deleted)
+
+        duplicate_entry.refresh_from_db()
+        legacy_entry.refresh_from_db()
+        self.assertTrue(duplicate_entry.is_deleted)
+        self.assertTrue(legacy_entry.is_deleted)
+
     def test_inventory_rejects_duplicate_watch_cost_lines(self):
         payload = {
             "brand": "Seiko",
