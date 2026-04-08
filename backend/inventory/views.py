@@ -47,7 +47,7 @@ class InventoryItemViewSet(ModelViewSet):
         if tag:
             queryset = queryset.filter(tag=tag)
 
-        return queryset
+        return queryset.order_by("-purchase_date", "-id")
 
     @action(detail=True, methods=["get", "post"], url_path="costs")
     def costs(self, request, pk=None):

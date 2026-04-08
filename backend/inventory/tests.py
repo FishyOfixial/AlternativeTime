@@ -29,6 +29,31 @@ class TestInventoryApi(TestCase):
 
         self.assertEqual(response.status_code, 401)
 
+    def test_list_inventory_orders_newest_purchase_first(self):
+        old_item = InventoryItem.objects.create(
+            brand="Hamilton",
+            model_name="Khaki",
+            name="Hamilton Khaki",
+            product_id="HAM-001",
+            sku="HAM-001",
+            price=Decimal("4800.00"),
+            purchase_date=timezone.localdate() - timezone.timedelta(days=10),
+        )
+        new_item = InventoryItem.objects.create(
+            brand="Seiko",
+            model_name="5",
+            name="Seiko 5",
+            product_id="SEI-044",
+            sku="SEI-044",
+            price=Decimal("2200.00"),
+            purchase_date=timezone.localdate(),
+        )
+
+        response = self.client.get("/api/inventory/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["id"] for item in response.data], [new_item.id, old_item.id])
+
     def test_create_inventory_item_creates_purchase_cost_and_finance_entry(self):
         payload = {
             "brand": "Seiko",
