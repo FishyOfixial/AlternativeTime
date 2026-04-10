@@ -51,23 +51,43 @@ def infer_payment_method_from_account(account):
 
 
 def sync_sale_finance_entry(sale):
-    finance_entry, _ = FinanceEntry.all_objects.update_or_create(
+    sale_entries = FinanceEntry.all_objects.filter(
         sale=sale,
         concept=FinanceEntry.CONCEPT_SALE,
-        defaults={
-            "entry_type": FinanceEntry.TYPE_INCOME,
-            "amount": sale.amount_paid,
-            "account": infer_destination_account(sale.payment_method),
-            "entry_date": sale.sale_date,
-            "product": sale.product,
-            "notes": sale.notes,
-            "created_by": sale.created_by,
-            "updated_by": sale.updated_by,
-            "is_automatic": True,
-            "is_deleted": False,
-        },
-    )
-    recalculate_account_balance(finance_entry.account)
+    ).order_by("is_deleted", "id")
+    finance_entry = sale_entries.first()
+    previous_accounts = set(sale_entries.values_list("account", flat=True))
+    defaults = {
+        "entry_type": FinanceEntry.TYPE_INCOME,
+        "amount": sale.amount_paid,
+        "account": infer_destination_account(sale.payment_method),
+        "entry_date": sale.sale_date,
+        "product": sale.product,
+        "notes": sale.notes,
+        "created_by": sale.created_by,
+        "updated_by": sale.updated_by,
+        "is_automatic": True,
+        "is_deleted": False,
+    }
+
+    if finance_entry:
+        for field, value in defaults.items():
+            setattr(finance_entry, field, value)
+        finance_entry.save()
+        sale_entries.exclude(pk=finance_entry.pk).update(
+            is_deleted=True,
+            updated_by=sale.updated_by,
+        )
+    else:
+        finance_entry = FinanceEntry.objects.create(
+            sale=sale,
+            concept=FinanceEntry.CONCEPT_SALE,
+            **defaults,
+        )
+
+    previous_accounts.add(finance_entry.account)
+    for account in previous_accounts:
+        recalculate_account_balance(account)
     return finance_entry
 
 

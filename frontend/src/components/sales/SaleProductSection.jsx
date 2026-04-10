@@ -2,6 +2,7 @@
   inventoryItems,
   selectedItem,
   productValue,
+  productRequired = true,
   onChange,
   formatCurrency,
   fieldErrors
@@ -14,7 +15,7 @@
           className="w-full rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-3 text-[#2a221b]"
           name="product"
           onChange={onChange}
-          required
+          required={productRequired}
           value={productValue}
         >
           <option value="">Selecciona un reloj</option>
@@ -43,7 +44,7 @@
               </p>
             </div>
             <span className="rounded-md bg-[#edf7f1] px-2 py-1 text-xs text-[#7da281]">
-              Disponible
+              {selectedItem.status === "sold" ? "Vendido" : "Disponible"}
             </span>
           </div>
         </div>

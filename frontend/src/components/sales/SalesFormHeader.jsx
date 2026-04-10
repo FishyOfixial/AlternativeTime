@@ -1,12 +1,12 @@
 ﻿import { NavLink } from "react-router-dom";
 
-export default function SalesFormHeader() {
+export default function SalesFormHeader({ title = "Registrar venta" }) {
   return (
     <section className="flex flex-wrap items-start justify-between gap-4">
       <div>
         <p className="eyebrow">Ventas</p>
         <h1 className="mt-3 font-serif text-4xl tracking-tight text-[#2a221b]">
-          Registrar venta
+          {title}
         </h1>
       </div>
       <div className="flex flex-wrap gap-3">

@@ -51,6 +51,7 @@ export default function AppRouter() {
             <Route path="/inventory/:itemId" element={<InventoryFormPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/sales/new" element={<SalesFormPage />} />
+            <Route path="/sales/:saleId/edit" element={<SalesFormPage />} />
             <Route path="/layaways" element={<LayawaysPage />} />
             <Route path="/layaways/:layawayId" element={<LayawayDetailPage />} />
             <Route path="/finance" element={<FinancePage />} />

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ClientFormModal from "../components/clients/ClientFormModal";
 import ErrorState from "../components/feedback/ErrorState";
 import LoadingState from "../components/feedback/LoadingState";
@@ -12,14 +12,16 @@ import SalesFormHeader from "../components/sales/SalesFormHeader";
 import { useAuth } from "../contexts/AuthContext";
 import { buildInitialSaleForm, channelOptions, paymentOptions } from "../constants/sales";
 import { createClient, listClients } from "../services/clients";
-import { listInventory } from "../services/inventory";
-import { createSale } from "../services/sales";
+import { getInventoryItem, listInventory } from "../services/inventory";
+import { createSale, getSale, updateSale } from "../services/sales";
 import { formatCurrency } from "../utils/sales";
 
 export default function SalesFormPage() {
   const { accessToken } = useAuth();
   const navigate = useNavigate();
+  const { saleId } = useParams();
   const [searchParams] = useSearchParams();
+  const isEditMode = Boolean(saleId);
   const [inventoryState, setInventoryState] = useState({
     status: "loading",
     items: []
@@ -37,14 +39,27 @@ export default function SalesFormPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [clientSuccess, setClientSuccess] = useState("");
   const preselectedCustomer = searchParams.get("customer");
+  const [saleState, setSaleState] = useState({
+    status: isEditMode ? "loading" : "idle"
+  });
 
   useEffect(() => {
     async function loadInventory() {
       try {
         const items = await listInventory(accessToken, { status: "available" });
-        setInventoryState({
-          status: "success",
-          items: items.filter((item) => item.is_active)
+        setInventoryState((current) => {
+          const activeItems = items.filter((item) => item.is_active);
+          const mergedItems = [...activeItems];
+          current.items.forEach((item) => {
+            const exists = mergedItems.some((candidate) => String(candidate.id) === String(item.id));
+            if (!exists) {
+              mergedItems.unshift(item);
+            }
+          });
+          return {
+            status: "success",
+            items: mergedItems
+          };
         });
       } catch {
         setInventoryState({ status: "error", items: [] });
@@ -68,6 +83,60 @@ export default function SalesFormPage() {
     loadInventory();
     loadClients();
   }, [accessToken]);
+
+  useEffect(() => {
+    if (!isEditMode) {
+      setSaleState({ status: "idle" });
+      return;
+    }
+
+    async function loadSale() {
+      setSaleState({ status: "loading" });
+      try {
+        const sale = await getSale(accessToken, saleId);
+        const productId = sale.product_id || sale.product || "";
+
+        if (productId) {
+          try {
+            const product = await getInventoryItem(accessToken, productId);
+            setInventoryState((current) => {
+              const exists = current.items.some((item) => String(item.id) === String(product.id));
+              if (exists) {
+                return current;
+              }
+              return {
+                ...current,
+                items: [product, ...current.items]
+              };
+            });
+          } catch {
+            // La venta puede seguir editandose aunque el detalle del reloj no cargue.
+          }
+        }
+
+        setFormValues({
+          ...buildInitialSaleForm(),
+          product: productId ? String(productId) : "",
+          customer: sale.customer || sale.customer_id ? String(sale.customer || sale.customer_id) : "",
+          customer_name: "",
+          customer_contact: "",
+          sale_date: sale.sale_date,
+          payment_method: sale.payment_method,
+          sales_channel: sale.sales_channel,
+          amount_paid: String(sale.amount_paid || ""),
+          extras: String(sale.extras || "0.00"),
+          sale_shipping_cost: String(sale.sale_shipping_cost || "0.00"),
+          cost_snapshot: String(sale.cost_snapshot || "0.00"),
+          notes: sale.notes || ""
+        });
+        setSaleState({ status: "success" });
+      } catch {
+        setSaleState({ status: "error" });
+      }
+    }
+
+    loadSale();
+  }, [accessToken, isEditMode, saleId]);
 
   useEffect(() => {
     if (!preselectedCustomer || clientsState.status !== "success") {
@@ -102,7 +171,9 @@ export default function SalesFormPage() {
     [clientsState.items, formValues.customer]
   );
 
-  const costSnapshot = Number(selectedItem?.total_cost || 0);
+  const costSnapshot = selectedItem
+    ? Number(selectedItem.total_cost || 0)
+    : Number(formValues.cost_snapshot || 0);
   const amountPaid = Number(formValues.amount_paid || 0);
   const extras = Number(formValues.extras || 0);
   const shipping = Number(formValues.sale_shipping_cost || 0);
@@ -215,9 +286,9 @@ export default function SalesFormPage() {
         return;
       }
 
-      await createSale(accessToken, {
+      const payload = {
         customer: customerId,
-        product: Number(formValues.product),
+        product: formValues.product ? Number(formValues.product) : null,
         customer_name: "",
         customer_contact: "",
         sale_date: formValues.sale_date,
@@ -227,10 +298,19 @@ export default function SalesFormPage() {
         extras: formValues.extras,
         sale_shipping_cost: formValues.sale_shipping_cost,
         notes: formValues.notes.trim()
-      });
+      };
+
+      if (isEditMode) {
+        await updateSale(accessToken, saleId, payload);
+      } else {
+        await createSale(accessToken, payload);
+      }
+
       navigate("/sales", {
         replace: true,
-        state: { success: "Venta registrada correctamente." }
+        state: {
+          success: isEditMode ? "Venta actualizada correctamente." : "Venta registrada correctamente."
+        }
       });
     } catch (error) {
       if (error?.data) {
@@ -238,14 +318,18 @@ export default function SalesFormPage() {
         setFieldErrors(parsed.fields);
         setSubmitError(parsed.message);
       } else {
-        setSubmitError("No pudimos registrar la venta. Revisa los datos e intenta de nuevo.");
+        setSubmitError(
+          isEditMode
+            ? "No pudimos actualizar la venta. Revisa los datos e intenta de nuevo."
+            : "No pudimos registrar la venta. Revisa los datos e intenta de nuevo."
+        );
       }
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  if (inventoryState.status === "loading") {
+  if (inventoryState.status === "loading" || saleState.status === "loading") {
     return <LoadingState title="Cargando inventario" message="Estamos consultando los relojes disponibles." />;
   }
 
@@ -258,9 +342,18 @@ export default function SalesFormPage() {
     );
   }
 
+  if (saleState.status === "error") {
+    return (
+      <ErrorState
+        title="Venta no disponible"
+        message="No pudimos cargar los datos de esta venta para editarla."
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <SalesFormHeader />
+      <SalesFormHeader title={isEditMode ? "Editar venta" : "Registrar venta"} />
 
       {clientSuccess ? (
         <div className="rounded-xl border border-[#d9e5d7] bg-[#edf7ed] px-4 py-3 text-sm text-[#4c6d50]">
@@ -281,6 +374,7 @@ export default function SalesFormPage() {
               inventoryItems={inventoryState.items}
               selectedItem={selectedItem}
               productValue={formValues.product}
+              productRequired={!isEditMode}
               onChange={handleChange}
               formatCurrency={formatCurrency}
               fieldErrors={fieldErrors}
@@ -315,7 +409,7 @@ export default function SalesFormPage() {
             margin={margin}
             formatCurrency={formatCurrency}
             isSubmitting={isSubmitting}
-            canSubmit={Boolean(formValues.product && formValues.amount_paid)}
+            canSubmit={Boolean((formValues.product || isEditMode) && formValues.amount_paid)}
           />
 
           {selectedItem && selectedClient ? (

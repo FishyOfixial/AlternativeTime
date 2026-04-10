@@ -1,3 +1,4 @@
+import { NavLink } from "react-router-dom";
 import ResponsiveTableShell from "../common/ResponsiveTableShell";
 
 function SaleMobileCard({ sale, formatDate, formatCurrency }) {
@@ -26,6 +27,12 @@ function SaleMobileCard({ sale, formatDate, formatCurrency }) {
         <p className="truncate">Costo: {formatCurrency(sale.cost_snapshot)}</p>
         <p className="text-right">Margen: {(Number(sale.profit_percentage || 0) * 100).toFixed(1)}%</p>
       </div>
+      <NavLink
+        className="mt-3 inline-flex rounded-md border border-[#dccfb9] bg-[#fffdf9] px-3 py-2 text-xs font-semibold text-[#7d6751]"
+        to={`/sales/${sale.id}/edit`}
+      >
+        Editar venta
+      </NavLink>
     </article>
   );
 }
@@ -61,6 +68,7 @@ export default function SalesTable({
               <th className="hidden w-[120px] px-4 py-4 lg:table-cell">Costo</th>
               <th className="w-[120px] px-4 py-4">Ganancia</th>
               <th className="w-[90px] px-4 py-4">Margen</th>
+              <th className="w-[110px] px-4 py-4">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -84,6 +92,14 @@ export default function SalesTable({
                 <td className="hidden px-4 py-4 lg:table-cell">{formatCurrency(sale.cost_snapshot)}</td>
                 <td className="px-4 py-4 text-[#6ca07e]">{formatCurrency(sale.gross_profit)}</td>
                 <td className="px-4 py-4">{(Number(sale.profit_percentage || 0) * 100).toFixed(1)}%</td>
+                <td className="px-4 py-4">
+                  <NavLink
+                    className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-3 py-2 text-xs font-semibold text-[#7d6751]"
+                    to={`/sales/${sale.id}/edit`}
+                  >
+                    Editar
+                  </NavLink>
+                </td>
               </tr>
             ))}
           </tbody>

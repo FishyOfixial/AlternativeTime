@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from clients.models import Client
-from finance.services import infer_destination_account, sync_sale_finance_entry
+from finance.services import sync_sale_finance_entry
 from inventory.models import InventoryItem
 
 from .models import Sale
@@ -74,7 +74,11 @@ class SaleCreateSerializer(serializers.ModelSerializer):
         allow_null=True,
         source="client",
     )
-    product = serializers.PrimaryKeyRelatedField(queryset=InventoryItem.objects.all())
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=InventoryItem.objects.all(),
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Sale
@@ -94,24 +98,55 @@ class SaleCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        product = attrs["product"]
-        sale_date = attrs["sale_date"]
-        customer = attrs.get("client")
-        customer_name = (attrs.get("customer_name") or "").strip()
+        product = attrs["product"] if "product" in attrs else getattr(self.instance, "product", None)
+        sale_date = attrs.get("sale_date") or getattr(self.instance, "sale_date", None)
+        customer = attrs.get("client", getattr(self.instance, "client", None))
+        customer_name = (
+            attrs.get("customer_name", getattr(self.instance, "customer_name", "")) or ""
+        ).strip()
 
+        if not self.instance and not product:
+            raise serializers.ValidationError({"product": "Selecciona un reloj para vender."})
         if sale_date > timezone.localdate():
             raise serializers.ValidationError({"sale_date": "No se permiten ventas futuras."})
-        if sale_date < product.purchase_date:
+        if product and sale_date < product.purchase_date:
             raise serializers.ValidationError({"sale_date": "La venta no puede ser anterior a la compra."})
-        if product.status == InventoryItem.STATUS_SOLD:
+        is_current_sale_product = self.instance and self.instance.product_id == getattr(product, "id", None)
+        if product and product.status == InventoryItem.STATUS_SOLD and not is_current_sale_product:
             raise serializers.ValidationError({"product": "Este reloj ya fue vendido."})
-        if Sale.objects.filter(product=product).exclude(pk=getattr(self.instance, "pk", None)).exists():
+        if product and (
+            Sale.objects.filter(product=product, is_deleted=False)
+            .exclude(pk=getattr(self.instance, "pk", None))
+            .exists()
+        ):
             raise serializers.ValidationError({"product": "Este reloj ya tiene una venta registrada."})
         if not customer and not customer_name:
             raise serializers.ValidationError(
                 {"customer_name": "Debes indicar un cliente o al menos un nombre libre."}
             )
         return attrs
+
+    def _mark_product_as_sold(self, product, sale, user):
+        if not product:
+            return
+        product.status = InventoryItem.STATUS_SOLD
+        product.sold_date = sale.sale_date
+        product.sold_at = product.sold_at or timezone.now()
+        product.days_to_sell = max((sale.sale_date - product.purchase_date).days, 0)
+        product.updated_by = user
+        product.save()
+
+    def _release_product_if_unused(self, product, user):
+        if not product:
+            return
+        if Sale.objects.filter(product=product, is_deleted=False).exists():
+            return
+        product.status = InventoryItem.STATUS_AVAILABLE
+        product.sold_date = None
+        product.sold_at = None
+        product.days_to_sell = None
+        product.updated_by = user
+        product.save()
 
     @transaction.atomic
     def create(self, validated_data):
@@ -127,16 +162,34 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             updated_by=user,
         )
 
-        product.status = InventoryItem.STATUS_SOLD
-        product.sold_date = sale.sale_date
-        product.sold_at = timezone.now()
-        product.days_to_sell = max((sale.sale_date - product.purchase_date).days, 0)
-        product.updated_by = user
-        product.save()
+        self._mark_product_as_sold(product, sale, user)
 
         sync_sale_finance_entry(sale)
         sale.refresh_from_db()
         return sale
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        request = self.context["request"]
+        user = request.user
+        previous_product = instance.product
+        next_product = validated_data.get("product", previous_product)
+
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.cost_snapshot = next_product.total_purchase_cost if next_product else Decimal("0.00")
+        instance.updated_by = user
+        instance.save()
+
+        if previous_product_id := getattr(previous_product, "id", None):
+            if previous_product_id != getattr(next_product, "id", None):
+                self._release_product_if_unused(previous_product, user)
+
+        self._mark_product_as_sold(next_product, instance, user)
+        sync_sale_finance_entry(instance)
+        instance.refresh_from_db()
+        return instance
 
     def to_representation(self, instance):
         return SaleSerializer(instance, context=self.context).data

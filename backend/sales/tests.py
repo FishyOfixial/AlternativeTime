@@ -74,7 +74,7 @@ class TestSalesApi(TestCase):
         self.assertEqual(response.status_code, 201)
         sale = Sale.objects.get()
         self.item.refresh_from_db()
-        finance_entry = FinanceEntry.objects.get(sale=sale)
+        finance_entry = FinanceEntry.objects.get(sale=sale, concept=FinanceEntry.CONCEPT_SALE)
         self.assertEqual(sale.client, self.customer)
         self.assertEqual(sale.product, self.item)
         self.assertEqual(str(sale.cost_snapshot), "19000.00")
@@ -124,3 +124,176 @@ class TestSalesApi(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertIsNone(Sale.objects.get().client)
+
+    def test_sale_can_be_updated_with_same_sold_product(self):
+        sale = Sale.objects.create(
+            client=self.customer,
+            product=self.item,
+            sale_date=timezone.localdate(),
+            payment_method="transfer",
+            sales_channel="instagram",
+            amount_paid=Decimal("25000.00"),
+            cost_snapshot=Decimal("19000.00"),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.item.status = InventoryItem.STATUS_SOLD
+        self.item.sold_date = sale.sale_date
+        self.item.days_to_sell = 10
+        self.item.save()
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("25000.00"),
+            account="bbva",
+            entry_date=sale.sale_date,
+            sale=sale,
+            product=self.item,
+            notes="Venta Rolex Datejust",
+        )
+
+        response = self.client.patch(
+            f"/api/sales/{sale.id}/",
+            {
+                "customer": self.customer.id,
+                "product": self.item.id,
+                "sale_date": str(timezone.localdate()),
+                "payment_method": "cash",
+                "sales_channel": "direct",
+                "amount_paid": "26000.00",
+                "extras": "500.00",
+                "sale_shipping_cost": "200.00",
+                "notes": "Ajuste de venta",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        sale.refresh_from_db()
+        finance_entry = FinanceEntry.objects.get(sale=sale, concept=FinanceEntry.CONCEPT_SALE)
+        self.assertEqual(str(sale.amount_paid), "26000.00")
+        self.assertEqual(str(sale.gross_profit), "6300.00")
+        self.assertEqual(sale.payment_method, "cash")
+        self.assertEqual(finance_entry.account, "cash")
+        self.assertEqual(str(finance_entry.amount), "26000.00")
+
+    def test_update_sale_deduplicates_existing_sale_finance_entries(self):
+        sale = Sale.objects.create(
+            client=self.customer,
+            product=self.item,
+            sale_date=timezone.localdate(),
+            payment_method="transfer",
+            sales_channel="instagram",
+            amount_paid=Decimal("25000.00"),
+            cost_snapshot=Decimal("19000.00"),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.item.status = InventoryItem.STATUS_SOLD
+        self.item.sold_date = sale.sale_date
+        self.item.days_to_sell = 10
+        self.item.save()
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("25000.00"),
+            account="bbva",
+            entry_date=sale.sale_date,
+            sale=sale,
+            product=self.item,
+            notes="Venta duplicada 1",
+        )
+        FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("24000.00"),
+            account="cash",
+            entry_date=sale.sale_date,
+            sale=sale,
+            product=self.item,
+            notes="Venta duplicada 2",
+        )
+
+        response = self.client.patch(
+            f"/api/sales/{sale.id}/",
+            {
+                "customer": self.customer.id,
+                "product": self.item.id,
+                "sale_date": str(timezone.localdate()),
+                "payment_method": "cash",
+                "sales_channel": "direct",
+                "amount_paid": "26000.00",
+                "extras": "500.00",
+                "sale_shipping_cost": "200.00",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        active_entries = FinanceEntry.objects.filter(sale=sale, concept=FinanceEntry.CONCEPT_SALE)
+        all_entries = FinanceEntry.all_objects.filter(sale=sale, concept=FinanceEntry.CONCEPT_SALE)
+        self.assertEqual(active_entries.count(), 1)
+        self.assertEqual(all_entries.count(), 2)
+        self.assertEqual(str(active_entries.get().amount), "26000.00")
+        self.assertEqual(active_entries.get().account, "cash")
+
+    def test_update_sale_releases_previous_product_when_product_changes(self):
+        second_item = InventoryItem.objects.create(
+            brand="Omega",
+            model_name="Seamaster",
+            name="Omega Seamaster",
+            product_id="OME-001",
+            sku="OME-001",
+            price=Decimal("30000.00"),
+            purchase_date=timezone.localdate() - timezone.timedelta(days=5),
+            status="available",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        PurchaseCost.objects.create(
+            product=second_item,
+            purchase_date=second_item.purchase_date,
+            watch_cost=Decimal("20000.00"),
+            payment_method="cash",
+            source_account="cash",
+        )
+        sale = Sale.objects.create(
+            client=self.customer,
+            product=self.item,
+            sale_date=timezone.localdate(),
+            payment_method="transfer",
+            sales_channel="instagram",
+            amount_paid=Decimal("25000.00"),
+            cost_snapshot=Decimal("19000.00"),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.item.status = InventoryItem.STATUS_SOLD
+        self.item.sold_date = sale.sale_date
+        self.item.days_to_sell = 10
+        self.item.save()
+
+        response = self.client.patch(
+            f"/api/sales/{sale.id}/",
+            {
+                "customer": self.customer.id,
+                "product": second_item.id,
+                "sale_date": str(timezone.localdate()),
+                "payment_method": "transfer",
+                "sales_channel": "instagram",
+                "amount_paid": "30000.00",
+                "extras": "0.00",
+                "sale_shipping_cost": "0.00",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.item.refresh_from_db()
+        second_item.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(self.item.status, InventoryItem.STATUS_AVAILABLE)
+        self.assertIsNone(self.item.sold_date)
+        self.assertEqual(second_item.status, InventoryItem.STATUS_SOLD)
+        self.assertEqual(sale.product, second_item)
+        self.assertEqual(str(sale.cost_snapshot), "20000.00")
