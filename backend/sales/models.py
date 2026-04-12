@@ -5,6 +5,7 @@ from django.db import models
 
 from api.model_mixins import TimestampedSoftDeleteModel
 from clients.models import Client
+from finance.models import FinanceEntry
 from inventory.models import InventoryItem, PAYMENT_CHOICES
 
 
@@ -53,6 +54,16 @@ class Sale(TimestampedSoftDeleteModel):
         default=0,
         validators=[MinValueValidator(0)],
     )
+    extras_account = models.CharField(
+        max_length=20,
+        choices=FinanceEntry.ACCOUNT_CHOICES,
+        default=FinanceEntry.ACCOUNT_CASH,
+    )
+    sale_shipping_account = models.CharField(
+        max_length=20,
+        choices=FinanceEntry.ACCOUNT_CHOICES,
+        default=FinanceEntry.ACCOUNT_CASH,
+    )
     cost_snapshot = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     gross_profit = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     profit_percentage = models.DecimalField(max_digits=7, decimal_places=4, default=0)
@@ -86,8 +97,21 @@ class Sale(TimestampedSoftDeleteModel):
         else:
             self.profit_percentage = Decimal("0.0000")
 
+    def infer_expense_account(self):
+        mappings = {
+            "cash": FinanceEntry.ACCOUNT_CASH,
+            "transfer": FinanceEntry.ACCOUNT_BBVA,
+            "card": FinanceEntry.ACCOUNT_CREDIT,
+            "msi": FinanceEntry.ACCOUNT_CREDIT,
+            "consignment": FinanceEntry.ACCOUNT_AMEX,
+        }
+        return mappings.get(self.payment_method, FinanceEntry.ACCOUNT_CASH)
+
     def save(self, *args, **kwargs):
         self.sync_customer_snapshot()
         self.calculate_profit_fields()
+        inferred_account = self.infer_expense_account()
+        self.extras_account = self.extras_account or inferred_account
+        self.sale_shipping_account = self.sale_shipping_account or inferred_account
         self.total = self.amount_paid
         super().save(*args, **kwargs)

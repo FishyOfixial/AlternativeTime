@@ -51,6 +51,12 @@ def infer_payment_method_from_account(account):
 
 
 def sync_sale_finance_entry(sale):
+    from layaways.models import Layaway
+
+    if Layaway.objects.filter(sale=sale).exists():
+        deactivate_sale_finance_entries(sale, sale.updated_by)
+        return None
+
     sale_entries = FinanceEntry.all_objects.filter(
         sale=sale,
         concept=FinanceEntry.CONCEPT_SALE,
@@ -89,6 +95,23 @@ def sync_sale_finance_entry(sale):
     for account in previous_accounts:
         recalculate_account_balance(account)
     return finance_entry
+
+
+def deactivate_sale_finance_entries(sale, user=None):
+    sale_entries = FinanceEntry.all_objects.filter(
+        sale=sale,
+        concept=FinanceEntry.CONCEPT_SALE,
+        is_deleted=False,
+    )
+    accounts = set(sale_entries.values_list("account", flat=True))
+    if accounts:
+        sale_entries.update(
+            is_deleted=True,
+            updated_by=user,
+        )
+        for account in accounts:
+            recalculate_account_balance(account)
+    return bool(accounts)
 
 
 def sync_purchase_finance_entry(product):
@@ -231,6 +254,8 @@ def reconcile_layaway_completion(layaway, user):
             sale.sale_date = latest_payment.payment_date
             sale.payment_method = latest_payment.payment_method
             sale.amount_paid = layaway.agreed_price
+            sale.extras_account = latest_payment.account
+            sale.sale_shipping_account = latest_payment.account
             sale.notes = f"Apartado completado #{layaway.id}"
             sale.updated_by = user
             sale.is_deleted = False
@@ -247,6 +272,8 @@ def reconcile_layaway_completion(layaway, user):
                 amount_paid=layaway.agreed_price,
                 extras=Decimal("0.00"),
                 sale_shipping_cost=Decimal("0.00"),
+                extras_account=latest_payment.account,
+                sale_shipping_account=latest_payment.account,
                 cost_snapshot=product.total_purchase_cost,
                 notes=f"Apartado completado #{layaway.id}",
                 created_by=user,

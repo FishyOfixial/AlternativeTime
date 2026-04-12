@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 from clients.models import Client
 from finance.models import FinanceEntry
 from inventory.models import InventoryItem, PurchaseCost
+from layaways.models import Layaway, LayawayPayment
 
 from .models import Sale
 
@@ -297,3 +298,133 @@ class TestSalesApi(TestCase):
         self.assertEqual(second_item.status, InventoryItem.STATUS_SOLD)
         self.assertEqual(sale.product, second_item)
         self.assertEqual(str(sale.cost_snapshot), "20000.00")
+
+    def test_update_layaway_generated_sale_updates_latest_payment_instead_of_creating_sale_entry(self):
+        layaway = Layaway.objects.create(
+            product=self.item,
+            client=self.customer,
+            agreed_price=Decimal("25000.00"),
+            start_date=timezone.localdate() - timezone.timedelta(days=3),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.item.status = InventoryItem.STATUS_RESERVED
+        self.item.save()
+        first_payment = LayawayPayment.objects.create(
+            layaway=layaway,
+            payment_date=timezone.localdate() - timezone.timedelta(days=2),
+            amount=Decimal("10000.00"),
+            payment_method="cash",
+            account=FinanceEntry.ACCOUNT_CASH,
+            notes="Primer abono",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        first_entry = FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_LAYAWAY_PAYMENT,
+            amount=first_payment.amount,
+            account=first_payment.account,
+            entry_date=first_payment.payment_date,
+            product=self.item,
+            notes=first_payment.notes,
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=True,
+        )
+        first_payment.finance_entry = first_entry
+        first_payment.save(update_fields=["finance_entry"])
+        final_payment = LayawayPayment.objects.create(
+            layaway=layaway,
+            payment_date=timezone.localdate(),
+            amount=Decimal("15000.00"),
+            payment_method="transfer",
+            account=FinanceEntry.ACCOUNT_BBVA,
+            notes="Liquidacion",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        final_entry = FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_LAYAWAY_PAYMENT,
+            amount=final_payment.amount,
+            account=final_payment.account,
+            entry_date=final_payment.payment_date,
+            product=self.item,
+            notes=final_payment.notes,
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=True,
+        )
+        final_payment.finance_entry = final_entry
+        final_payment.save(update_fields=["finance_entry"])
+        sale = Sale.objects.create(
+            client=self.customer,
+            product=self.item,
+            sale_date=final_payment.payment_date,
+            payment_method=final_payment.payment_method,
+            sales_channel="direct",
+            amount_paid=Decimal("25000.00"),
+            extras=Decimal("0.00"),
+            sale_shipping_cost=Decimal("0.00"),
+            cost_snapshot=Decimal("19000.00"),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        layaway.sale = sale
+        layaway.amount_paid = Decimal("25000.00")
+        layaway.balance_due = Decimal("0.00")
+        layaway.status = Layaway.STATUS_COMPLETED
+        layaway.save(update_fields=["sale", "amount_paid", "balance_due", "status", "updated_at"])
+        self.item.status = InventoryItem.STATUS_SOLD
+        self.item.sold_date = sale.sale_date
+        self.item.save()
+        legacy_sale_entry = FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_SALE,
+            amount=Decimal("25000.00"),
+            account=FinanceEntry.ACCOUNT_BBVA,
+            entry_date=sale.sale_date,
+            sale=sale,
+            product=self.item,
+            notes="Duplicado legado",
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=True,
+        )
+
+        response = self.client.patch(
+            f"/api/sales/{sale.id}/",
+            {
+                "amount_paid": "26000.00",
+                "payment_method": "cash",
+                "sale_date": str(timezone.localdate() - timezone.timedelta(days=1)),
+                "sales_channel": "instagram",
+                "extras": "500.00",
+                "sale_shipping_cost": "200.00",
+                "notes": "Ajuste apartado",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        sale.refresh_from_db()
+        layaway.refresh_from_db()
+        final_payment.refresh_from_db()
+        final_entry.refresh_from_db()
+        legacy_sale_entry.refresh_from_db()
+        self.assertEqual(str(sale.amount_paid), "26000.00")
+        self.assertEqual(sale.payment_method, "cash")
+        self.assertEqual(sale.sales_channel, "instagram")
+        self.assertEqual(str(sale.extras), "500.00")
+        self.assertEqual(str(sale.sale_shipping_cost), "200.00")
+        self.assertEqual(str(layaway.agreed_price), "26000.00")
+        self.assertEqual(str(layaway.amount_paid), "26000.00")
+        self.assertEqual(str(layaway.balance_due), "0.00")
+        self.assertEqual(str(final_payment.amount), "16000.00")
+        self.assertEqual(final_payment.payment_method, "cash")
+        self.assertEqual(final_payment.account, FinanceEntry.ACCOUNT_CASH)
+        self.assertEqual(str(final_entry.amount), "16000.00")
+        self.assertEqual(final_entry.account, FinanceEntry.ACCOUNT_CASH)
+        self.assertTrue(legacy_sale_entry.is_deleted)
+        self.assertFalse(FinanceEntry.objects.filter(sale=sale, concept=FinanceEntry.CONCEPT_SALE).exists())

@@ -5,8 +5,15 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from clients.models import Client
-from finance.services import sync_sale_finance_entry
+from finance.services import (
+    deactivate_sale_finance_entries,
+    infer_destination_account,
+    reconcile_layaway_completion,
+    sync_layaway_payment_finance_entry,
+    sync_sale_finance_entry,
+)
 from inventory.models import InventoryItem
+from layaways.models import Layaway
 
 from .models import Sale
 
@@ -96,6 +103,11 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             "notes",
         ]
 
+    def _get_linked_layaway(self, sale):
+        if not sale or not sale.pk:
+            return None
+        return Layaway.objects.select_related("product", "client", "sale").filter(sale=sale).first()
+
     def validate(self, attrs):
         attrs = super().validate(attrs)
         product = attrs["product"] if "product" in attrs else getattr(self.instance, "product", None)
@@ -124,6 +136,12 @@ class SaleCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"customer_name": "Debes indicar un cliente o al menos un nombre libre."}
             )
+        if self.instance:
+            layaway = self._get_linked_layaway(self.instance)
+            if layaway and product and getattr(product, "id", None) != self.instance.product_id:
+                raise serializers.ValidationError(
+                    {"product": "La venta de un apartado completado debe seguir ligada al mismo reloj."}
+                )
         return attrs
 
     def _mark_product_as_sold(self, product, sale, user):
@@ -147,6 +165,80 @@ class SaleCreateSerializer(serializers.ModelSerializer):
         product.days_to_sell = None
         product.updated_by = user
         product.save()
+
+    def _sync_linked_layaway(
+        self,
+        sale,
+        layaway,
+        user,
+        *,
+        sales_channel,
+        extras,
+        sale_shipping_cost,
+        notes,
+    ):
+        latest_payment = (
+            layaway.payments.filter(is_deleted=False).order_by("-payment_date", "-created_at").first()
+        )
+        if latest_payment is None:
+            raise serializers.ValidationError(
+                {"amount_paid": "No se pudo ajustar el apartado porque no tiene abonos registrados."}
+            )
+
+        other_payments_total = sum(
+            payment.amount
+            for payment in layaway.payments.filter(is_deleted=False).exclude(pk=latest_payment.pk)
+        )
+        next_amount = Decimal(str(sale.amount_paid or "0.00"))
+        if next_amount <= other_payments_total:
+            raise serializers.ValidationError(
+                {
+                    "amount_paid": (
+                        "El total de la venta debe ser mayor que la suma de los abonos previos del apartado."
+                    )
+                }
+            )
+
+        latest_payment.payment_date = sale.sale_date
+        latest_payment.payment_method = sale.payment_method
+        latest_payment.account = infer_destination_account(sale.payment_method)
+        latest_payment.amount = next_amount - other_payments_total
+        latest_payment.updated_by = user
+        latest_payment.save()
+
+        layaway.client = sale.client
+        layaway.customer_name = sale.customer_name
+        layaway.customer_contact = sale.customer_contact
+        layaway.agreed_price = next_amount
+        layaway.updated_by = user
+        layaway.save()
+
+        sync_layaway_payment_finance_entry(latest_payment, user=user)
+        deactivate_sale_finance_entries(sale, user)
+        reconcile_layaway_completion(layaway, user)
+
+        sale.refresh_from_db()
+        sale.sales_channel = sales_channel
+        sale.extras = extras
+        sale.sale_shipping_cost = sale_shipping_cost
+        sale.notes = notes
+        sale.updated_by = user
+        sale.save(update_fields=[
+            "sales_channel",
+            "extras",
+            "sale_shipping_cost",
+            "notes",
+            "updated_by",
+            "updated_at",
+            "total",
+            "gross_profit",
+            "profit_percentage",
+            "extras_account",
+            "sale_shipping_account",
+            "customer_name",
+            "customer_contact",
+        ])
+        return sale
 
     @transaction.atomic
     def create(self, validated_data):
@@ -174,6 +266,11 @@ class SaleCreateSerializer(serializers.ModelSerializer):
         user = request.user
         previous_product = instance.product
         next_product = validated_data.get("product", previous_product)
+        linked_layaway = self._get_linked_layaway(instance)
+        pending_sales_channel = validated_data.get("sales_channel", instance.sales_channel)
+        pending_extras = validated_data.get("extras", instance.extras)
+        pending_shipping = validated_data.get("sale_shipping_cost", instance.sale_shipping_cost)
+        pending_notes = validated_data.get("notes", instance.notes)
 
         for field, value in validated_data.items():
             setattr(instance, field, value)
@@ -181,6 +278,17 @@ class SaleCreateSerializer(serializers.ModelSerializer):
         instance.cost_snapshot = next_product.total_purchase_cost if next_product else Decimal("0.00")
         instance.updated_by = user
         instance.save()
+
+        if linked_layaway:
+            return self._sync_linked_layaway(
+                instance,
+                linked_layaway,
+                user,
+                sales_channel=pending_sales_channel,
+                extras=pending_extras,
+                sale_shipping_cost=pending_shipping,
+                notes=pending_notes,
+            )
 
         if previous_product_id := getattr(previous_product, "id", None):
             if previous_product_id != getattr(next_product, "id", None):

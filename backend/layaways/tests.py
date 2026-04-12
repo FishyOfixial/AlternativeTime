@@ -152,6 +152,8 @@ class LayawayApiTests(TestCase):
         self.assertEqual(self.item.status, InventoryItem.STATUS_SOLD)
         sale = Sale.objects.get(id=layaway.sale_id)
         self.assertEqual(str(sale.amount_paid), "9000.00")
+        self.assertEqual(sale.extras_account, "bbva")
+        self.assertEqual(sale.sale_shipping_account, "bbva")
         payment_entries = FinanceEntry.objects.filter(concept=FinanceEntry.CONCEPT_LAYAWAY_PAYMENT)
         self.assertEqual(payment_entries.count(), 2)
         self.assertFalse(FinanceEntry.objects.filter(sale=sale).exists())
