@@ -18,7 +18,7 @@
           <span>{formatCurrency(amountPaid)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span>Costo del reloj</span>
+          <span>Reloj</span>
           <span>-{formatCurrency(costSnapshot)}</span>
         </div>
         <div className="flex items-center justify-between">
