@@ -46,7 +46,7 @@ export default function ClientForm({
 
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">Telefono</span>
-          <input className={inputClassName} defaultValue={values.phone} name="phone" required type="text" />
+          <input className={inputClassName} defaultValue={values.phone} name="phone" type="text" />
         </label>
       </div>
 
