@@ -177,7 +177,7 @@ export default function SalesFormPage() {
   const amountPaid = Number(formValues.amount_paid || 0);
   const extras = Number(formValues.extras || 0);
   const shipping = Number(formValues.sale_shipping_cost || 0);
-  const profit = amountPaid - costSnapshot - extras;
+  const profit = amountPaid - costSnapshot - extras - shipping;
   const margin = amountPaid > 0 ? (profit / amountPaid) * 100 : 0;
 
   function handleChange(event) {

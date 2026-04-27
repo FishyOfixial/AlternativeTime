@@ -168,14 +168,15 @@ class InventoryItem(TimestampedSoftDeleteModel):
 
     @property
     def total_purchase_cost(self):
-        line_total = self.purchase_cost_lines.filter(is_deleted=False).aggregate(total=Sum("amount"))["total"]
+        line_total = self.purchase_cost_lines.filter(is_deleted=False).exclude(
+            cost_type=PurchaseCostLine.TYPE_SHIPPING
+        ).aggregate(total=Sum("amount"))["total"]
         if line_total is not None:
             return line_total
         if hasattr(self, "purchase_cost"):
             return self.purchase_cost.total_pagado
         return (
             (self.cost_price or Decimal("0.00"))
-            + (self.shipping_cost or Decimal("0.00"))
             + (self.maintenance_cost or Decimal("0.00"))
         )
 
@@ -272,7 +273,6 @@ class PurchaseCost(models.Model):
     def recalculate_total(self):
         self.total_pagado = (
             Decimal(str(self.watch_cost or "0.00"))
-            + Decimal(str(self.shipping_cost or "0.00"))
             + Decimal(str(self.maintenance_cost or "0.00"))
             + Decimal(str(self.other_costs or "0.00"))
         )

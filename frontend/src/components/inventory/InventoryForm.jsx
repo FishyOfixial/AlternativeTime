@@ -279,8 +279,12 @@ export default function InventoryForm({
   }
 
   const summary = useMemo(() => {
-    const purchaseCost =
-      values.purchase_costs.reduce((total, cost) => total + Number(cost.amount || 0), 0);
+    const purchaseCost = values.purchase_costs.reduce((total, cost) => {
+      if (cost.cost_type === "shipping") {
+        return total;
+      }
+      return total + Number(cost.amount || 0);
+    }, 0);
     const salePrice = Number(values.price || 0);
     const profit = salePrice - purchaseCost;
     const margin = salePrice > 0 ? (profit / salePrice) * 100 : 0;

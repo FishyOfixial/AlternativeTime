@@ -148,6 +148,17 @@ def sync_purchase_finance_entry(product):
 def sync_purchase_cost_line_finance_entry(cost_line):
     old_account = cost_line.finance_entry.account if cost_line.finance_entry_id else None
 
+    if cost_line.cost_type == "shipping":
+        if cost_line.finance_entry_id:
+            finance_entry = cost_line.finance_entry
+            finance_entry.is_deleted = True
+            finance_entry.updated_by = cost_line.updated_by
+            finance_entry.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+            cost_line.finance_entry = None
+            cost_line.save(update_fields=["finance_entry", "updated_at"])
+            recalculate_account_balance(finance_entry.account)
+        return None
+
     if cost_line.amount <= 0:
         if cost_line.finance_entry_id:
             finance_entry = cost_line.finance_entry

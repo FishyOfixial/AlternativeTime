@@ -155,14 +155,13 @@ class FinanceEntryViewSet(viewsets.ModelViewSet):
         next_purchase_date = validated_data.get("entry_date", purchase_cost.purchase_date)
         next_amount = Decimal(str(validated_data.get("amount", purchase_cost.total_pagado)))
         fixed_costs = (
-            Decimal(str(purchase_cost.shipping_cost or "0.00"))
-            + Decimal(str(purchase_cost.maintenance_cost or "0.00"))
+            Decimal(str(purchase_cost.maintenance_cost or "0.00"))
             + Decimal(str(purchase_cost.other_costs or "0.00"))
         )
 
         if next_amount < fixed_costs:
             raise ValidationError(
-                {"amount": "El monto no puede ser menor a la suma de envio, mantenimiento y otros costos."}
+                {"amount": "El monto no puede ser menor a la suma de mantenimiento y otros costos."}
             )
         if product.sold_date and next_purchase_date > product.sold_date:
             raise ValidationError(

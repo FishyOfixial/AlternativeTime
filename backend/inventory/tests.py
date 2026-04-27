@@ -88,10 +88,10 @@ class TestInventoryApi(TestCase):
         self.assertTrue(item.product_id.startswith("SEI-"))
         self.assertEqual(item.sku, item.product_id)
         self.assertEqual(item.tag, "new")
-        self.assertEqual(str(purchase_cost.total_pagado), "6350.00")
+        self.assertEqual(str(purchase_cost.total_pagado), "6100.00")
         self.assertEqual(PurchaseCostLine.objects.filter(product=item).count(), 4)
-        self.assertEqual(finance_entries.count(), 4)
-        self.assertEqual(sum(entry.amount for entry in finance_entries), Decimal("6350.00"))
+        self.assertEqual(finance_entries.count(), 3)
+        self.assertEqual(sum(entry.amount for entry in finance_entries), Decimal("6100.00"))
         self.assertEqual(
             set(finance_entries.values_list("entry_type", flat=True)),
             {FinanceEntry.TYPE_EXPENSE},
@@ -128,9 +128,9 @@ class TestInventoryApi(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["display_name"], "Bulova Accutron")
         self.assertEqual(response.data["days_in_inventory"], 5)
-        self.assertEqual(response.data["total_cost"], "2050.00")
-        self.assertEqual(response.data["estimated_profit"], "1150.00")
-        self.assertEqual(response.data["utilidad"], 35.9)
+        self.assertEqual(response.data["total_cost"], "1950.00")
+        self.assertEqual(response.data["estimated_profit"], "1250.00")
+        self.assertEqual(response.data["utilidad"], 39.1)
         self.assertEqual(response.data["age_tag"], "new")
 
     def test_inventory_stops_counting_days_after_sale(self):
@@ -193,7 +193,7 @@ class TestInventoryApi(TestCase):
         self.assertEqual(InventoryItem.objects.count(), 2)
         self.assertEqual(PurchaseCost.objects.count(), 2)
         self.assertEqual(PurchaseCostLine.objects.count(), 6)
-        self.assertEqual(FinanceEntry.objects.filter(concept=FinanceEntry.CONCEPT_PURCHASE).count(), 6)
+        self.assertEqual(FinanceEntry.objects.filter(concept=FinanceEntry.CONCEPT_PURCHASE).count(), 4)
 
     def test_import_csv_returns_row_errors_when_data_is_invalid(self):
         csv_content = (
@@ -258,7 +258,7 @@ class TestInventoryApi(TestCase):
                 concept=FinanceEntry.CONCEPT_PURCHASE,
                 purchase_cost_line__isnull=False,
             ).count(),
-            3,
+            2,
         )
 
     def test_backfill_purchase_cost_lines_skips_existing_type_even_if_amount_changed(self):
