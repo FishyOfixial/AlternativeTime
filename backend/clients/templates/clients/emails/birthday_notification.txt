@@ -1,8 +1,8 @@
-Hola {{ owner_name }},
+Hola,
 
 Los siguientes clientes cumplen años hoy:
 
-{% for client in clients %}* {{ client.name }}
+{% for client in clients %}* {{ client.name }}{% if client.contact_parts %} - {{ client.contact_parts|join:" - " }}{% endif %}
 {% endfor %}
 Te recomendamos contactarlos para felicitarlos o enviarles una promoción especial.
 

@@ -117,6 +117,7 @@ class TestClientsApi(TestCase):
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     DEFAULT_FROM_EMAIL="Alternative Time <no-reply@example.com>",
     ALTERNATIVE_TIME_BUSINESS_NAME="Alternative Time",
+    BIRTHDAY_NOTIFICATION_TO_EMAILS=["alerts@example.com"],
 )
 class TestBirthdayNotifications(TestCase):
     def setUp(self):
@@ -133,24 +134,40 @@ class TestBirthdayNotifications(TestCase):
             password="Secret123!",
         )
 
-    def test_send_birthday_notifications_groups_clients_by_owner(self):
+    def test_send_birthday_notifications_sends_one_email_with_contact_details(self):
         today = date(2026, 6, 2)
-        Client.objects.create(name="Juan Perez", birth_date=today, created_by=self.owner)
-        Client.objects.create(name="Maria Lopez", birth_date=date(1990, 6, 2), created_by=self.owner)
-        Client.objects.create(name="Carlos Rodriguez", birth_date=today, created_by=self.other_owner)
+        Client.objects.create(
+            name="Juan Perez",
+            birth_date=today,
+            instagram_handle="@juan",
+            phone="555-111-2222",
+            created_by=self.owner,
+        )
+        Client.objects.create(
+            name="Maria Lopez",
+            birth_date=date(1990, 6, 2),
+            instagram_handle="@maria",
+            created_by=self.owner,
+        )
+        Client.objects.create(
+            name="Carlos Rodriguez",
+            birth_date=today,
+            phone="555-333-4444",
+            created_by=self.other_owner,
+        )
         Client.objects.create(name="No Birthday", birth_date=date(1990, 6, 3), created_by=self.owner)
         Client.objects.create(name="No Date", created_by=self.owner)
 
         result = send_birthday_notifications(today=today)
 
         self.assertEqual(result.birthdays_found, 3)
-        self.assertEqual(result.owners_notified, 2)
-        self.assertEqual(result.emails_sent, 2)
-        self.assertEqual(len(mail.outbox), 2)
-        owner_email = next(message for message in mail.outbox if message.to == ["owner@example.com"])
-        self.assertIn("Juan Perez", owner_email.body)
-        self.assertIn("Maria Lopez", owner_email.body)
-        self.assertNotIn("No Birthday", owner_email.body)
+        self.assertEqual(result.emails_sent, 1)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["alerts@example.com"])
+        self.assertIn("Juan Perez - @juan - 555-111-2222", mail.outbox[0].body)
+        self.assertIn("Maria Lopez - @maria", mail.outbox[0].body)
+        self.assertIn("Carlos Rodriguez - 555-333-4444", mail.outbox[0].body)
+        self.assertNotIn("No Birthday", mail.outbox[0].body)
 
     def test_send_birthday_notifications_does_not_send_without_birthdays(self):
         Client.objects.create(
@@ -165,10 +182,43 @@ class TestBirthdayNotifications(TestCase):
         self.assertEqual(result.emails_sent, 0)
         self.assertEqual(getattr(mail, "outbox", []), [])
 
+    @override_settings(BIRTHDAY_NOTIFICATION_TO_EMAILS=[])
+    def test_send_birthday_notifications_does_not_send_without_recipient(self):
+        Client.objects.create(
+            name="No Recipient",
+            birth_date=date(1990, 6, 2),
+            created_by=self.owner,
+        )
+
+        result = send_birthday_notifications(today=date(2026, 6, 2))
+
+        self.assertEqual(result.birthdays_found, 1)
+        self.assertEqual(result.emails_sent, 0)
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(getattr(mail, "outbox", []), [])
+
+    @override_settings(BIRTHDAY_NOTIFICATION_TO_EMAILS=["alerts@example.com", "owner@example.com"])
+    def test_send_birthday_notifications_supports_multiple_recipients(self):
+        Client.objects.create(
+            name="Multiple Recipients",
+            birth_date=date(1990, 6, 2),
+            created_by=self.owner,
+        )
+
+        result = send_birthday_notifications(today=date(2026, 6, 2))
+
+        self.assertEqual(result.emails_sent, 1)
+        self.assertEqual(mail.outbox[0].to, ["alerts@example.com", "owner@example.com"])
+
     def test_notify_birthdays_command_accepts_date_argument(self):
-        Client.objects.create(name="Command Client", birth_date=date(1990, 6, 2), created_by=self.owner)
+        Client.objects.create(
+            name="Command Client",
+            birth_date=date(1990, 6, 2),
+            instagram_handle="@command",
+            created_by=self.owner,
+        )
 
         call_command("notify_birthdays", "--date", "2026-06-02")
 
         self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("Command Client", mail.outbox[0].body)
+        self.assertIn("Command Client - @command", mail.outbox[0].body)

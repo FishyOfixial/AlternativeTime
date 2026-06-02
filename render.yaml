@@ -46,6 +46,8 @@ services:
         sync: false
       - key: ALTERNATIVE_TIME_BUSINESS_NAME
         value: Alternative Time
+      - key: BIRTHDAY_NOTIFICATION_TO_EMAILS
+        sync: false
 
   - type: cron
     name: alternative-time-birthday-notifications
@@ -87,6 +89,8 @@ services:
         sync: false
       - key: ALTERNATIVE_TIME_BUSINESS_NAME
         value: Alternative Time
+      - key: BIRTHDAY_NOTIFICATION_TO_EMAILS
+        sync: false
 
   - type: web
     name: alternative-time-web

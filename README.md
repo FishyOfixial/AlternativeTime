@@ -283,6 +283,7 @@ Variables importantes de backend:
 - `EMAIL_HOST_PASSWORD`
 - `DEFAULT_FROM_EMAIL`
 - `ALTERNATIVE_TIME_BUSINESS_NAME`
+- `BIRTHDAY_NOTIFICATION_TO_EMAILS`
 
 Variables importantes de frontend:
 
@@ -329,6 +330,22 @@ Render interpreta los cron en UTC. Para 8:00 AM en `America/Mexico_City`, el blu
 ```text
 0 14 * * *
 ```
+
+El correo diario se envia a los destinatarios configurados en `BIRTHDAY_NOTIFICATION_TO_EMAILS`.
+Usa una lista separada por comas, incluso si solo hay un destinatario:
+
+```env
+BIRTHDAY_NOTIFICATION_TO_EMAILS=admin@example.com
+BIRTHDAY_NOTIFICATION_TO_EMAILS=admin@example.com,ventas@example.com
+```
+
+El contenido lista clientes que cumplen años ese dia con sus datos de contacto disponibles:
+
+```text
+Nombre del cliente - @instagram - telefono
+```
+
+Si el cliente no tiene Instagram o telefono, ese dato se omite.
 
 ## Operacion y Mantenimiento
 

@@ -19,13 +19,16 @@
             </tr>
             <tr>
               <td style="padding:28px;">
-                <p style="margin:0 0 16px;font-size:16px;line-height:1.5;">Hola {{ owner_name }},</p>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.5;">Hola,</p>
                 <p style="margin:0 0 18px;font-size:16px;line-height:1.5;">Los siguientes clientes cumplen años hoy:</p>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
                   {% for client in clients %}
                     <tr>
                       <td style="padding:12px 14px;border:1px solid #ead9b4;background:#fff8ed;font-size:16px;font-weight:700;color:#3b3024;">
                         {{ client.name }}
+                        {% if client.contact_parts %}
+                          <span style="display:block;margin-top:4px;font-size:14px;font-weight:400;color:#7d6751;">{{ client.contact_parts|join:" - " }}</span>
+                        {% endif %}
                       </td>
                     </tr>
                   {% endfor %}
