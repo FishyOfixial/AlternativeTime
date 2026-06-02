@@ -2,7 +2,7 @@ services:
   - type: web
     name: alternative-time-api
     runtime: python
-    plan: free
+    plan: starter
     rootDir: backend
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: python manage.py migrate --noinput && gunicorn config.wsgi:application
@@ -108,4 +108,4 @@ services:
 
 databases:
   - name: alternative-time-db
-    plan: free
+    plan: basic-256mb
