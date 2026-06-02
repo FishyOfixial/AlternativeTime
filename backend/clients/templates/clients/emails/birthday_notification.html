@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cumpleaños de clientes hoy</title>
+  </head>
+  <body style="margin:0;background:#f7f1e8;color:#2a221b;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f1e8;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#fffdf9;border:1px solid #ead9b4;border-radius:14px;overflow:hidden;">
+            <tr>
+              <td style="background:#2a221b;padding:24px 28px;color:#f7ead5;">
+                <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#d8b56d;">{{ business_name }}</div>
+                <h1 style="margin:10px 0 0;font-family:Georgia,serif;font-size:28px;line-height:1.2;color:#fff7e8;">Cumpleaños de clientes hoy</h1>
+                <p style="margin:8px 0 0;color:#d8cab6;">{{ today_display }}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px;">
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.5;">Hola {{ owner_name }},</p>
+                <p style="margin:0 0 18px;font-size:16px;line-height:1.5;">Los siguientes clientes cumplen años hoy:</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                  {% for client in clients %}
+                    <tr>
+                      <td style="padding:12px 14px;border:1px solid #ead9b4;background:#fff8ed;font-size:16px;font-weight:700;color:#3b3024;">
+                        {{ client.name }}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </table>
+                <p style="margin:22px 0 0;font-size:16px;line-height:1.5;">Te recomendamos contactarlos para felicitarlos o enviarles una promoción especial.</p>
+                <p style="margin:24px 0 0;font-size:16px;line-height:1.5;">Saludos,<br><strong>Alternative Time</strong></p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

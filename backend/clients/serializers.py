@@ -18,6 +18,7 @@ class ClientSerializer(serializers.ModelSerializer):
             "phone",
             "email",
             "instagram_handle",
+            "birth_date",
             "address",
             "notes",
             "is_active",

@@ -32,6 +32,61 @@ services:
         value: http://localhost:5173,http://alternative-time-web.onrender.com
       - key: FRONTEND_HOST
         value: alternative-time-web.onrender.com
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: ALTERNATIVE_TIME_BUSINESS_NAME
+        value: Alternative Time
+
+  - type: cron
+    name: alternative-time-birthday-notifications
+    runtime: python
+    plan: starter
+    rootDir: backend
+    schedule: "0 14 * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py notify_birthdays
+    buildFilter:
+      paths:
+        - backend/**
+        - render.yaml
+        - .env.example
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: alternative-time-db
+          property: connectionString
+      - key: POSTGRES_SSL_REQUIRE
+        value: "True"
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: ALTERNATIVE_TIME_BUSINESS_NAME
+        value: Alternative Time
 
   - type: web
     name: alternative-time-web

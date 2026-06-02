@@ -1,7 +1,10 @@
 from decimal import Decimal
+from datetime import date
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.core import mail
+from django.core.management import call_command
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -9,6 +12,7 @@ from inventory.models import InventoryItem, PurchaseCost
 from sales.models import Sale
 
 from .models import Client
+from .services import send_birthday_notifications
 
 
 class TestClientsApi(TestCase):
@@ -42,6 +46,21 @@ class TestClientsApi(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("phone", response.data)
+
+    def test_create_client_assigns_authenticated_user_as_owner(self):
+        response = self.client.post(
+            "/api/clients/",
+            {
+                "name": "Owned Client",
+                "birth_date": "1990-06-02",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        client = Client.objects.get(id=response.data["id"])
+        self.assertEqual(client.created_by, self.user)
+        self.assertEqual(client.updated_by, self.user)
 
     def test_retrieve_client_includes_purchase_history(self):
         client = Client.objects.create(
@@ -92,3 +111,64 @@ class TestClientsApi(TestCase):
         self.assertEqual(response.data["total_spent"], "1550")
         self.assertEqual(len(response.data["purchase_history"]), 1)
         self.assertEqual(response.data["purchase_history"][0]["item_names"], ["Classic Watch"])
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="Alternative Time <no-reply@example.com>",
+    ALTERNATIVE_TIME_BUSINESS_NAME="Alternative Time",
+)
+class TestBirthdayNotifications(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.owner = user_model.objects.create_user(
+            username="owner",
+            email="owner@example.com",
+            password="Secret123!",
+            first_name="Ivan",
+        )
+        self.other_owner = user_model.objects.create_user(
+            username="other-owner",
+            email="other@example.com",
+            password="Secret123!",
+        )
+
+    def test_send_birthday_notifications_groups_clients_by_owner(self):
+        today = date(2026, 6, 2)
+        Client.objects.create(name="Juan Perez", birth_date=today, created_by=self.owner)
+        Client.objects.create(name="Maria Lopez", birth_date=date(1990, 6, 2), created_by=self.owner)
+        Client.objects.create(name="Carlos Rodriguez", birth_date=today, created_by=self.other_owner)
+        Client.objects.create(name="No Birthday", birth_date=date(1990, 6, 3), created_by=self.owner)
+        Client.objects.create(name="No Date", created_by=self.owner)
+
+        result = send_birthday_notifications(today=today)
+
+        self.assertEqual(result.birthdays_found, 3)
+        self.assertEqual(result.owners_notified, 2)
+        self.assertEqual(result.emails_sent, 2)
+        self.assertEqual(len(mail.outbox), 2)
+        owner_email = next(message for message in mail.outbox if message.to == ["owner@example.com"])
+        self.assertIn("Juan Perez", owner_email.body)
+        self.assertIn("Maria Lopez", owner_email.body)
+        self.assertNotIn("No Birthday", owner_email.body)
+
+    def test_send_birthday_notifications_does_not_send_without_birthdays(self):
+        Client.objects.create(
+            name="Tomorrow",
+            birth_date=date(1990, 6, 3),
+            created_by=self.owner,
+        )
+
+        result = send_birthday_notifications(today=date(2026, 6, 2))
+
+        self.assertEqual(result.birthdays_found, 0)
+        self.assertEqual(result.emails_sent, 0)
+        self.assertEqual(getattr(mail, "outbox", []), [])
+
+    def test_notify_birthdays_command_accepts_date_argument(self):
+        Client.objects.create(name="Command Client", birth_date=date(1990, 6, 2), created_by=self.owner)
+
+        call_command("notify_birthdays", "--date", "2026-06-02")
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Command Client", mail.outbox[0].body)

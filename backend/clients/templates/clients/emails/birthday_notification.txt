@@ -1,0 +1,10 @@
+Hola {{ owner_name }},
+
+Los siguientes clientes cumplen años hoy:
+
+{% for client in clients %}* {{ client.name }}
+{% endfor %}
+Te recomendamos contactarlos para felicitarlos o enviarles una promoción especial.
+
+Saludos,
+Alternative Time

@@ -3,6 +3,7 @@ const initialValues = {
   phone: "",
   email: "",
   instagram_handle: "",
+  birth_date: "",
   address: "",
   notes: ""
 };
@@ -31,6 +32,7 @@ export default function ClientForm({
       phone: String(formData.get("phone") || "").trim(),
       email: String(formData.get("email") || "").trim(),
       instagram_handle: String(formData.get("instagram_handle") || "").trim(),
+      birth_date: String(formData.get("birth_date") || "").trim() || null,
       address: String(formData.get("address") || "").trim(),
       notes: String(formData.get("notes") || "").trim()
     });
@@ -67,6 +69,11 @@ export default function ClientForm({
           />
         </label>
       </div>
+
+      <label className="block">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">Cumpleaños</span>
+        <input className={inputClassName} defaultValue={values.birth_date || ""} name="birth_date" type="date" />
+      </label>
 
       <label className="block">
         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b09a7e]">Direccion</span>

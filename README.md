@@ -276,6 +276,13 @@ Variables importantes de backend:
 - `DJANGO_CORS_ALLOWED_ORIGINS`
 - `DJANGO_CSRF_TRUSTED_ORIGINS`
 - `FRONTEND_HOST`
+- `EMAIL_HOST`
+- `EMAIL_PORT`
+- `EMAIL_USE_TLS`
+- `EMAIL_HOST_USER`
+- `EMAIL_HOST_PASSWORD`
+- `DEFAULT_FROM_EMAIL`
+- `ALTERNATIVE_TIME_BUSINESS_NAME`
 
 Variables importantes de frontend:
 
@@ -291,6 +298,7 @@ El repositorio ya incluye blueprint listo para Render en:
 Servicios definidos:
 
 - `alternative-time-api`: backend Django
+- `alternative-time-birthday-notifications`: Cron Job para avisos diarios de cumpleaños
 - `alternative-time-web`: static site de frontend
 - `alternative-time-db`: PostgreSQL administrado
 
@@ -302,18 +310,42 @@ Capacidades de la configuración actual:
 - frontend publicado como sitio estático
 - rewrite SPA para `react-router-dom`
 - conexión automática entre frontend, backend y base de datos
+- variables SMTP marcadas como `sync: false` para capturarlas en Render sin versionar credenciales
+
+El Cron Job de cumpleaños ejecuta:
+
+```bash
+python manage.py notify_birthdays
+```
+
+Schedule recomendado para ejecutarse diario a las 8:00 AM:
+
+```text
+0 8 * * *
+```
+
+Render interpreta los cron en UTC. Para 8:00 AM en `America/Mexico_City`, el blueprint usa:
+
+```text
+0 14 * * *
+```
 
 ## Operacion y Mantenimiento
 
 Management commands relevantes:
 
 - [import_legacy_data.py](./backend/api/management/commands/import_legacy_data.py)
+- [notify_birthdays.py](./backend/clients/management/commands/notify_birthdays.py)
 - [update_inventory_age.py](./backend/inventory/management/commands/update_inventory_age.py)
 
 Uso típico:
 
 ```powershell
 .\.venv\Scripts\python.exe backend\manage.py update_inventory_age
+```
+
+```powershell
+.\.venv\Scripts\python.exe backend\manage.py notify_birthdays
 ```
 
 ```powershell

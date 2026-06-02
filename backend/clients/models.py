@@ -8,6 +8,7 @@ class Client(TimestampedSoftDeleteModel):
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
     instagram_handle = models.CharField(max_length=255, blank=True)
+    birth_date = models.DateField(blank=True, null=True)
     address = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
