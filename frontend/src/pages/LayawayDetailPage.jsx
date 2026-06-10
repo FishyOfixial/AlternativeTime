@@ -18,6 +18,7 @@ export default function LayawayDetailPage() {
   const { accessToken } = useAuth();
   const [state, setState] = useState({ status: "loading", layaway: null, error: "" });
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -76,6 +77,26 @@ export default function LayawayDetailPage() {
     setEditValues((current) => ({ ...current, [name]: value }));
   }
 
+  function openEditForm() {
+    setUpdateError("");
+    setUpdateFieldErrors({});
+    setIsEditing(true);
+  }
+
+  function closeEditForm() {
+    if (layaway) {
+      setEditValues({
+        agreed_price: layaway.agreed_price || "",
+        start_date: layaway.start_date || "",
+        due_date: layaway.due_date || "",
+        notes: layaway.notes || ""
+      });
+    }
+    setUpdateError("");
+    setUpdateFieldErrors({});
+    setIsEditing(false);
+  }
+
   async function handleUpdate(event) {
     event.preventDefault();
     setIsUpdating(true);
@@ -89,6 +110,7 @@ export default function LayawayDetailPage() {
         due_date: editValues.due_date || null
       });
       setState({ status: "success", layaway: updated, error: "" });
+      setIsEditing(false);
     } catch (error) {
       if (error.message === "VALIDATION_ERROR" && error.data) {
         setUpdateFieldErrors(error.data);
@@ -152,113 +174,138 @@ export default function LayawayDetailPage() {
 
   return (
     <div className="space-y-6">
-      <section className="flex items-start justify-between gap-4">
+      <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <h1 className="mt-2 font-serif text-4xl tracking-tight text-[#2a221b]">Apartado #{layaway.id}</h1>
           <p className="mt-2 text-sm text-[#8a775f]">
             {layaway.product_label} ({layaway.product_code})
           </p>
         </div>
-        <NavLink
-          className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-4 py-2 text-sm text-[#7d6751] transition hover:bg-[#f3ecde]"
-          to="/layaways"
-        >
-          Volver
-        </NavLink>
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-4 py-2 text-sm font-semibold text-[#7d6751] transition hover:bg-[#f3ecde]"
+            onClick={openEditForm}
+            type="button"
+          >
+            Editar apartado
+          </button>
+          <button
+            className="rounded-full border border-[#d8b7a8] bg-[#fff7f3] px-4 py-2 text-sm font-semibold text-[#9d5c4b] transition hover:bg-[#fde7e2] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isDeleting}
+            onClick={handleDelete}
+            type="button"
+          >
+            {isDeleting ? "Eliminando..." : "Eliminar apartado"}
+          </button>
+          <NavLink
+            className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-4 py-2 text-sm text-[#7d6751] transition hover:bg-[#f3ecde]"
+            to="/layaways"
+          >
+            Volver
+          </NavLink>
+        </div>
       </section>
 
       <LayawaySummaryCards layaway={layaway} />
 
       <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
         <div className="space-y-5">
-          <section className="panel-surface p-4">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-              <div>
-                <p className="eyebrow">Condiciones</p>
-                <h2 className="mt-2 font-serif text-2xl text-[#2a221b]">Editar apartado</h2>
-              </div>
-              <button
-                className="rounded-xl border border-[#d8b7a8] bg-[#fff7f3] px-4 py-2 text-sm font-semibold text-[#9d5c4b] transition hover:bg-[#fde7e2] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isDeleting}
-                onClick={handleDelete}
-                type="button"
-              >
-                {isDeleting ? "Eliminando..." : "Eliminar apartado"}
-              </button>
-            </div>
-
-            {updateError ? <p className="mt-3 text-sm text-[#a55b4f]">{updateError}</p> : null}
-
-            <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={handleUpdate}>
-              <label className="block">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">
-                  Precio acordado
-                </span>
-                <input
-                  className={fieldClassName}
-                  min="1"
-                  name="agreed_price"
-                  onChange={handleEditChange}
-                  required
-                  step="0.01"
-                  type="number"
-                  value={editValues.agreed_price}
-                />
-                {updateFieldErrors.agreed_price ? (
-                  <p className="mt-1 text-xs text-[#a55b4f]">{updateFieldErrors.agreed_price}</p>
-                ) : null}
-              </label>
-
-              <label className="block">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">
-                  Fecha inicio
-                </span>
-                <input
-                  className={`${fieldClassName} appearance-none text-xs sm:text-sm`}
-                  name="start_date"
-                  onChange={handleEditChange}
-                  required
-                  type="date"
-                  value={editValues.start_date}
-                />
-                {updateFieldErrors.start_date ? (
-                  <p className="mt-1 text-xs text-[#a55b4f]">{updateFieldErrors.start_date}</p>
-                ) : null}
-              </label>
-
-              <label className="block">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">
-                  Fecha compromiso
-                </span>
-                <input
-                  className={`${fieldClassName} appearance-none text-xs sm:text-sm`}
-                  name="due_date"
-                  onChange={handleEditChange}
-                  type="date"
-                  value={editValues.due_date}
-                />
-                {updateFieldErrors.due_date ? (
-                  <p className="mt-1 text-xs text-[#a55b4f]">{updateFieldErrors.due_date}</p>
-                ) : null}
-              </label>
-
-              <label className="block md:col-span-2">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">Notas</span>
-                <textarea
-                  className={`${fieldClassName} min-h-20 resize-none`}
-                  name="notes"
-                  onChange={handleEditChange}
-                  value={editValues.notes}
-                />
-              </label>
-
-              <div className="md:col-span-2">
-                <button className="gold-button px-4 py-2.5 text-xs" disabled={isUpdating} type="submit">
-                  {isUpdating ? "Guardando..." : "Guardar cambios"}
+          {isEditing ? (
+            <section className="panel-surface p-4">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                <div>
+                  <p className="eyebrow">Condiciones</p>
+                  <h2 className="mt-2 font-serif text-2xl text-[#2a221b]">Editar apartado</h2>
+                </div>
+                <button
+                  className="rounded-xl border border-[#dccfb9] px-4 py-2 text-sm text-[#7d6751]"
+                  onClick={closeEditForm}
+                  type="button"
+                >
+                  Cancelar
                 </button>
               </div>
-            </form>
-          </section>
+
+              {updateError ? <p className="mt-3 text-sm text-[#a55b4f]">{updateError}</p> : null}
+
+              <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={handleUpdate}>
+                <label className="block">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">
+                    Precio acordado
+                  </span>
+                  <input
+                    className={fieldClassName}
+                    min="1"
+                    name="agreed_price"
+                    onChange={handleEditChange}
+                    required
+                    step="0.01"
+                    type="number"
+                    value={editValues.agreed_price}
+                  />
+                  {updateFieldErrors.agreed_price ? (
+                    <p className="mt-1 text-xs text-[#a55b4f]">{updateFieldErrors.agreed_price}</p>
+                  ) : null}
+                </label>
+
+                <label className="block">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">
+                    Fecha inicio
+                  </span>
+                  <input
+                    className={`${fieldClassName} appearance-none text-xs sm:text-sm`}
+                    name="start_date"
+                    onChange={handleEditChange}
+                    required
+                    type="date"
+                    value={editValues.start_date}
+                  />
+                  {updateFieldErrors.start_date ? (
+                    <p className="mt-1 text-xs text-[#a55b4f]">{updateFieldErrors.start_date}</p>
+                  ) : null}
+                </label>
+
+                <label className="block">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">
+                    Fecha compromiso
+                  </span>
+                  <input
+                    className={`${fieldClassName} appearance-none text-xs sm:text-sm`}
+                    name="due_date"
+                    onChange={handleEditChange}
+                    type="date"
+                    value={editValues.due_date}
+                  />
+                  {updateFieldErrors.due_date ? (
+                    <p className="mt-1 text-xs text-[#a55b4f]">{updateFieldErrors.due_date}</p>
+                  ) : null}
+                </label>
+
+                <label className="block md:col-span-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#b09a7e]">Notas</span>
+                  <textarea
+                    className={`${fieldClassName} min-h-20 resize-none`}
+                    name="notes"
+                    onChange={handleEditChange}
+                    value={editValues.notes}
+                  />
+                </label>
+
+                <div className="flex flex-wrap gap-2 md:col-span-2">
+                  <button className="gold-button px-4 py-2.5 text-xs" disabled={isUpdating} type="submit">
+                    {isUpdating ? "Guardando..." : "Guardar cambios"}
+                  </button>
+                  <button
+                    className="rounded-xl border border-[#dccfb9] px-4 py-2.5 text-sm text-[#7d6751]"
+                    onClick={closeEditForm}
+                    type="button"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </section>
+          ) : null}
 
           <LayawayPaymentsTable payments={layaway.payments || []} />
         </div>
