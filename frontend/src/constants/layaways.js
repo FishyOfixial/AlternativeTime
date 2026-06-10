@@ -1,5 +1,6 @@
 import { accountLabels } from "./finance";
 import { paymentOptions } from "./sales";
+import { getBusinessTodayIsoDate } from "../utils/dates";
 
 export const layawayStatusLabels = {
   active: "Activo",
@@ -50,7 +51,7 @@ export function buildInitialLayawayForm() {
     customer_address: "",
     customer_notes: "",
     agreed_price: "",
-    start_date: new Date().toISOString().slice(0, 10),
+    start_date: getBusinessTodayIsoDate(),
     due_date: "",
     notes: ""
   };
@@ -58,7 +59,7 @@ export function buildInitialLayawayForm() {
 
 export function buildInitialLayawayPaymentForm() {
   return {
-    payment_date: new Date().toISOString().slice(0, 10),
+    payment_date: getBusinessTodayIsoDate(),
     amount: "",
     payment_method: "cash",
     account: "cash",

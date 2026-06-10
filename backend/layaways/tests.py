@@ -10,7 +10,7 @@ from finance.models import FinanceEntry
 from inventory.models import InventoryItem, PurchaseCost
 from sales.models import Sale
 
-from .models import Layaway
+from .models import Layaway, LayawayPayment
 
 
 class LayawayApiTests(TestCase):
@@ -103,6 +103,21 @@ class LayawayApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("product", response.data)
 
+    def test_reject_layaway_with_future_start_date(self):
+        response = self.client.post(
+            "/api/layaways/",
+            {
+                "product": self.item.id,
+                "client": self.customer.id,
+                "agreed_price": "9500.00",
+                "start_date": str(timezone.localdate() + timezone.timedelta(days=1)),
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("start_date", response.data)
+
     def test_register_partial_and_final_payment(self):
         layaway = Layaway.objects.create(
             product=self.item,
@@ -157,6 +172,116 @@ class LayawayApiTests(TestCase):
         payment_entries = FinanceEntry.objects.filter(concept=FinanceEntry.CONCEPT_LAYAWAY_PAYMENT)
         self.assertEqual(payment_entries.count(), 2)
         self.assertFalse(FinanceEntry.objects.filter(sale=sale).exists())
+
+    def test_update_layaway_agreed_price_recalculates_balance(self):
+        layaway = Layaway.objects.create(
+            product=self.item,
+            client=self.customer,
+            agreed_price=Decimal("9000.00"),
+            start_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        LayawayPayment.objects.create(
+            layaway=layaway,
+            payment_date=timezone.localdate(),
+            amount=Decimal("3000.00"),
+            payment_method="cash",
+            account="cash",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        layaway.save()
+
+        response = self.client.patch(
+            f"/api/layaways/{layaway.id}/",
+            {"agreed_price": "8000.00"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        layaway.refresh_from_db()
+        self.assertEqual(str(layaway.agreed_price), "8000.00")
+        self.assertEqual(str(layaway.amount_paid), "3000.00")
+        self.assertEqual(str(layaway.balance_due), "5000.00")
+
+    def test_update_layaway_start_date_allows_correcting_previous_day(self):
+        layaway = Layaway.objects.create(
+            product=self.item,
+            client=self.customer,
+            agreed_price=Decimal("9000.00"),
+            start_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        payment = LayawayPayment.objects.create(
+            layaway=layaway,
+            payment_date=timezone.localdate(),
+            amount=Decimal("3000.00"),
+            payment_method="cash",
+            account="cash",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        corrected_date = payment.payment_date - timezone.timedelta(days=1)
+
+        response = self.client.patch(
+            f"/api/layaways/{layaway.id}/",
+            {"start_date": str(corrected_date)},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        layaway.refresh_from_db()
+        self.assertEqual(layaway.start_date, corrected_date)
+
+    def test_delete_layaway_preserves_payments_and_finance_entries(self):
+        layaway = Layaway.objects.create(
+            product=self.item,
+            client=self.customer,
+            agreed_price=Decimal("9000.00"),
+            start_date=timezone.localdate(),
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        self.item.status = InventoryItem.STATUS_RESERVED
+        self.item.save()
+        payment = LayawayPayment.objects.create(
+            layaway=layaway,
+            payment_date=timezone.localdate(),
+            amount=Decimal("3000.00"),
+            payment_method="cash",
+            account="cash",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        finance_entry = FinanceEntry.objects.create(
+            entry_type=FinanceEntry.TYPE_INCOME,
+            concept=FinanceEntry.CONCEPT_LAYAWAY_PAYMENT,
+            amount=payment.amount,
+            account=payment.account,
+            entry_date=payment.payment_date,
+            product=self.item,
+            notes=payment.notes,
+            created_by=self.user,
+            updated_by=self.user,
+            is_automatic=True,
+        )
+        payment.finance_entry = finance_entry
+        payment.save(update_fields=["finance_entry"])
+
+        response = self.client.delete(f"/api/layaways/{layaway.id}/")
+
+        self.assertEqual(response.status_code, 204)
+        layaway.refresh_from_db()
+        payment.refresh_from_db()
+        finance_entry.refresh_from_db()
+        self.item.refresh_from_db()
+        self.assertTrue(layaway.is_deleted)
+        self.assertEqual(layaway.status, Layaway.STATUS_CANCELLED)
+        self.assertFalse(payment.is_deleted)
+        self.assertFalse(finance_entry.is_deleted)
+        self.assertEqual(self.item.status, InventoryItem.STATUS_AVAILABLE)
 
     def test_notifications_endpoint_returns_categories(self):
         old_item = InventoryItem.objects.create(

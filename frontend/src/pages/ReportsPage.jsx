@@ -6,6 +6,7 @@ import ReportFiltersForm from "../components/reports/ReportFiltersForm";
 import { useAuth } from "../contexts/AuthContext";
 import { exportReport, getDashboardSummary } from "../services/reports";
 import { listClients } from "../services/clients";
+import { getBusinessTodayIsoDate, toBusinessIsoDate } from "../utils/dates";
 import {
   accountOptions,
   channelOptions,
@@ -20,10 +21,7 @@ import {
 } from "../constants/reports";
 
 function toDateString(value) {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, "0");
-  const day = String(value.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return toBusinessIsoDate(value);
 }
 
 function shiftMonths(value, amount) {
@@ -63,7 +61,7 @@ export default function ReportsPage() {
   const [dashboardState, setDashboardState] = useState({ status: "loading", data: null });
   const [clientsState, setClientsState] = useState({ status: "loading", data: [] });
   const [selectedRange, setSelectedRange] = useState("month");
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(Number(getBusinessTodayIsoDate().slice(0, 4)));
   const [selectedReportType, setSelectedReportType] = useState(reportOptions[0].id);
   const [filters, setFilters] = useState({
     date_from: "",

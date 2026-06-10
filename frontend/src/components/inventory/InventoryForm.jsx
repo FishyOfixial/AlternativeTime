@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 
+import { getBusinessTodayIsoDate } from "../../utils/dates";
+
 function getTodayIsoDate() {
-  return new Date().toISOString().slice(0, 10);
+  return getBusinessTodayIsoDate();
 }
 
 function newTempId(prefix = "cost") {

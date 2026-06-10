@@ -1,4 +1,4 @@
-import { apiJsonAuth, buildQueryString, submitJson } from "./serviceUtils";
+import { apiJsonAuth, apiRequestAuth, buildQueryString, submitJson } from "./serviceUtils";
 
 export function listLayaways(accessToken, filters = {}) {
   return apiJsonAuth(`/api/layaways/${buildQueryString(filters)}`, accessToken);
@@ -13,6 +13,20 @@ export function createLayaway(accessToken, payload) {
     accessToken,
     method: "POST",
     payload
+  });
+}
+
+export function updateLayaway(accessToken, layawayId, payload) {
+  return submitJson(`/api/layaways/${layawayId}/`, {
+    accessToken,
+    method: "PATCH",
+    payload
+  });
+}
+
+export async function deleteLayaway(accessToken, layawayId) {
+  await apiRequestAuth(`/api/layaways/${layawayId}/`, accessToken, {
+    method: "DELETE"
   });
 }
 

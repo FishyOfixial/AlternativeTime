@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -14,12 +15,13 @@ from .serializers import (
     LayawayCreateSerializer,
     LayawayPaymentCreateSerializer,
     LayawaySerializer,
+    LayawayUpdateSerializer,
 )
 
 
 class LayawayViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
-    http_method_names = ["get", "post", "head", "options"]
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
         queryset = Layaway.objects.select_related("client", "product", "sale")
@@ -46,7 +48,48 @@ class LayawayViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == "create":
             return LayawayCreateSerializer
+        if self.action in {"update", "partial_update"}:
+            return LayawayUpdateSerializer
         return LayawaySerializer
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        product = instance.product
+        sale = instance.sale
+        should_release_product = product.status == InventoryItem.STATUS_RESERVED
+
+        instance.status = Layaway.STATUS_CANCELLED
+        instance.sale = None
+        instance.is_deleted = True
+        instance.updated_by = self.request.user
+        instance.save(update_fields=["status", "sale", "is_deleted", "updated_by", "updated_at"])
+
+        if sale is not None and sale.notes == f"Apartado completado #{instance.id}":
+            sale.is_deleted = True
+            sale.updated_by = self.request.user
+            sale.save(update_fields=["is_deleted", "updated_by", "updated_at"])
+            should_release_product = True
+
+        active_layaway_exists = Layaway.objects.filter(
+            product=product,
+            status=Layaway.STATUS_ACTIVE,
+        ).exclude(pk=instance.pk).exists()
+        if not active_layaway_exists and should_release_product:
+            product.status = InventoryItem.STATUS_AVAILABLE
+            product.updated_by = self.request.user
+            product.save(
+                update_fields=[
+                    "status",
+                    "sold_date",
+                    "sold_at",
+                    "days_to_sell",
+                    "updated_by",
+                    "updated_at",
+                    "stock",
+                    "is_active",
+                    "tag",
+                ]
+            )
 
     @action(detail=True, methods=["post"], url_path="payments")
     def payments(self, request, pk=None):

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { USERS_MODULE_ENABLED } from "../../constants/features";
+import { BUSINESS_TIME_ZONE } from "../../utils/dates";
 
 const titles = {
   "/dashboard": "Dashboard",
@@ -26,7 +27,8 @@ export default function HeaderBar({ onMenuClick }) {
   const currentDate = useMemo(() => {
     return new Intl.DateTimeFormat("es-MX", {
       month: "short",
-      year: "numeric"
+      year: "numeric",
+      timeZone: BUSINESS_TIME_ZONE
     }).format(new Date());
   }, []);
 

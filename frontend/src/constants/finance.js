@@ -1,4 +1,6 @@
-﻿export const accountLabels = {
+import { getBusinessTodayIsoDate } from "../utils/dates";
+
+export const accountLabels = {
   cash: "Efectivo",
   bbva: "BBVA",
   credit: "Credito",
@@ -35,7 +37,7 @@ export const rangeOptions = [
 ];
 
 export const initialEntryForm = {
-  entry_date: new Date().toISOString().slice(0, 10),
+  entry_date: getBusinessTodayIsoDate(),
   entry_type: "income",
   concept: "sale",
   amount: "",

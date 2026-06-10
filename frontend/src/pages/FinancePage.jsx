@@ -17,6 +17,7 @@ import {
   updateFinanceEntry
 } from "../services/finance";
 import { exportReport } from "../services/reports";
+import { getBusinessTodayIsoDate } from "../utils/dates";
 import {
   accountCards,
   accountLabels,
@@ -36,7 +37,7 @@ export default function FinancePage() {
   const [balances, setBalances] = useState([]);
   const [entries, setEntries] = useState([]);
   const [selectedRange, setSelectedRange] = useState("month");
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(Number(getBusinessTodayIsoDate().slice(0, 4)));
   const [filterType, setFilterType] = useState("all");
   const [filterAccount, setFilterAccount] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,7 +51,7 @@ export default function FinancePage() {
   const [exportError, setExportError] = useState("");
 
   const availableYears = useMemo(() => {
-    const currentYear = new Date().getFullYear();
+    const currentYear = Number(getBusinessTodayIsoDate().slice(0, 4));
     return Array.from({ length: 5 }, (_, index) => currentYear - index);
   }, []);
 
@@ -118,7 +119,7 @@ export default function FinancePage() {
   function resetEntryForm() {
     setEntryForm({
       ...initialEntryForm,
-      entry_date: new Date().toISOString().slice(0, 10)
+      entry_date: getBusinessTodayIsoDate()
     });
     setEntryError("");
     setEntryFieldErrors({});
@@ -127,7 +128,7 @@ export default function FinancePage() {
 
   function buildEntryFormFromEntry(entry) {
     return {
-      entry_date: entry.entry_date || new Date().toISOString().slice(0, 10),
+      entry_date: entry.entry_date || getBusinessTodayIsoDate(),
       entry_type: entry.entry_type || "income",
       concept: entry.concept || "sale",
       amount: entry.amount || "",

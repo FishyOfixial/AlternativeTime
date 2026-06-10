@@ -1,4 +1,6 @@
-﻿export function getClientInitials(name) {
+import { BUSINESS_TIME_ZONE, formatBusinessDate, getBusinessTodayIsoDate } from "./dates";
+
+export function getClientInitials(name) {
   return name
     .split(" ")
     .filter(Boolean)
@@ -23,26 +25,19 @@ export function formatLastPurchase(value) {
 
   return new Intl.DateTimeFormat("es-MX", {
     month: "short",
-    year: "numeric"
+    year: "numeric",
+    timeZone: BUSINESS_TIME_ZONE
   }).format(new Date(value));
 }
 
 export function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).format(new Date(value));
+  return value ? formatBusinessDate(value) : "-";
 }
 
 export function buildInitialClientSaleForm() {
   return {
     product: "",
-    sale_date: new Date().toISOString().slice(0, 10),
+    sale_date: getBusinessTodayIsoDate(),
     payment_method: "cash",
     sales_channel: "instagram",
     amount_paid: "",

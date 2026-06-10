@@ -110,6 +110,8 @@ class LayawayCreateSerializer(serializers.ModelSerializer):
 
         if agreed_price <= 0:
             raise serializers.ValidationError({"agreed_price": "El precio acordado debe ser mayor a 0."})
+        if start_date > timezone.localdate():
+            raise serializers.ValidationError({"start_date": "La fecha de inicio no puede estar en el futuro."})
         if product.status != InventoryItem.STATUS_AVAILABLE:
             raise serializers.ValidationError({"product": "Solo puedes apartar relojes disponibles."})
         if Layaway.objects.filter(
@@ -142,6 +144,50 @@ class LayawayCreateSerializer(serializers.ModelSerializer):
         product.save(update_fields=["status", "updated_by", "updated_at"])
         layaway.refresh_from_db()
         return layaway
+
+    def to_representation(self, instance):
+        return LayawaySerializer(instance, context=self.context).data
+
+
+class LayawayUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Layaway
+        fields = ["agreed_price", "start_date", "due_date", "notes"]
+
+    def validate(self, attrs):
+        instance = self.instance
+        agreed_price = Decimal(attrs.get("agreed_price", instance.agreed_price or Decimal("0.00")))
+
+        if agreed_price <= 0:
+            raise serializers.ValidationError({"agreed_price": "El precio acordado debe ser mayor a 0."})
+        if instance.status == Layaway.STATUS_CANCELLED:
+            raise serializers.ValidationError({"status": "No puedes editar un apartado cancelado."})
+
+        start_date = attrs.get("start_date", instance.start_date)
+        due_date = attrs.get("due_date", instance.due_date)
+        first_payment = instance.payments.filter(is_deleted=False).order_by("payment_date", "created_at").first()
+
+        if start_date > timezone.localdate():
+            raise serializers.ValidationError({"start_date": "La fecha de inicio no puede estar en el futuro."})
+        if first_payment and start_date > first_payment.payment_date:
+            raise serializers.ValidationError(
+                {"start_date": "La fecha de inicio no puede ser posterior al primer abono registrado."}
+            )
+        if due_date and due_date < start_date:
+            raise serializers.ValidationError({"due_date": "La fecha limite no puede ser menor al inicio."})
+        return attrs
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        request = self.context["request"]
+        user = request.user
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.updated_by = user
+        instance.save()
+        reconcile_layaway_completion(instance, user)
+        instance.refresh_from_db()
+        return instance
 
     def to_representation(self, instance):
         return LayawaySerializer(instance, context=self.context).data

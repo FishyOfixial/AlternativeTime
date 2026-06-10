@@ -1,4 +1,6 @@
-﻿export const channelLabels = {
+import { getBusinessTodayIsoDate } from "../utils/dates";
+
+export const channelLabels = {
   marketplace: "Marketplace",
   instagram: "Instagram",
   whatsapp: "WhatsApp",
@@ -39,7 +41,7 @@ export function buildInitialSaleForm() {
     customer_email: "",
     customer_address: "",
     customer_notes: "",
-    sale_date: new Date().toISOString().slice(0, 10),
+    sale_date: getBusinessTodayIsoDate(),
     payment_method: "cash",
     sales_channel: "marketplace",
     amount_paid: "",

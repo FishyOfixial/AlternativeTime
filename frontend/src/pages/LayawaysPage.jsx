@@ -17,6 +17,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { createClient, listClients } from "../services/clients";
 import { listInventory } from "../services/inventory";
 import { createLayaway, listLayaways } from "../services/layaways";
+import { getBusinessTodayIsoDate } from "../utils/dates";
 
 function sortClientsAlphabetically(items) {
   return [...items].sort((left, right) =>
@@ -51,9 +52,8 @@ function isDueSoon(layaway) {
     return false;
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dueDate = new Date(`${layaway.due_date}T00:00:00`);
+  const today = new Date(`${getBusinessTodayIsoDate()}T12:00:00Z`);
+  const dueDate = new Date(`${layaway.due_date}T12:00:00Z`);
   const diffInDays = Math.round((dueDate.getTime() - today.getTime()) / 86400000);
   return diffInDays >= 0 && diffInDays <= 7;
 }
@@ -256,7 +256,7 @@ export default function LayawaysPage() {
         customer_contact: "",
         agreed_price: formValues.agreed_price,
         start_date: formValues.start_date,
-        due_date: formValues.due_date,
+        due_date: formValues.due_date || null,
         notes: formValues.notes.trim()
       });
 

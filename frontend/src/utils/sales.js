@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { formatBusinessDate, getBusinessTodayIsoDate, toBusinessIsoDate } from "./dates";
 
 export function formatCurrency(value) {
   return new Intl.NumberFormat("es-MX", {
@@ -10,15 +11,7 @@ export function formatCurrency(value) {
 }
 
 export function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).format(new Date(value));
+  return value ? formatBusinessDate(value) : "-";
 }
 
 export function getBrandFromLabel(label) {
@@ -53,8 +46,8 @@ export function monthToRange(value) {
   const [year, month] = value.split("-").map((item) => Number(item));
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 0);
-  const date_from = start.toISOString().slice(0, 10);
-  const date_to = end.toISOString().slice(0, 10);
+  const date_from = toBusinessIsoDate(start);
+  const date_to = toBusinessIsoDate(end);
   return { date_from, date_to };
 }
 
@@ -97,6 +90,6 @@ export function exportSalesSpreadsheet({
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Ventas");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getBusinessTodayIsoDate();
   XLSX.writeFile(workbook, `ventas_${today}.xlsx`);
 }

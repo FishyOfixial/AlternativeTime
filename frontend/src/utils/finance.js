@@ -1,4 +1,6 @@
-﻿export function formatCurrency(value) {
+import { formatBusinessDate, toBusinessIsoDate } from "./dates";
+
+export function formatCurrency(value) {
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "MXN",
@@ -8,14 +10,7 @@
 }
 
 export function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).format(new Date(value));
+  return value ? formatBusinessDate(value) : "-";
 }
 
 function shiftMonths(value, months) {
@@ -48,8 +43,5 @@ export function getRangeDates(range, year) {
 }
 
 export function toISODate(value) {
-  if (!value) {
-    return "";
-  }
-  return value.toISOString().slice(0, 10);
+  return toBusinessIsoDate(value);
 }

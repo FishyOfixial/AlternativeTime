@@ -5,6 +5,7 @@ import LoadingState from "../components/feedback/LoadingState";
 import { useAuth } from "../contexts/AuthContext";
 import { listNotifications } from "../services/layaways";
 import { getDashboardSummary } from "../services/reports";
+import { getBusinessTodayIsoDate } from "../utils/dates";
 
 const initialState = {
   status: "loading",
@@ -199,7 +200,7 @@ export default function DashboardPage() {
     data: null
   });
   const [selectedRange, setSelectedRange] = useState("month");
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(Number(getBusinessTodayIsoDate().slice(0, 4)));
   const [chartMode, setChartMode] = useState("sales");
 
   useEffect(() => {
