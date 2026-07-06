@@ -19,6 +19,7 @@ function buildInventoryPayload(payload) {
     status: payload.status,
     sales_channel: payload.sales_channel,
     image_url: payload.image_url?.trim() || "",
+    is_published: Boolean(payload.is_published),
     purchase_costs: purchaseCosts.length
       ? purchaseCosts.map((cost) => ({
           id: cost.id,
@@ -85,5 +86,16 @@ export async function importInventoryCsv(accessToken, file) {
     method: "POST",
     formData,
     errorMessage: "No pudimos importar el CSV."
+  });
+}
+
+export function uploadInventoryImage(accessToken, itemId, file) {
+  const formData = new FormData();
+  formData.append("primary_image", file);
+  return submitFormData(`/api/inventory/${itemId}/primary-image/`, {
+    accessToken,
+    method: "POST",
+    formData,
+    errorMessage: "No pudimos subir la foto."
   });
 }

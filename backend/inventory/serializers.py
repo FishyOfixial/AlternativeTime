@@ -75,6 +75,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
     total_cost = serializers.SerializerMethodField()
     estimated_profit = serializers.SerializerMethodField()
     utilidad = serializers.SerializerMethodField()
+    primary_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryItem
@@ -98,6 +99,9 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "age_tag",
             "sales_channel",
             "image_url",
+            "primary_image",
+            "primary_image_url",
+            "is_published",
             "sold_at",
             "sold_date",
             "days_to_sell",
@@ -117,6 +121,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "product_id",
             "sku",
             "name",
+            "primary_image_url",
             "display_name",
             "tag",
             "age_tag",
@@ -141,6 +146,12 @@ class InventoryItemSerializer(serializers.ModelSerializer):
 
     def get_utilidad(self, obj):
         return round(float(obj.utilidad), 1)
+
+    def get_primary_image_url(self, obj):
+        if not obj.primary_image:
+            return ""
+        request = self.context.get("request")
+        return request.build_absolute_uri(obj.primary_image.url) if request else obj.primary_image.url
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -323,3 +334,23 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data["tag"] = data["age_tag"]
         return data
+
+
+class PublicInventoryItemSerializer(serializers.ModelSerializer):
+    display_name = serializers.CharField(read_only=True)
+    availability = serializers.CharField(source="get_status_display", read_only=True)
+    primary_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InventoryItem
+        fields = [
+            "id", "product_id", "display_name", "brand", "model_name",
+            "year_label", "condition_score", "description", "price", "status",
+            "availability", "stock", "primary_image_url",
+        ]
+
+    def get_primary_image_url(self, obj):
+        if obj.primary_image:
+            request = self.context.get("request")
+            return request.build_absolute_uri(obj.primary_image.url) if request else obj.primary_image.url
+        return obj.image_url or ""

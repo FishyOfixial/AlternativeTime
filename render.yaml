@@ -46,6 +46,8 @@ services:
         sync: false
       - key: ALTERNATIVE_TIME_BUSINESS_NAME
         value: Alternative Time
+      - key: CLOUDINARY_URL
+        sync: false
       - key: BIRTHDAY_NOTIFICATION_TO_EMAILS
         sync: false
 
@@ -109,6 +111,10 @@ services:
     envVars:
       - key: VITE_API_HOST
         value: alternative-time-api.onrender.com
+      - key: VITE_WHATSAPP_URL
+        sync: false
+      - key: VITE_INSTAGRAM_URL
+        sync: false
 
 databases:
   - name: alternative-time-db

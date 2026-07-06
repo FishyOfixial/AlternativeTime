@@ -10,6 +10,7 @@ El stack actual del proyecto es:
 - Base de datos en desarrollo: SQLite
 - Base de datos en produccion: PostgreSQL
 - Configuracion de entorno: archivo `.env` en la raiz del repositorio
+- Media en produccion: Cloudinary
 
 ## Objetivo de la arquitectura actual
 
@@ -37,12 +38,17 @@ Responsable de:
 - manejar navegacion y estado de la experiencia cliente
 - consumir la API del backend
 - presentar datos operativos y administrativos
+- presentar el catalogo publico sin mezclarlo con el shell autenticado
 
 ## Flujo de comunicacion actual
 
 El flujo actual es:
 
 `frontend -> /api/* -> proxy de Vite -> Django REST API`
+
+Para fotografias en produccion:
+
+`POS -> endpoint autenticado -> Cloudinary -> CDN -> catalogo publico`
 
 En desarrollo, Vite redirige las solicitudes `/api` al backend local en
 `http://127.0.0.1:8000`.
@@ -76,6 +82,7 @@ configuracion para Django. Actualmente se contemplan variables como:
 - `DB_ENGINE`
 - `SQLITE_NAME`
 - `POSTGRES_*`
+- `CLOUDINARY_URL`
 
 El archivo `.env.example` documenta el contrato de configuracion sin exponer
 secretos reales.
@@ -88,6 +95,7 @@ Actualmente el backend ya esta organizado en apps funcionales:
 - `users`: autenticacion JWT y datos del usuario autenticado
 - `clients`: CRUD base de clientes
 - `inventory`: CRUD base de inventario y productos
+- `inventory.storage`: backend de imagenes Cloudinary con fallback local
 - `sales`: ventas y sus items con logica transaccional
 - `finance`: resumen financiero inicial
 - `reports`: reportes operativos agregados
@@ -129,6 +137,8 @@ el onboarding, la version compartida y la documentacion unificada.
 Actualmente el sistema expone y consume estas interfaces concretas:
 
 - `GET /api/health/` desde el backend
+- `GET /api/catalog/`
+- `GET /api/catalog/:id/`
 - `POST /api/auth/login/`
 - `POST /api/auth/refresh/`
 - `GET /api/auth/me/`
@@ -140,7 +150,12 @@ Actualmente el sistema expone y consume estas interfaces concretas:
 - `GET /api/reports/inventory-summary/`
 - consumo desde el frontend de `/api/health/` mediante proxy de Vite
 - configuracion del backend mediante variables `DJANGO_*`, `DB_ENGINE`,
-  `SQLITE_NAME` y `POSTGRES_*`
+  `SQLITE_NAME`, `POSTGRES_*` y `CLOUDINARY_URL`
+
+El catalogo publico solo serializa informacion comercial. El CRUD completo de
+inventario y la carga `POST /api/inventory/:id/primary-image/` requieren JWT.
+Las piezas vendidas, eliminadas logicamente, inactivas o no publicadas se
+excluyen en el queryset publico.
 
 ## Limites actuales de la arquitectura
 

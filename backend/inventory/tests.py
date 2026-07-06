@@ -29,6 +29,48 @@ class TestInventoryApi(TestCase):
 
         self.assertEqual(response.status_code, 401)
 
+    def test_public_catalog_only_exposes_published_unsold_items(self):
+        published = InventoryItem.objects.create(
+            brand="Omega",
+            model_name="Seamaster",
+            price="85000.00",
+            description="Diver automático.",
+            purchase_date=timezone.localdate(),
+            is_published=True,
+        )
+        InventoryItem.objects.create(
+            brand="Rolex",
+            model_name="Explorer",
+            price="120000.00",
+            purchase_date=timezone.localdate(),
+            is_published=False,
+        )
+        sold = InventoryItem.objects.create(
+            brand="Cartier",
+            model_name="Tank",
+            price="65000.00",
+            purchase_date=timezone.localdate(),
+            is_published=True,
+        )
+        sold.status = InventoryItem.STATUS_SOLD
+        sold.save()
+
+        response = APIClient().get("/api/catalog/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["id"] for item in response.data], [published.id])
+        self.assertNotIn("notes", response.data[0])
+        self.assertNotIn("cost_price", response.data[0])
+
+    def test_public_catalog_does_not_allow_writes(self):
+        response = APIClient().post(
+            "/api/catalog/",
+            {"brand": "Seiko", "model_name": "Presage"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 405)
+
     def test_list_inventory_orders_newest_purchase_first(self):
         old_item = InventoryItem.objects.create(
             brand="Hamilton",

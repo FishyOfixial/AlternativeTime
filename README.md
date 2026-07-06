@@ -39,6 +39,24 @@ La plataforma cubre de forma integrada:
 - reportes ejecutivos
 - healthcheck y monitoreo básico del sistema
 
+## Catalogo Publico
+
+La misma aplicacion incluye una experiencia publica para clientes, separada del
+POS y sin inicio de sesion:
+
+- `/catalog`: coleccion publicada
+- `/catalog/:id`: detalle de una pieza
+- `/login`: acceso interno al POS
+- `/api/catalog/`: API publica de solo lectura
+
+El catalogo reutiliza el inventario existente. Solo muestra piezas con
+`is_published=True` que continuan activas y no estan vendidas. No expone costos,
+proveedores, notas internas ni operaciones administrativas.
+
+Las fotografias se cargan desde la ficha autenticada de inventario y se guardan
+en Cloudinary cuando `CLOUDINARY_URL` esta configurada. Consulta la
+[guia del catalogo publico](./docs/product/public-catalog.md).
+
 ## Arquitectura de Alto Nivel
 
 La solución está construida con una separación clara entre backend y frontend, siguiendo una organización modular por dominios de negocio.
@@ -165,6 +183,7 @@ La configuración actual contempla:
 - Gunicorn para despliegue WSGI
 - WhiteNoise para manejo de estáticos
 - Render como infraestructura objetivo de despliegue
+- Cloudinary para almacenamiento y entrega CDN de fotografias
 
 ## Estructura del Repositorio
 
@@ -230,6 +249,12 @@ Healthcheck local:
 http://127.0.0.1:8000/api/health/
 ```
 
+API publica del catalogo:
+
+```text
+http://127.0.0.1:8000/api/catalog/
+```
+
 ### Frontend
 
 Instalar dependencias:
@@ -249,6 +274,9 @@ Frontend local:
 ```text
 http://localhost:5173
 ```
+
+El catalogo abre en `http://localhost:5173/catalog` y el POS en
+`http://localhost:5173/login`.
 
 Validaciones recomendadas:
 
@@ -289,6 +317,17 @@ Variables importantes de frontend:
 
 - `VITE_API_BASE_URL`
 - `VITE_API_HOST`
+- `VITE_WHATSAPP_URL`
+- `VITE_INSTAGRAM_URL`
+
+Variable de almacenamiento de imagenes:
+
+```env
+CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+```
+
+`CLOUDINARY_URL` contiene credenciales y no debe versionarse. Sin ella, el
+backend usa `backend/media` como fallback de desarrollo.
 
 ## Deploy en Render
 
@@ -312,6 +351,8 @@ Capacidades de la configuración actual:
 - rewrite SPA para `react-router-dom`
 - conexión automática entre frontend, backend y base de datos
 - variables SMTP marcadas como `sync: false` para capturarlas en Render sin versionar credenciales
+- `CLOUDINARY_URL` marcada como `sync: false` en el backend
+- links de WhatsApp e Instagram configurables durante el build del frontend
 
 El Cron Job de cumpleaños ejecuta:
 
@@ -387,6 +428,7 @@ Especialmente útiles:
 - [docs/architecture/system-architecture.md](./docs/architecture/system-architecture.md)
 - [docs/engineering/backend-guide.md](./docs/engineering/backend-guide.md)
 - [docs/engineering/frontend-guide.md](./docs/engineering/frontend-guide.md)
+- [docs/product/public-catalog.md](./docs/product/public-catalog.md)
 - [docs/planning/roadmap.md](./docs/planning/roadmap.md)
 - [docs/planning/offline-sync-action-plan.md](./docs/planning/offline-sync-action-plan.md)
 

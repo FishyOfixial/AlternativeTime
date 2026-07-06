@@ -3,6 +3,8 @@ import ProtectedRoute from "../components/auth/ProtectedRoute";
 import PublicOnlyRoute from "../components/auth/PublicOnlyRoute";
 import ClientDetailPage from "../pages/ClientDetailPage";
 import ClientsPage from "../pages/ClientsPage";
+import CatalogDetailPage from "../pages/CatalogDetailPage";
+import CatalogPage from "../pages/CatalogPage";
 import AuthenticatedLayout from "../layouts/AuthenticatedLayout";
 import DashboardPage from "../pages/DashboardPage";
 import HomePage from "../pages/HomePage";
@@ -35,9 +37,11 @@ export default function AppRouter() {
       <Routes>
         <Route path="/healthcheck" element={<Navigate to="/healthcheck/" replace />} />
         <Route path="/healthcheck/" element={<HomePage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
+        <Route path="/catalog/:itemId" element={<CatalogDetailPage />} />
 
         <Route element={<PublicOnlyRoute />}>
-          <Route index element={<Navigate to="/login" replace />} />
+          <Route index element={<Navigate to="/catalog" replace />} />
           <Route path="/login" element={<LoginPage />} />
         </Route>
 

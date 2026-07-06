@@ -1,6 +1,7 @@
 from datetime import datetime, time
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Sum
@@ -22,6 +23,14 @@ ACCOUNT_CHOICES = [
     ("credit", "Credito"),
     ("amex", "Amex"),
 ]
+
+
+def validate_watch_image_size(image):
+    if image.size > 8 * 1024 * 1024:
+        raise ValidationError("La imagen no puede pesar más de 8 MB.")
+    content_type = getattr(image, "content_type", "")
+    if content_type and content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise ValidationError("Usa una imagen JPG, PNG o WebP.")
 
 
 def get_brand_prefix(brand):
@@ -139,6 +148,15 @@ class InventoryItem(TimestampedSoftDeleteModel):
         default="cash",
     )
     image_url = models.URLField(blank=True)
+    primary_image = models.ImageField(
+        upload_to="watches/%Y/%m/",
+        blank=True,
+        validators=[validate_watch_image_size],
+    )
+    is_published = models.BooleanField(
+        default=False,
+        help_text="Muestra este reloj en el catálogo público.",
+    )
     is_active = models.BooleanField(default=True)
     stock = models.PositiveIntegerField(default=1)
 

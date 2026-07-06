@@ -206,3 +206,29 @@ usar sincronizacion por eventos visibles y a modelar estados de sync en la UX.
 **Estado**
 
 Aprobada.
+
+## DEC-011 Catalogo publico sobre inventario y media en Cloudinary
+
+**Decision**
+
+Usar `InventoryItem` como fuente unica del catalogo publico, controlar la
+visibilidad con `is_published` y almacenar fotografias en Cloudinary mediante
+el storage de Django.
+
+**Contexto**
+
+El negocio necesita mostrar piezas a clientes sin exponer el POS. Duplicar
+productos en otro modelo generaria inconsistencias de precio y disponibilidad.
+El filesystem de un servicio web en Render no ofrece persistencia adecuada para
+fotografias cargadas por usuarios.
+
+**Impacto**
+
+La API publica queda limitada a lectura y campos comerciales. Las escrituras y
+subidas requieren JWT. Las piezas vendidas o inactivas se retiran
+automaticamente. `CLOUDINARY_URL` pasa a ser un secreto obligatorio en
+produccion; desarrollo conserva filesystem local como fallback.
+
+**Estado**
+
+Aprobada.

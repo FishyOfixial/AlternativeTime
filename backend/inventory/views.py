@@ -7,16 +7,17 @@ from decimal import Decimal, InvalidOperation
 from django.db.models import Q
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from finance.services import delete_purchase_cost_line_relationship, sync_purchase_cost_line_finance_entry
 
 from .models import InventoryItem, PurchaseCostLine
-from .serializers import InventoryItemSerializer, PurchaseCostLineSerializer
+from .serializers import InventoryItemSerializer, PublicInventoryItemSerializer, PurchaseCostLineSerializer
 
 
 class InventoryItemViewSet(ModelViewSet):
@@ -48,6 +49,32 @@ class InventoryItemViewSet(ModelViewSet):
             queryset = queryset.filter(tag=tag)
 
         return queryset.order_by("-purchase_date", "-id")
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="primary-image",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def primary_image(self, request, pk=None):
+        product = self.get_object()
+        previous_image_name = product.primary_image.name
+        image = request.FILES.get("primary_image")
+        if image is None:
+            return Response(
+                {"primary_image": ["Selecciona una imagen."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = self.get_serializer(
+            product,
+            data={"primary_image": image},
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=request.user)
+        if previous_image_name and previous_image_name != product.primary_image.name:
+            product.primary_image.storage.delete(previous_image_name)
+        return Response(serializer.data)
 
     @action(detail=True, methods=["get", "post"], url_path="costs")
     def costs(self, request, pk=None):
@@ -344,3 +371,17 @@ class InventoryItemViewSet(ModelViewSet):
             "credito": "credit",
             "amex": "amex",
         }
+
+
+class PublicCatalogViewSet(ReadOnlyModelViewSet):
+    serializer_class = PublicInventoryItemSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    pagination_class = None
+
+    def get_queryset(self):
+        return (
+            InventoryItem.objects.filter(is_published=True, is_active=True)
+            .exclude(status=InventoryItem.STATUS_SOLD)
+            .order_by("-purchase_date", "-id")
+        )

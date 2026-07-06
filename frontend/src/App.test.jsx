@@ -253,12 +253,13 @@ describe("App auth routing", () => {
   });
 
   it("redirects the root route to login for guests", async () => {
+    global.fetch = vi.fn(async () => mockJsonResponse([]));
     window.history.pushState({}, "", "/");
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: /iniciar sesion/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /relojes disponibles/i })).toBeInTheDocument();
     await waitFor(() => {
-      expect(window.location.pathname).toBe("/login");
+      expect(window.location.pathname).toBe("/catalog");
     });
   });
 

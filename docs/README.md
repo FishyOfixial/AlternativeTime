@@ -32,15 +32,16 @@ La documentacion de este repositorio cubre:
 
 1. [User Manual](product/user-manual.md)
 2. [Product Overview](product/product-overview.md)
-3. [System Architecture](architecture/system-architecture.md)
-4. [Backend Guide](engineering/backend-guide.md)
-5. [Frontend Guide](engineering/frontend-guide.md)
-6. [Roadmap](planning/roadmap.md)
-7. [Backlog](planning/backlog.md)
-8. [Decisions Log](planning/decisions-log.md)
-9. [Offline Sync Action Plan](planning/offline-sync-action-plan.md)
-10. [Technical Specification](specification/technical-specification.md)
-11. [Technical Specification Addendum v1.1](specification/technical-specification-addendum-v1.1.md)
+3. [Public Catalog](product/public-catalog.md)
+4. [System Architecture](architecture/system-architecture.md)
+5. [Backend Guide](engineering/backend-guide.md)
+6. [Frontend Guide](engineering/frontend-guide.md)
+7. [Roadmap](planning/roadmap.md)
+8. [Backlog](planning/backlog.md)
+9. [Decisions Log](planning/decisions-log.md)
+10. [Offline Sync Action Plan](planning/offline-sync-action-plan.md)
+11. [Technical Specification](specification/technical-specification.md)
+12. [Technical Specification Addendum v1.1](specification/technical-specification-addendum-v1.1.md)
 
 ## Criterio de Uso
 

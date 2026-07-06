@@ -38,6 +38,7 @@ ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS))
 INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
+    "cloudinary",
     "api",
     "users",
     "clients",
@@ -139,7 +140,23 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
+CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "").strip()
+
+STORAGES = {
+    "default": {
+        "BACKEND": (
+            "inventory.storage.CloudinaryImageStorage"
+            if CLOUDINARY_URL
+            else "django.core.files.storage.FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

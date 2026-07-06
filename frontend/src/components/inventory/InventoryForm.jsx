@@ -32,6 +32,8 @@ const initialValues = {
   purchase_date: getTodayIsoDate(),
   price: "0.00",
   status: "available",
+  is_published: false,
+  primary_image: null,
   sales_channel: "marketplace",
   purchase_costs: defaultCostLines.map((line) => ({
     temp_id: newTempId(line.cost_type),
@@ -209,10 +211,10 @@ export default function InventoryForm({
   }, [fieldErrors]);
 
   function handleChange(event) {
-    const { name, value } = event.target;
+    const { checked, files, name, type, value } = event.target;
     setValues((current) => ({
       ...current,
-      [name]: value
+      [name]: type === "checkbox" ? checked : type === "file" ? files?.[0] || null : value
     }));
   }
 
@@ -318,6 +320,8 @@ export default function InventoryForm({
       purchase_date: values.purchase_date || null,
       price: values.price,
       status: values.status,
+      is_published: values.is_published,
+      primary_image: values.primary_image,
       sales_channel: values.sales_channel,
       purchase_costs: values.purchase_costs.map((cost) => ({
         id: cost.id,
@@ -394,6 +398,39 @@ export default function InventoryForm({
               />
               <FieldError fieldName="description" />
             </Field>
+            <Field className="col-span-2" label="Foto principal del catálogo">
+              {defaultValues.primary_image_url ? (
+                <img
+                  alt={`Foto actual de ${defaultValues.display_name || "reloj"}`}
+                  className="mb-3 h-40 w-full rounded-xl border border-[#dccfb9] object-cover"
+                  src={defaultValues.primary_image_url}
+                />
+              ) : null}
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                className={getInputClass("primary_image")}
+                name="primary_image"
+                onChange={handleChange}
+                type="file"
+              />
+              <p className="mt-1 text-xs text-[#8c7963]">JPG, PNG o WebP. Máximo 8 MB.</p>
+              <FieldError fieldName="primary_image" />
+            </Field>
+            <label className="col-span-2 flex items-start gap-3 rounded-xl border border-[#dccfb9] bg-[#f7f0e4] p-4">
+              <input
+                checked={Boolean(values.is_published)}
+                className="mt-1 h-4 w-4 accent-[#9b7838]"
+                name="is_published"
+                onChange={handleChange}
+                type="checkbox"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-[#2a221b]">Publicar en el catálogo</span>
+                <span className="mt-1 block text-xs text-[#7d6c55]">
+                  Solo los relojes marcados serán visibles para clientes.
+                </span>
+              </span>
+            </label>
             <Field className="col-span-2" label="Notas internas">
               <textarea
                 className={`${getInputClass("notes")} min-h-16 resize-none`}

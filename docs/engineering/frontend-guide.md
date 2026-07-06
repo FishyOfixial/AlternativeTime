@@ -11,6 +11,7 @@ El frontend ya opera de punta a punta para:
 - ventas directas
 - apartados y abonos
 - finanzas y reportes
+- catalogo publico y detalle de producto
 
 ## Estructura
 
@@ -31,6 +32,15 @@ frontend/
 
 ## Modulos visibles en UI
 
+Rutas publicas:
+
+- `/` redirige a `/catalog`
+- `/catalog`
+- `/catalog/:itemId`
+- `/login`
+
+Rutas protegidas del POS:
+
 - `/dashboard`
 - `/clients`
 - `/inventory`
@@ -38,6 +48,10 @@ frontend/
 - `/layaways`
 - `/finance`
 - `/reports`
+
+El catalogo no se renderiza dentro de `AuthenticatedLayout` y consume
+`/api/catalog/` sin token. Los formularios internos y la subida de imagen
+continuan utilizando el contexto JWT.
 
 ## Modulos ocultos temporalmente
 
@@ -56,6 +70,19 @@ El frontend consume endpoints reales de:
 - `finance`
 - `reports`
 - `notifications`
+- `catalog`
+
+## Contacto comercial
+
+Los botones publicos se configuran en el entorno de build:
+
+```env
+VITE_WHATSAPP_URL=https://wa.me/521XXXXXXXXXX
+VITE_INSTAGRAM_URL=https://www.instagram.com/alternative_time_co/
+```
+
+Vite incorpora estas variables al bundle. Cambiarlas en Render requiere un
+nuevo build del sitio estatico.
 
 ## Pruebas y validacion
 

@@ -31,6 +31,12 @@ Para operar el sistema se recomienda:
 
 ## Acceso al Sistema
 
+### Catálogo para clientes
+
+La ruta `/catalog` es pública y no solicita usuario ni contraseña. Permite ver
+las piezas publicadas, abrir su detalle y contactar al negocio por WhatsApp o
+Instagram. El catálogo no permite crear, editar, vender o apartar productos.
+
 ### Inicio de sesión
 
 1. Abrir la URL del sistema.
@@ -132,6 +138,9 @@ Cada registro puede incluir:
 - costos asociados
 - estado del reloj
 - antigüedad en inventario
+- descripción pública
+- fotografía principal
+- opción `Publicar en el catálogo`
 
 ### Alta de reloj
 
@@ -147,6 +156,22 @@ Cada registro puede incluir:
 2. Abrir el formulario de edición.
 3. Ajustar datos.
 4. Guardar cambios.
+
+### Publicar una pieza
+
+1. Abrir la ficha del reloj desde `Inventario`.
+2. Confirmar precio, descripción y estado.
+3. Seleccionar una fotografía JPG, PNG o WebP de hasta 8 MB.
+4. Activar `Publicar en el catálogo`.
+5. Guardar.
+6. Revisar la pieza en `/catalog`.
+
+Solo usuarios autenticados pueden modificar esta información. Para retirar una
+pieza disponible sin eliminarla, desactivar la opción de publicación.
+
+Los relojes vendidos no aparecen aunque conserven la opción de publicación
+activada. Al registrar la venta, el sistema cambia el stock a cero, desactiva la
+pieza y la API pública la excluye automáticamente.
 
 ### Importación CSV
 

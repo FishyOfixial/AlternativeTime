@@ -88,6 +88,7 @@ Ejemplos de convencion:
 - `/api/inventory/`
 - `/api/sales/`
 - `/api/layaways/`
+- `/api/catalog/`
 
 Reglas recomendadas:
 
@@ -134,26 +135,41 @@ El backend ya contempla:
 
 Esto permite la integracion local con el frontend servido por Vite.
 
-## Autenticacion
+## Autenticacion y superficie publica
 
-La autenticacion ya tiene una direccion de trabajo definida para el siguiente
-sprint del backend.
+El backend usa JWT de Simple JWT con el usuario estandar de Django. La politica
+global de DRF exige autenticacion; cada excepcion publica debe declararse de
+forma explicita.
 
-Decision de trabajo actual:
+Actualmente son publicos:
 
-- JWT con DRF como estrategia objetivo para el MVP backend
-- uso del usuario estandar de Django en la primera iteracion
+- `GET /api/health/`
+- `GET /api/catalog/`
+- `GET /api/catalog/:id/`
 
-Pendientes aun abiertos:
+`PublicCatalogViewSet` usa `AllowAny`, no habilita autenticadores y hereda de
+`ReadOnlyModelViewSet`. El CRUD de inventario, costos y fotografias conserva la
+proteccion JWT. Los permisos granulares por rol siguen pendientes.
 
-- no hay estrategia de permisos por rol implementada
-- no hay definicion final de roles y autorizacion granular
-- no debe asumirse todavia un modelo final de usuarios mas alla del `User`
-  estandar de Django
+## Imagenes y Cloudinary
 
-La implementacion debe quedar alineada con las pantallas de login y usuarios que
-ya aparecen en los artefactos de diseno y esta planificada en
-`docs/sprints/backend/backend-sprint-01-foundations.md`.
+`InventoryItem.primary_image` utiliza el storage por defecto de Django:
+
+- si existe `CLOUDINARY_URL`, usa
+  `inventory.storage.CloudinaryImageStorage`
+- sin la variable, usa `FileSystemStorage` y `backend/media`
+
+La subida autenticada se realiza con:
+
+```text
+POST /api/inventory/:id/primary-image/
+Content-Type: multipart/form-data
+campo: primary_image
+```
+
+Se aceptan JPG, PNG y WebP de hasta 8 MB. Al reemplazar una fotografia, el
+endpoint elimina el asset anterior. No imprimas ni registres `CLOUDINARY_URL`,
+porque incluye API key y secret.
 
 ## Endpoint actual de referencia
 
@@ -168,6 +184,9 @@ Y ya cuenta con endpoints iniciales de negocio y consolidacion:
 - `GET /api/auth/me/`
 - `/api/clients/`
 - `/api/inventory/`
+- `GET /api/catalog/`
+- `GET /api/catalog/:id/`
+- `POST /api/inventory/:id/primary-image/`
 - `/api/sales/`
 - `/api/layaways/`
 - `/api/notifications/`

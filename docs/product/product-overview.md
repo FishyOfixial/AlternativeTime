@@ -16,6 +16,7 @@ de uso esperado es:
 - usuarios del negocio operando ventas e inventario
 - personal administrativo consultando clientes, finanzas y reportes
 - responsables del sistema gestionando usuarios y acceso
+- clientes consultando relojes publicados sin acceso al POS
 
 La interfaz sugiere una experiencia centrada en paneles administrativos,
 formularios y vistas de consulta.
@@ -33,6 +34,7 @@ Los siguientes modulos se infieren directamente del SRS y de los mockups en
 - Ventas
 - Finanzas
 - Reportes
+- Catalogo publico
 
 ## Rol de cada modulo
 
@@ -60,6 +62,15 @@ ventas, historial y posiblemente informacion de contacto o seguimiento.
 
 Administra productos o existencias disponibles. Incluye vistas tipo listado,
 tarjetas y formularios, lo que indica operaciones de alta, edicion y consulta.
+Tambien administra la fotografia principal en Cloudinary y `is_published`, que
+controla la visibilidad de cada pieza fuera del POS.
+
+### Catalogo publico
+
+Expone `/catalog` y `/catalog/:id` sin autenticacion. Comparte la base de
+inventario con el POS, pero usa un contrato reducido de solo lectura. Las piezas
+vendidas se retiran automaticamente y los clientes contactan al negocio por
+WhatsApp o Instagram. Este canal no procesa pagos ni modifica inventario.
 
 ### Ventas
 

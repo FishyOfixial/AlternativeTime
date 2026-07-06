@@ -15,7 +15,7 @@ class PurchaseCostLineInline(admin.TabularInline):
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ("product_id", "display_name", "price", "status", "tag", "purchase_date")
+    list_display = ("product_id", "display_name", "price", "status", "is_published", "tag", "purchase_date")
     search_fields = ("product_id", "sku", "brand", "model_name")
-    list_filter = ("status", "tag", "brand")
+    list_filter = ("is_published", "status", "tag", "brand")
     inlines = [PurchaseCostLineInline, PurchaseCostInline]
