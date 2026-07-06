@@ -182,6 +182,7 @@ function setupAuthenticatedFetch() {
         agreed_price: "12000.00",
         amount_paid: "3000.00",
         balance_due: "9000.00",
+        due_date: "2026-04-15",
         payments: []
       });
     }
@@ -350,6 +351,8 @@ describe("App auth routing", () => {
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(await screen.findByText(/apartado #1/i)).toBeInTheDocument();
+    expect(screen.getByText(/término de pago/i)).toBeInTheDocument();
+    expect(screen.getByText(/15 abr 2026/i)).toBeInTheDocument();
 
     await act(async () => {
       window.history.pushState({}, "", "/finance");
