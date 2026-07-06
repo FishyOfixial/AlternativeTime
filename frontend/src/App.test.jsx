@@ -1,5 +1,5 @@
 import { act } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "./App";
 
 function createToken(expOffsetSeconds = 1800) {
@@ -262,6 +262,31 @@ describe("App auth routing", () => {
     await waitFor(() => {
       expect(window.location.pathname).toBe("/catalog");
     });
+  });
+
+  it("opens the purchase policies from the public catalog", async () => {
+    global.fetch = vi.fn(async () => mockJsonResponse([]));
+    window.history.pushState({}, "", "/catalog");
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /^políticas$/i }));
+
+    expect(screen.getByRole("dialog", { name: /políticas de compra/i })).toBeInTheDocument();
+    expect(screen.getByText(/ventas finales/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/15 días naturales/i).length).toBeGreaterThan(0);
+  });
+
+  it("opens the FAQ from the public catalog without decorative emojis", async () => {
+    global.fetch = vi.fn(async () => mockJsonResponse([]));
+    window.history.pushState({}, "", "/catalog");
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /^faq$/i }));
+
+    expect(screen.getByRole("dialog", { name: /preguntas frecuentes/i })).toBeInTheDocument();
+    expect(screen.getByText(/¿los relojes son originales?/i)).toBeInTheDocument();
+    expect(screen.getByText(/¿cómo funciona el sistema de apartado?/i)).toBeInTheDocument();
+    expect(screen.queryByText(/🛡️|💳/)).not.toBeInTheDocument();
   });
 
   it("renders the standalone healthcheck page", async () => {

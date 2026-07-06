@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import ContactLinks from "./ContactLinks";
+import FaqModal from "./FaqModal";
+import PoliciesModal from "./PoliciesModal";
 
 export default function CatalogShell({ children }) {
+  const [isPoliciesOpen, setIsPoliciesOpen] = useState(false);
+  const [isFaqOpen, setIsFaqOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#0d0e0e] text-[#f4f0e8]">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0d0e0e]/90 backdrop-blur-xl">
@@ -14,6 +20,20 @@ export default function CatalogShell({ children }) {
             <Link className="text-sm text-[#d7d0c4] transition hover:text-white" to="/catalog">
               Colección
             </Link>
+            <button
+              className="text-sm text-[#d7d0c4] transition hover:text-white"
+              onClick={() => setIsPoliciesOpen(true)}
+              type="button"
+            >
+              Políticas
+            </button>
+            <button
+              className="text-sm text-[#d7d0c4] transition hover:text-white"
+              onClick={() => setIsFaqOpen(true)}
+              type="button"
+            >
+              FAQ
+            </button>
             <div className="hidden sm:block"><ContactLinks compact /></div>
           </nav>
         </div>
@@ -25,9 +45,25 @@ export default function CatalogShell({ children }) {
             <p className="text-xs uppercase tracking-[0.35em] text-[#b99a59]">Alternative Time Co.</p>
             <p className="mt-2 max-w-md text-sm text-[#8f8c85]">Relojes seleccionados con carácter, historia y precisión.</p>
           </div>
+          <button
+            className="text-left text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
+            onClick={() => setIsPoliciesOpen(true)}
+            type="button"
+          >
+            Políticas de compra
+          </button>
+          <button
+            className="text-left text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
+            onClick={() => setIsFaqOpen(true)}
+            type="button"
+          >
+            Preguntas frecuentes
+          </button>
           <ContactLinks compact />
         </div>
       </footer>
+      <PoliciesModal isOpen={isPoliciesOpen} onClose={() => setIsPoliciesOpen(false)} />
+      <FaqModal isOpen={isFaqOpen} onClose={() => setIsFaqOpen(false)} />
     </div>
   );
 }
