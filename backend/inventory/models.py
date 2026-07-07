@@ -236,6 +236,33 @@ class InventoryItem(TimestampedSoftDeleteModel):
         super().save(*args, **kwargs)
 
 
+class InventoryItemImage(models.Model):
+    product = models.ForeignKey(
+        InventoryItem,
+        on_delete=models.CASCADE,
+        related_name="catalog_images",
+    )
+    image = models.ImageField(
+        upload_to="watches/gallery/%Y/%m/",
+        validators=[validate_watch_image_size],
+    )
+    position = models.PositiveSmallIntegerField(default=0)
+    alt_text = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "position"],
+                name="unique_inventory_image_position",
+            )
+        ]
+
+    def __str__(self):
+        return f"Imagen {self.position + 1} - {self.product.display_name}"
+
+
 class PurchaseCost(models.Model):
     product = models.OneToOneField(
         InventoryItem,

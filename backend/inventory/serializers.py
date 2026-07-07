@@ -5,7 +5,13 @@ from rest_framework import serializers
 
 from finance.services import delete_purchase_cost_line_relationship, sync_purchase_cost_line_finance_entry
 
-from .models import InventoryItem, PurchaseCost, PurchaseCostLine
+from .models import InventoryItem, InventoryItemImage, PurchaseCost, PurchaseCostLine
+
+
+def build_image_url(image_field, request=None):
+    if not image_field:
+        return ""
+    return request.build_absolute_uri(image_field.url) if request else image_field.url
 
 
 class PurchaseCostSerializer(serializers.ModelSerializer):
@@ -76,6 +82,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
     estimated_profit = serializers.SerializerMethodField()
     utilidad = serializers.SerializerMethodField()
     primary_image_url = serializers.SerializerMethodField()
+    image_urls = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryItem
@@ -101,6 +108,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "image_url",
             "primary_image",
             "primary_image_url",
+            "image_urls",
             "is_published",
             "sold_at",
             "sold_date",
@@ -122,6 +130,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "sku",
             "name",
             "primary_image_url",
+            "image_urls",
             "display_name",
             "tag",
             "age_tag",
@@ -148,10 +157,23 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         return round(float(obj.utilidad), 1)
 
     def get_primary_image_url(self, obj):
-        if not obj.primary_image:
-            return ""
         request = self.context.get("request")
-        return request.build_absolute_uri(obj.primary_image.url) if request else obj.primary_image.url
+        first_gallery_image = next(iter(getattr(obj, "catalog_images", []).all()), None)
+        if first_gallery_image:
+            return build_image_url(first_gallery_image.image, request)
+        return build_image_url(obj.primary_image, request)
+
+    def get_image_urls(self, obj):
+        request = self.context.get("request")
+        urls = [
+            build_image_url(image.image, request)
+            for image in obj.catalog_images.all()
+            if image.image
+        ]
+        if urls:
+            return urls
+        fallback = build_image_url(obj.primary_image, request) or obj.image_url
+        return [fallback] if fallback else []
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -340,17 +362,33 @@ class PublicInventoryItemSerializer(serializers.ModelSerializer):
     display_name = serializers.CharField(read_only=True)
     availability = serializers.CharField(source="get_status_display", read_only=True)
     primary_image_url = serializers.SerializerMethodField()
+    image_urls = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryItem
         fields = [
             "id", "product_id", "display_name", "brand", "model_name",
             "year_label", "condition_score", "description", "price", "status",
-            "availability", "stock", "primary_image_url",
+            "availability", "stock", "primary_image_url", "image_urls",
         ]
 
     def get_primary_image_url(self, obj):
+        request = self.context.get("request")
+        first_gallery_image = next(iter(getattr(obj, "catalog_images", []).all()), None)
+        if first_gallery_image:
+            return build_image_url(first_gallery_image.image, request)
         if obj.primary_image:
-            request = self.context.get("request")
-            return request.build_absolute_uri(obj.primary_image.url) if request else obj.primary_image.url
+            return build_image_url(obj.primary_image, request)
         return obj.image_url or ""
+
+    def get_image_urls(self, obj):
+        request = self.context.get("request")
+        urls = [
+            build_image_url(image.image, request)
+            for image in obj.catalog_images.all()
+            if image.image
+        ]
+        if urls:
+            return urls
+        fallback = self.get_primary_image_url(obj)
+        return [fallback] if fallback else []

@@ -99,3 +99,14 @@ export function uploadInventoryImage(accessToken, itemId, file) {
     errorMessage: "No pudimos subir la foto."
   });
 }
+
+export function uploadInventoryImages(accessToken, itemId, files = []) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("images", file));
+  return submitFormData(`/api/inventory/${itemId}/images/`, {
+    accessToken,
+    method: "POST",
+    formData,
+    errorMessage: "No pudimos subir las fotos."
+  });
+}

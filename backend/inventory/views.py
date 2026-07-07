@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 from finance.services import delete_purchase_cost_line_relationship, sync_purchase_cost_line_finance_entry
 
-from .models import InventoryItem, PurchaseCostLine
+from .models import InventoryItem, InventoryItemImage, PurchaseCostLine
 from .serializers import InventoryItemSerializer, PublicInventoryItemSerializer, PurchaseCostLineSerializer
 
 
@@ -24,7 +24,9 @@ class InventoryItemViewSet(ModelViewSet):
     serializer_class = InventoryItemSerializer
 
     def get_queryset(self):
-        queryset = InventoryItem.objects.select_related("purchase_cost").prefetch_related("purchase_cost_lines")
+        queryset = InventoryItem.objects.select_related("purchase_cost").prefetch_related(
+            "purchase_cost_lines", "catalog_images"
+        )
         params = self.request.query_params
 
         search = params.get("search", "").strip()
@@ -74,6 +76,48 @@ class InventoryItemViewSet(ModelViewSet):
         serializer.save(updated_by=request.user)
         if previous_image_name and previous_image_name != product.primary_image.name:
             product.primary_image.storage.delete(previous_image_name)
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="images",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def images(self, request, pk=None):
+        product = self.get_object()
+        images = request.FILES.getlist("images")
+        if not images:
+            return Response(
+                {"images": ["Selecciona al menos una imagen."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(images) > 10:
+            return Response(
+                {"images": ["Cada reloj puede tener máximo 10 imágenes."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        previous_gallery_names = list(product.catalog_images.values_list("image", flat=True))
+        previous_primary_name = product.primary_image.name
+        created_image_names = []
+        with transaction.atomic():
+            product.catalog_images.all().delete()
+            for index, image in enumerate(images):
+                image_item = InventoryItemImage(product=product, image=image, position=index)
+                image_item.full_clean()
+                image_item.save()
+                created_image_names.append(image_item.image.name)
+            product.primary_image = created_image_names[0]
+            product.save(update_fields=["primary_image", "updated_at"])
+
+        for image_name in previous_gallery_names:
+            if image_name:
+                product.primary_image.storage.delete(image_name)
+        if previous_primary_name and previous_primary_name != product.primary_image.name:
+            product.primary_image.storage.delete(previous_primary_name)
+
+        serializer = self.get_serializer(product)
         return Response(serializer.data)
 
     @action(detail=True, methods=["get", "post"], url_path="costs")
@@ -380,8 +424,58 @@ class PublicCatalogViewSet(ReadOnlyModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        return (
-            InventoryItem.objects.filter(is_published=True, is_active=True)
+        queryset = (
+            InventoryItem.objects.prefetch_related("catalog_images")
+            .filter(is_published=True, is_active=True)
             .exclude(status=InventoryItem.STATUS_SOLD)
-            .order_by("-purchase_date", "-id")
         )
+
+        params = self.request.query_params
+        search = params.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(
+                Q(product_id__icontains=search)
+                | Q(brand__icontains=search)
+                | Q(model_name__icontains=search)
+                | Q(year_label__icontains=search)
+                | Q(description__icontains=search)
+            )
+
+        brand = params.get("brand", "").strip()
+        if brand:
+            queryset = queryset.filter(brand__iexact=brand)
+
+        year_label = params.get("year_label", "").strip()
+        if year_label:
+            queryset = queryset.filter(year_label__iexact=year_label)
+
+        min_price = self._parse_decimal_query(params.get("min_price"))
+        if min_price is not None:
+            queryset = queryset.filter(price__gte=min_price)
+
+        max_price = self._parse_decimal_query(params.get("max_price"))
+        if max_price is not None:
+            queryset = queryset.filter(price__lte=max_price)
+
+        condition_min = self._parse_decimal_query(params.get("condition_min"))
+        if condition_min is not None:
+            queryset = queryset.filter(condition_score__gte=condition_min)
+
+        ordering_options = {
+            "newest": ("-purchase_date", "-id"),
+            "price_asc": ("price", "brand", "model_name"),
+            "price_desc": ("-price", "brand", "model_name"),
+            "brand": ("brand", "model_name", "price"),
+            "condition_desc": ("-condition_score", "brand", "model_name"),
+        }
+        ordering = ordering_options.get(params.get("ordering"), ordering_options["newest"])
+        return queryset.order_by(*ordering)
+
+    @staticmethod
+    def _parse_decimal_query(value):
+        if value in (None, ""):
+            return None
+        try:
+            return Decimal(str(value))
+        except (InvalidOperation, ValueError):
+            return None

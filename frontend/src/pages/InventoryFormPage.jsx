@@ -9,7 +9,7 @@ import {
   deleteInventoryItem,
   getInventoryItem,
   listInventory,
-  uploadInventoryImage,
+  uploadInventoryImages,
   updateInventoryItem
 } from "../services/inventory";
 
@@ -71,13 +71,13 @@ export default function InventoryFormPage() {
     try {
       if (isEdit) {
         await updateInventoryItem(accessToken, itemId, payload);
-        if (payload.primary_image instanceof File) {
-          await uploadInventoryImage(accessToken, itemId, payload.primary_image);
+        if (payload.image_files?.length) {
+          await uploadInventoryImages(accessToken, itemId, payload.image_files);
         }
       } else {
         const created = await createInventoryItem(accessToken, payload);
-        if (payload.primary_image instanceof File) {
-          await uploadInventoryImage(accessToken, created.id, payload.primary_image);
+        if (payload.image_files?.length) {
+          await uploadInventoryImages(accessToken, created.id, payload.image_files);
         }
       }
 

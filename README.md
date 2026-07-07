@@ -53,6 +53,10 @@ El catalogo reutiliza el inventario existente. Solo muestra piezas con
 `is_published=True` que continuan activas y no estan vendidas. No expone costos,
 proveedores, notas internas ni operaciones administrativas.
 
+Los clientes pueden filtrar por marca, estilo/anio, rango de precio y condicion,
+ademas de ordenar por recientes, precio, marca o mejor condicion. Cada reloj
+puede tener una galeria de hasta 10 fotografias con carrusel en el detalle.
+
 Las fotografias se cargan desde la ficha autenticada de inventario y se guardan
 en Cloudinary cuando `CLOUDINARY_URL` esta configurada. Consulta la
 [guia del catalogo publico](./docs/product/public-catalog.md).

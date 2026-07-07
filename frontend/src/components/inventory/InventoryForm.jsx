@@ -34,6 +34,7 @@ const initialValues = {
   status: "available",
   is_published: false,
   primary_image: null,
+  image_files: [],
   sales_channel: "marketplace",
   purchase_costs: defaultCostLines.map((line) => ({
     temp_id: newTempId(line.cost_type),
@@ -212,9 +213,18 @@ export default function InventoryForm({
 
   function handleChange(event) {
     const { checked, files, name, type, value } = event.target;
+    const nextValue =
+      type === "checkbox"
+        ? checked
+        : type === "file" && event.target.multiple
+          ? Array.from(files || []).slice(0, 10)
+          : type === "file"
+            ? files?.[0] || null
+            : value;
+
     setValues((current) => ({
       ...current,
-      [name]: type === "checkbox" ? checked : type === "file" ? files?.[0] || null : value
+      [name]: nextValue
     }));
   }
 
@@ -322,6 +332,7 @@ export default function InventoryForm({
       status: values.status,
       is_published: values.is_published,
       primary_image: values.primary_image,
+      image_files: values.image_files,
       sales_channel: values.sales_channel,
       purchase_costs: values.purchase_costs.map((cost) => ({
         id: cost.id,
@@ -398,8 +409,19 @@ export default function InventoryForm({
               />
               <FieldError fieldName="description" />
             </Field>
-            <Field className="col-span-2" label="Foto principal del catálogo">
-              {defaultValues.primary_image_url ? (
+            <Field className="col-span-2" label="Galeria del catalogo">
+              {defaultValues.image_urls?.length ? (
+                <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  {defaultValues.image_urls.slice(0, 10).map((imageUrl, index) => (
+                    <img
+                      alt={`Foto ${index + 1} de ${defaultValues.display_name || "reloj"}`}
+                      className="h-28 w-full rounded-xl border border-[#dccfb9] object-cover"
+                      key={imageUrl}
+                      src={imageUrl}
+                    />
+                  ))}
+                </div>
+              ) : defaultValues.primary_image_url ? (
                 <img
                   alt={`Foto actual de ${defaultValues.display_name || "reloj"}`}
                   className="mb-3 h-40 w-full rounded-xl border border-[#dccfb9] object-cover"
@@ -408,13 +430,21 @@ export default function InventoryForm({
               ) : null}
               <input
                 accept="image/jpeg,image/png,image/webp"
-                className={getInputClass("primary_image")}
-                name="primary_image"
+                className={getInputClass("image_files")}
+                multiple
+                name="image_files"
                 onChange={handleChange}
                 type="file"
               />
-              <p className="mt-1 text-xs text-[#8c7963]">JPG, PNG o WebP. Máximo 8 MB.</p>
-              <FieldError fieldName="primary_image" />
+              <p className="mt-1 text-xs text-[#8c7963]">
+                Puedes subir hasta 10 imagenes JPG, PNG o WebP. Maximo 8 MB por imagen. La primera sera la foto principal.
+              </p>
+              {values.image_files.length ? (
+                <p className="mt-1 text-xs font-semibold text-[#7d6751]">
+                  {values.image_files.length} imagen{values.image_files.length === 1 ? "" : "es"} seleccionada{values.image_files.length === 1 ? "" : "s"}.
+                </p>
+              ) : null}
+              <FieldError fieldName="image_files" />
             </Field>
             <label className="col-span-2 flex items-start gap-3 rounded-xl border border-[#dccfb9] bg-[#f7f0e4] p-4">
               <input
