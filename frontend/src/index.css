@@ -73,6 +73,32 @@ a:focus-visible {
   display: none;
 }
 
+.catalog-description-scroll {
+  scrollbar-color: rgba(196, 164, 95, 0.55) rgba(255, 255, 255, 0.055);
+  scrollbar-width: thin;
+}
+
+.catalog-description-scroll::-webkit-scrollbar {
+  width: 9px;
+}
+
+.catalog-description-scroll::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02));
+  border-radius: 999px;
+}
+
+.catalog-description-scroll::-webkit-scrollbar-thumb {
+  background:
+    linear-gradient(180deg, rgba(224, 193, 117, 0.88), rgba(122, 98, 48, 0.78));
+  border: 2px solid #111210;
+  border-radius: 999px;
+}
+
+.catalog-description-scroll::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, rgba(238, 211, 144, 0.95), rgba(160, 128, 58, 0.9));
+}
+
 .font-serif {
   font-family: inherit !important;
   font-weight: 700;

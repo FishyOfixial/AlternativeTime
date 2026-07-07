@@ -103,10 +103,14 @@ export default function CatalogDetailPage() {
                 <div><p className="text-[10px] uppercase tracking-[.25em] text-[#6f6f69]">Existencia</p><p className="mt-2 text-[#d9d4ca]">{state.item.stock} pieza</p></div>
                 <div><p className="text-[10px] uppercase tracking-[.25em] text-[#6f6f69]">Condicion</p><p className="mt-2 text-[#d9d4ca]">{state.item.condition_score}/10</p></div>
               </div>
-              <div className="mt-8 max-h-56 overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.03] p-5 pr-4 scrollbar-thin scrollbar-thumb-[#6f603f] scrollbar-track-transparent">
+              <div className="relative mt-8 rounded-[1.35rem] border border-[#c4a45f]/15 bg-[linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))] p-[1px] shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
+                <div className="pointer-events-none absolute inset-x-3 top-[1px] z-10 h-8 rounded-t-[1.25rem] bg-gradient-to-b from-[#121310] to-transparent" />
+                <div className="pointer-events-none absolute inset-x-3 bottom-[1px] z-10 h-8 rounded-b-[1.25rem] bg-gradient-to-t from-[#121310] to-transparent" />
+                <div className="catalog-description-scroll max-h-56 overflow-y-auto rounded-[1.25rem] bg-[#10110f]/72 px-5 py-5 pr-4">
                 <p className="whitespace-pre-line text-base leading-8 text-[#aaa69d]">
                   {state.item.description || "Solicita mas informacion sobre esta pieza y su historia."}
                 </p>
+                </div>
               </div>
               <div className="mt-9">
                 <ContactLinks productName={state.item.display_name} whatsappLabel="Adquirir por WhatsApp" />
