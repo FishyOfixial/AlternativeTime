@@ -72,6 +72,7 @@ function sortItems(items, sortBy) {
 export default function CatalogPage() {
   const [state, setState] = useState({ status: "loading", items: [] });
   const [filters, setFilters] = useState(initialFilters);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   useEffect(() => {
     listCatalog()
@@ -111,6 +112,16 @@ export default function CatalogPage() {
     setFilters(initialFilters);
   }
 
+  const activeFilterCount = [
+    filters.search.trim(),
+    filters.brand !== "all",
+    filters.yearLabel !== "all",
+    filters.minPrice,
+    filters.maxPrice,
+    filters.conditionMin !== "all",
+    filters.sortBy !== "newest"
+  ].filter(Boolean).length;
+
   return (
     <CatalogShell>
       <main>
@@ -146,7 +157,28 @@ export default function CatalogPage() {
             )}
           </div>
 
-          <div className="mb-8 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-3 shadow-[0_24px_80px_rgba(0,0,0,.22)] sm:mb-12 sm:rounded-[2rem] sm:p-5">
+          <div className="mb-8 rounded-[1.5rem] border border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(0,0,0,.22)] sm:mb-12 sm:rounded-[2rem]">
+            <button
+              aria-controls="catalog-filters"
+              aria-expanded={isFiltersOpen}
+              className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left sm:px-5"
+              onClick={() => setIsFiltersOpen((current) => !current)}
+              type="button"
+            >
+              <span>
+                <span className="block text-xs uppercase tracking-[0.28em] text-[#c4a45f]">Filtros</span>
+                <span className="mt-1 block text-sm text-[#8f8c85]">
+                  {activeFilterCount ? `${activeFilterCount} activo${activeFilterCount === 1 ? "" : "s"}` : "Buscar, filtrar y ordenar"}
+                </span>
+              </span>
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#10110f] text-xl text-[#d4b874] transition">
+                {isFiltersOpen ? "−" : "+"}
+              </span>
+            </button>
+            <div
+              className={`${isFiltersOpen ? "block" : "hidden"} border-t border-white/10 p-3 sm:block sm:p-5`}
+              id="catalog-filters"
+            >
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.35fr_.8fr_.8fr_.7fr_.7fr_.8fr]">
               <label className="block">
                 <span className="text-[10px] uppercase tracking-[0.24em] text-[#9c8148]">Buscar</span>
@@ -235,6 +267,7 @@ export default function CatalogPage() {
               >
                 Limpiar filtros
               </button>
+            </div>
             </div>
           </div>
 
