@@ -144,6 +144,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
 CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "").strip()
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
+PUBLIC_CATALOG_CACHE_SECONDS = int(os.getenv("PUBLIC_CATALOG_CACHE_SECONDS", "300"))
 
 STORAGES = {
     "default": {
@@ -157,6 +159,23 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "TIMEOUT": PUBLIC_CATALOG_CACHE_SECONDS,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "alternative-time-local-cache",
+            "TIMEOUT": PUBLIC_CATALOG_CACHE_SECONDS,
+        }
+    }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

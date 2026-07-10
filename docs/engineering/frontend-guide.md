@@ -34,9 +34,10 @@ frontend/
 
 Rutas publicas:
 
-- `/` redirige a `/catalog`
-- `/catalog`
-- `/catalog/:itemId`
+- `/` muestra la portada publica
+- `/catalogo`
+- `/catalogo/:itemId`
+- `/catalog` y `/catalog/:itemId` redirigen por compatibilidad
 - `/login`
 
 Rutas protegidas del POS:

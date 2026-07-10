@@ -12,12 +12,12 @@ export default function CatalogShell({ children }) {
     <div className="min-h-screen bg-[#0d0e0e] text-[#f4f0e8]">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0d0e0e]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-5 py-4 sm:px-8">
-          <Link className="group" to="/catalog">
+          <Link className="group" to="/">
             <span className="block text-[10px] uppercase tracking-[0.45em] text-[#b99a59]">Alternative</span>
             <span className="font-brand text-xl tracking-[0.12em] text-white">TIME CO.</span>
           </Link>
           <nav className="flex items-center gap-4">
-            <Link className="text-sm text-[#d7d0c4] transition hover:text-white" to="/catalog">
+            <Link className="text-sm text-[#d7d0c4] transition hover:text-white" to="/catalogo">
               Colección
             </Link>
             <button

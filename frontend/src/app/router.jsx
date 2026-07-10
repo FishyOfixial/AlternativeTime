@@ -1,9 +1,10 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import PublicOnlyRoute from "../components/auth/PublicOnlyRoute";
 import ClientDetailPage from "../pages/ClientDetailPage";
 import ClientsPage from "../pages/ClientsPage";
 import CatalogDetailPage from "../pages/CatalogDetailPage";
+import CatalogLandingPage from "../pages/CatalogLandingPage";
 import CatalogPage from "../pages/CatalogPage";
 import AuthenticatedLayout from "../layouts/AuthenticatedLayout";
 import DashboardPage from "../pages/DashboardPage";
@@ -31,17 +32,24 @@ const modulePages = [
   }
 ];
 
+function LegacyCatalogDetailRedirect() {
+  const { itemId } = useParams();
+  return <Navigate to={`/catalogo/${itemId}`} replace />;
+}
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/healthcheck" element={<Navigate to="/healthcheck/" replace />} />
         <Route path="/healthcheck/" element={<HomePage />} />
-        <Route path="/catalog" element={<CatalogPage />} />
-        <Route path="/catalog/:itemId" element={<CatalogDetailPage />} />
+        <Route path="/" element={<CatalogLandingPage />} />
+        <Route path="/catalogo" element={<CatalogPage />} />
+        <Route path="/catalogo/:itemId" element={<CatalogDetailPage />} />
+        <Route path="/catalog" element={<Navigate to="/catalogo" replace />} />
+        <Route path="/catalog/:itemId" element={<LegacyCatalogDetailRedirect />} />
 
         <Route element={<PublicOnlyRoute />}>
-          <Route index element={<Navigate to="/catalog" replace />} />
           <Route path="/login" element={<LoginPage />} />
         </Route>
 

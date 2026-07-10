@@ -10,14 +10,17 @@ de precio, descripcion, estado y existencia.
 
 | Capa | Ruta | Acceso |
 | --- | --- | --- |
-| Frontend | `/catalog` | Publico |
-| Frontend | `/catalog/:id` | Publico |
+| Frontend | `/` | Portada publica |
+| Frontend | `/catalogo` | Publico |
+| Frontend | `/catalogo/:id` | Publico |
+| Frontend | `/catalog` y `/catalog/:id` | Redirects de compatibilidad |
 | API | `GET /api/catalog/` | Publico, solo lectura |
 | API | `GET /api/catalog/:id/` | Publico, solo lectura |
 | API | `POST /api/inventory/:id/primary-image/` | JWT requerido |
 | API | `POST /api/inventory/:id/images/` | JWT requerido |
 
-La raiz `/` redirige al catalogo. El acceso interno continua en `/login`.
+La raiz `/` muestra una pantalla inicial simple con informacion de la empresa y
+un boton principal hacia `/catalogo`. El acceso interno continua en `/login`.
 
 ## Reglas de publicacion
 
@@ -90,6 +93,18 @@ estos query params para futuras URLs compartibles:
 - `condition_min`
 - `ordering`: `newest`, `price_asc`, `price_desc`, `brand`, `condition_desc`
 
+## Cache con Redis
+
+El endpoint publico del catalogo usa cache de Django para acelerar listados y
+detalles. En produccion se recomienda configurar:
+
+```env
+REDIS_URL=redis://USER:PASSWORD@HOST:PORT/DB
+PUBLIC_CATALOG_CACHE_SECONDS=300
+```
+
+Si `REDIS_URL` no existe, Django usa cache local en memoria para desarrollo.
+
 ## Operacion
 
 Para publicar una pieza:
@@ -100,7 +115,7 @@ Para publicar una pieza:
 4. Capturar descripcion y precio.
 5. Seleccionar de 1 a 10 fotografias para la galeria.
 6. Activar `Publicar en el catalogo`.
-7. Guardar y revisar `/catalog`.
+7. Guardar y revisar `/catalogo`.
 
 Para retirarla sin venderla, desactivar `Publicar en el catalogo`. Una venta la
 retira automaticamente.

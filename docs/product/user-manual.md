@@ -33,7 +33,7 @@ Para operar el sistema se recomienda:
 
 ### Catálogo para clientes
 
-La ruta `/catalog` es pública y no solicita usuario ni contraseña. Permite ver
+La ruta `/catalogo` es pública y no solicita usuario ni contraseña. Permite ver
 las piezas publicadas, abrir su detalle y contactar al negocio por WhatsApp o
 Instagram. El catálogo no permite crear, editar, vender o apartar productos.
 
@@ -164,7 +164,7 @@ Cada registro puede incluir:
 3. Seleccionar una fotografía JPG, PNG o WebP de hasta 8 MB.
 4. Activar `Publicar en el catálogo`.
 5. Guardar.
-6. Revisar la pieza en `/catalog`.
+6. Revisar la pieza en `/catalogo`.
 
 Solo usuarios autenticados pueden modificar esta información. Para retirar una
 pieza disponible sin eliminarla, desactivar la opción de publicación.

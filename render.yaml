@@ -48,6 +48,10 @@ services:
         value: Alternative Time
       - key: CLOUDINARY_URL
         sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: PUBLIC_CATALOG_CACHE_SECONDS
+        value: "300"
       - key: BIRTHDAY_NOTIFICATION_TO_EMAILS
         sync: false
 

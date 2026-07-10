@@ -4,9 +4,12 @@ import unicodedata
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.db.models import Q
 from django.db import transaction
+from django.utils.decorators import method_decorator
 from django.utils import timezone
+from django.views.decorators.cache import cache_page
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework import serializers, status
 from rest_framework.decorators import action
@@ -417,6 +420,8 @@ class InventoryItemViewSet(ModelViewSet):
         }
 
 
+@method_decorator(cache_page(settings.PUBLIC_CATALOG_CACHE_SECONDS), name="list")
+@method_decorator(cache_page(settings.PUBLIC_CATALOG_CACHE_SECONDS), name="retrieve")
 class PublicCatalogViewSet(ReadOnlyModelViewSet):
     serializer_class = PublicInventoryItemSerializer
     permission_classes = [AllowAny]

@@ -44,8 +44,10 @@ La plataforma cubre de forma integrada:
 La misma aplicacion incluye una experiencia publica para clientes, separada del
 POS y sin inicio de sesion:
 
-- `/catalog`: coleccion publicada
-- `/catalog/:id`: detalle de una pieza
+- `/`: pantalla inicial publica con informacion de la empresa
+- `/catalogo`: coleccion publicada
+- `/catalogo/:id`: detalle de una pieza
+- `/catalog` y `/catalog/:id`: redirects de compatibilidad
 - `/login`: acceso interno al POS
 - `/api/catalog/`: API publica de solo lectura
 
@@ -60,6 +62,10 @@ puede tener una galeria de hasta 10 fotografias con carrusel en el detalle.
 Las fotografias se cargan desde la ficha autenticada de inventario y se guardan
 en Cloudinary cuando `CLOUDINARY_URL` esta configurada. Consulta la
 [guia del catalogo publico](./docs/product/public-catalog.md).
+
+La API publica puede cachearse con Redis configurando `REDIS_URL`; si no existe,
+Django usa cache local en memoria. El TTL se controla con
+`PUBLIC_CATALOG_CACHE_SECONDS`.
 
 ## Arquitectura de Alto Nivel
 
@@ -279,7 +285,8 @@ Frontend local:
 http://localhost:5173
 ```
 
-El catalogo abre en `http://localhost:5173/catalog` y el POS en
+La portada publica abre en `http://localhost:5173/`, el catalogo en
+`http://localhost:5173/catalogo` y el POS en
 `http://localhost:5173/login`.
 
 Validaciones recomendadas:

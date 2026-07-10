@@ -253,20 +253,19 @@ describe("App auth routing", () => {
     vi.restoreAllMocks();
   });
 
-  it("redirects the root route to login for guests", async () => {
+  it("renders the public landing page at the root route", async () => {
     global.fetch = vi.fn(async () => mockJsonResponse([]));
     window.history.pushState({}, "", "/");
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: /relojes disponibles/i })).toBeInTheDocument();
-    await waitFor(() => {
-      expect(window.location.pathname).toBe("/catalog");
-    });
+    expect(await screen.findByRole("heading", { name: /relojes con historia/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /ver cat/i })).toHaveAttribute("href", "/catalogo");
+    expect(window.location.pathname).toBe("/");
   });
 
   it("opens the purchase policies from the public catalog", async () => {
     global.fetch = vi.fn(async () => mockJsonResponse([]));
-    window.history.pushState({}, "", "/catalog");
+    window.history.pushState({}, "", "/catalogo");
     render(<App />);
 
     fireEvent.click(await screen.findByRole("button", { name: /^políticas$/i }));
@@ -278,7 +277,7 @@ describe("App auth routing", () => {
 
   it("opens the FAQ from the public catalog without decorative emojis", async () => {
     global.fetch = vi.fn(async () => mockJsonResponse([]));
-    window.history.pushState({}, "", "/catalog");
+    window.history.pushState({}, "", "/catalogo");
     render(<App />);
 
     fireEvent.click(await screen.findByRole("button", { name: /^faq$/i }));

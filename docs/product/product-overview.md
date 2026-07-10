@@ -67,7 +67,7 @@ controla la visibilidad de cada pieza fuera del POS.
 
 ### Catalogo publico
 
-Expone `/catalog` y `/catalog/:id` sin autenticacion. Comparte la base de
+Expone `/` como portada, `/catalogo` y `/catalogo/:id` sin autenticacion. Comparte la base de
 inventario con el POS, pero usa un contrato reducido de solo lectura. Las piezas
 vendidas se retiran automaticamente y los clientes contactan al negocio por
 WhatsApp o Instagram. Este canal no procesa pagos ni modifica inventario.
