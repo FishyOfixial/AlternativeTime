@@ -103,13 +103,6 @@ a:focus-visible {
   contain: layout paint style;
 }
 
-@supports (content-visibility: auto) {
-  .catalog-card {
-    content-visibility: auto;
-    contain-intrinsic-size: 360px 520px;
-  }
-}
-
 .font-serif {
   font-family: inherit !important;
   font-weight: 700;

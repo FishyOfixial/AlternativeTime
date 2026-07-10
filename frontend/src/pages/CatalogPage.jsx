@@ -20,20 +20,31 @@ const initialFilters = {
   sortBy: "newest"
 };
 
+const loadedCatalogImages = new Set();
+
 function getItemImages(item) {
   return item.image_urls?.length ? item.image_urls : item.primary_image_url ? [item.primary_image_url] : [];
 }
 
 function WatchImage({ item, priority = false }) {
+  const [, setLoadedVersion] = useState(0);
   const [imageUrl] = getItemImages(item);
+  const wasAlreadyLoaded = imageUrl ? loadedCatalogImages.has(imageUrl) : false;
+
   if (imageUrl) {
     return (
       <img
         alt={item.display_name}
         className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
         decoding="async"
-        fetchPriority={priority ? "high" : "auto"}
-        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority || wasAlreadyLoaded ? "high" : "auto"}
+        loading={priority || wasAlreadyLoaded ? "eager" : "lazy"}
+        onLoad={() => {
+          if (!loadedCatalogImages.has(imageUrl)) {
+            loadedCatalogImages.add(imageUrl);
+            setLoadedVersion((current) => current + 1);
+          }
+        }}
         src={imageUrl}
       />
     );
