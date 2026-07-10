@@ -52,7 +52,13 @@ export default function CatalogDetailPage() {
             <div>
               <div className="relative aspect-[4/5] overflow-hidden bg-[#181916]">
                 {activeImage ? (
-                  <img alt={state.item.display_name} className="h-full w-full object-cover" src={activeImage} />
+                  <img
+                    alt={state.item.display_name}
+                    className="h-full w-full object-cover"
+                    decoding="async"
+                    fetchPriority="high"
+                    src={activeImage}
+                  />
                 ) : (
                   <div className="flex h-full items-center justify-center bg-[radial-gradient(circle,#292923,#111210_70%)] text-8xl text-[#b99a59]/40">▷</div>
                 )}
@@ -92,7 +98,7 @@ export default function CatalogDetailPage() {
                       onClick={() => setActiveImageIndex(index)}
                       type="button"
                     >
-                      <img alt="" className="h-full w-full object-cover" src={imageUrl} />
+                      <img alt="" className="h-full w-full object-cover" decoding="async" loading="lazy" src={imageUrl} />
                     </button>
                   ))}
                 </div>

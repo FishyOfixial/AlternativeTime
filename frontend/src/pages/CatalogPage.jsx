@@ -24,10 +24,19 @@ function getItemImages(item) {
   return item.image_urls?.length ? item.image_urls : item.primary_image_url ? [item.primary_image_url] : [];
 }
 
-function WatchImage({ item }) {
+function WatchImage({ item, priority = false }) {
   const [imageUrl] = getItemImages(item);
   if (imageUrl) {
-    return <img alt={item.display_name} className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]" src={imageUrl} />;
+    return (
+      <img
+        alt={item.display_name}
+        className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
+        decoding="async"
+        fetchPriority={priority ? "high" : "auto"}
+        loading={priority ? "eager" : "lazy"}
+        src={imageUrl}
+      />
+    );
   }
   return (
     <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_center,#292923,#161715_68%)]">
@@ -176,7 +185,7 @@ export default function CatalogPage() {
               </span>
             </button>
             <div
-              className={`${isFiltersOpen ? "block" : "hidden"} border-t border-white/10 p-3 sm:block sm:p-5`}
+              className={`${isFiltersOpen ? "block" : "hidden"} border-t border-white/10 p-3 sm:p-5`}
               id="catalog-filters"
             >
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.35fr_.8fr_.8fr_.7fr_.7fr_.8fr]">
@@ -281,10 +290,12 @@ export default function CatalogPage() {
           )}
 
           <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
-            {filteredItems.map((item) => (
-              <article className="group" key={item.id}>
+            {filteredItems.map((item, index) => (
+              <article className="catalog-card group" key={item.id}>
                 <Link to={`/catalogo/${item.id}`}>
-                  <div className="aspect-[3/4] overflow-hidden rounded-[2px] bg-[#181916] sm:aspect-[4/5]"><WatchImage item={item} /></div>
+                  <div className="aspect-[3/4] overflow-hidden rounded-[2px] bg-[#181916] sm:aspect-[4/5]">
+                    <WatchImage item={item} priority={index < 4} />
+                  </div>
                   <div className="border-b border-white/10 py-3 sm:py-5">
                     <div className="flex items-start justify-between gap-2 sm:gap-4">
                       <div className="min-w-0">
