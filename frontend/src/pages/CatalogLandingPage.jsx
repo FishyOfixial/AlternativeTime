@@ -45,15 +45,15 @@ export default function CatalogLandingPage() {
                 Con historia.
               </p>
               <div className="mt-10 h-px bg-[#c4a45f]/25" />
-              <p className="mt-6 text-sm leading-7 text-[#aaa69d]">
-                Un catálogo vivo de relojes seleccionados para quienes buscan algo más que una pieza nueva: buscan una pieza con alma.
-              </p>
-            </div>
-            <div className="absolute -bottom-6 -left-6 rounded-3xl border border-[#c4a45f]/25 bg-black/35 p-5 backdrop-blur">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-[#b99a59]">Piezas únicas</p>
-              <p className="mt-2 text-sm text-[#d7d0c4]">Disponibilidad directa desde inventario.</p>
-            </div>
+            <p className="mt-6 text-sm leading-7 text-[#aaa69d]">
+              Un catálogo vivo de relojes seleccionados para quienes buscan algo más que una pieza nueva: buscan una pieza con alma.
+            </p>
           </div>
+          <div className="absolute -bottom-6 -left-6 rounded-3xl border border-[#c4a45f]/25 bg-black/35 p-5 backdrop-blur">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-[#b99a59]">Piezas únicas</p>
+            <p className="mt-2 text-sm text-[#d7d0c4]">Disponibilidad directa desde inventario.</p>
+          </div>
+        </div>
         </section>
       </main>
     </CatalogShell>

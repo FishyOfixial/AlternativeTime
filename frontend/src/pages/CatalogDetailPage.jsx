@@ -6,6 +6,7 @@ import { getCatalogItem } from "../services/catalog";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const DESCRIPTION_COLLAPSE_LENGTH = 360;
+const loadedDetailImages = new Set();
 
 function getItemImages(item) {
   return item?.image_urls?.length ? item.image_urls : item?.primary_image_url ? [item.primary_image_url] : [];
@@ -27,6 +28,7 @@ export default function CatalogDetailPage() {
   const [state, setState] = useState({ status: "loading", item: null });
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [, setLoadedImageVersion] = useState(0);
 
   useEffect(() => {
     getCatalogItem(itemId)
@@ -43,6 +45,39 @@ export default function CatalogDetailPage() {
   const hasMultipleImages = images.length > 1;
   const description = state.item?.description || "Solicita más información sobre esta pieza y su historia.";
   const shouldCollapseDescription = description.length > DESCRIPTION_COLLAPSE_LENGTH;
+  const isActiveImageLoaded = activeImage.src ? loadedDetailImages.has(activeImage.src) : true;
+
+  useEffect(() => {
+    if (!state.item) {
+      return undefined;
+    }
+
+    const preloadTargets = images
+      .map((_, index) => getDetailImage(state.item, index).src)
+      .filter(Boolean)
+      .filter((imageUrl) => !loadedDetailImages.has(imageUrl));
+
+    if (!preloadTargets.length) {
+      return undefined;
+    }
+
+    const preloadedImages = preloadTargets.map((imageUrl) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = () => {
+        loadedDetailImages.add(imageUrl);
+        setLoadedImageVersion((current) => current + 1);
+      };
+      image.src = imageUrl;
+      return image;
+    });
+
+    return () => {
+      preloadedImages.forEach((image) => {
+        image.onload = null;
+      });
+    };
+  }, [images, state.item]);
 
   function showPreviousImage() {
     setActiveImageIndex((current) => (current === 0 ? images.length - 1 : current - 1));
@@ -63,15 +98,38 @@ export default function CatalogDetailPage() {
             <div>
               <div className="relative aspect-[4/5] overflow-hidden bg-[#181916]">
                 {activeImage.src ? (
-                  <img
-                    alt={state.item.display_name}
-                    className="h-full w-full object-cover"
-                    decoding="async"
-                    fetchPriority="high"
-                    sizes={activeImage.sizes}
-                    src={activeImage.src}
-                    srcSet={activeImage.srcSet || undefined}
-                  />
+                  <>
+                    {!isActiveImageLoaded && activeImage.thumb ? (
+                      <img
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 h-full w-full scale-105 object-cover opacity-45 blur-xl"
+                        decoding="async"
+                        src={activeImage.thumb}
+                      />
+                    ) : null}
+                    <img
+                      alt={state.item.display_name}
+                      className={`relative h-full w-full object-cover transition-opacity duration-200 ${isActiveImageLoaded ? "opacity-100" : "opacity-0"}`}
+                      decoding="async"
+                      fetchPriority="high"
+                      loading="eager"
+                      onLoad={() => {
+                        if (!loadedDetailImages.has(activeImage.src)) {
+                          loadedDetailImages.add(activeImage.src);
+                          setLoadedImageVersion((current) => current + 1);
+                        }
+                      }}
+                      sizes={activeImage.sizes}
+                      src={activeImage.src}
+                      srcSet={activeImage.srcSet || undefined}
+                    />
+                    {!isActiveImageLoaded ? (
+                      <div className="absolute inset-x-8 bottom-8 h-[2px] overflow-hidden rounded-full bg-white/10">
+                        <div className="h-full w-1/2 animate-pulse rounded-full bg-[#c4a45f]" />
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <div className="flex h-full items-center justify-center bg-[radial-gradient(circle,#292923,#111210_70%)] text-8xl text-[#b99a59]/40">▷</div>
                 )}
