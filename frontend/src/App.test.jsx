@@ -270,7 +270,7 @@ describe("App auth routing", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /^políticas$/i }));
 
-    expect(screen.getByRole("dialog", { name: /políticas de compra/i })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: /políticas de compra/i })).toBeInTheDocument();
     expect(screen.getByText(/ventas finales/i)).toBeInTheDocument();
     expect(screen.getAllByText(/15 días naturales/i).length).toBeGreaterThan(0);
   });
@@ -282,7 +282,7 @@ describe("App auth routing", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: /^faq$/i }));
 
-    expect(screen.getByRole("dialog", { name: /preguntas frecuentes/i })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: /preguntas frecuentes/i })).toBeInTheDocument();
     expect(screen.getByText(/¿los relojes son originales?/i)).toBeInTheDocument();
     expect(screen.getByText(/¿cómo funciona el sistema de apartado?/i)).toBeInTheDocument();
     expect(screen.queryByText(/🛡️|💳/)).not.toBeInTheDocument();

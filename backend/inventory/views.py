@@ -5,11 +5,11 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Q
 from django.db import transaction
-from django.utils.decorators import method_decorator
 from django.utils import timezone
-from django.views.decorators.cache import cache_page
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework import serializers, status
 from rest_framework.decorators import action
@@ -420,13 +420,80 @@ class InventoryItemViewSet(ModelViewSet):
         }
 
 
-@method_decorator(cache_page(settings.PUBLIC_CATALOG_CACHE_SECONDS), name="list")
-@method_decorator(cache_page(settings.PUBLIC_CATALOG_CACHE_SECONDS), name="retrieve")
+PUBLIC_CATALOG_VERSION_KEY = "public_catalog:version"
+
+
+def get_public_catalog_cache_version():
+    version = cache.get(PUBLIC_CATALOG_VERSION_KEY)
+    if version is None:
+        cache.set(PUBLIC_CATALOG_VERSION_KEY, 1, None)
+        return 1
+    return version
+
+
+class PublicCatalogPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = "page_size"
+    max_page_size = 48
+
+
 class PublicCatalogViewSet(ReadOnlyModelViewSet):
     serializer_class = PublicInventoryItemSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
-    pagination_class = None
+    pagination_class = PublicCatalogPagination
+
+    def _cache_key(self, name):
+        version = get_public_catalog_cache_version()
+        return f"public_catalog:v{version}:{name}:{self.request.get_full_path()}"
+
+    def list(self, request, *args, **kwargs):
+        cache_key = self._cache_key("list")
+        cached_payload = cache.get(cache_key)
+        if cached_payload is not None:
+            return Response(cached_payload)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, settings.PUBLIC_CATALOG_CACHE_SECONDS)
+        return response
+
+    def retrieve(self, request, *args, **kwargs):
+        cache_key = self._cache_key(f"detail:{kwargs.get(self.lookup_field)}")
+        cached_payload = cache.get(cache_key)
+        if cached_payload is not None:
+            return Response(cached_payload)
+
+        response = super().retrieve(request, *args, **kwargs)
+        cache.set(cache_key, response.data, settings.PUBLIC_CATALOG_CACHE_SECONDS)
+        return response
+
+    @action(detail=False, methods=["get"], url_path="filters")
+    def filters(self, request):
+        cache_key = self._cache_key("filters")
+        cached_payload = cache.get(cache_key)
+        if cached_payload is not None:
+            return Response(cached_payload)
+
+        queryset = (
+            InventoryItem.objects.filter(is_published=True, is_active=True)
+            .exclude(status=InventoryItem.STATUS_SOLD)
+        )
+        payload = {
+            "brands": list(
+                queryset.exclude(brand="")
+                .order_by("brand")
+                .values_list("brand", flat=True)
+                .distinct()
+            ),
+            "year_labels": list(
+                queryset.exclude(year_label="")
+                .order_by("year_label")
+                .values_list("year_label", flat=True)
+                .distinct()
+            ),
+        }
+        cache.set(cache_key, payload, settings.PUBLIC_CATALOG_CACHE_SECONDS)
+        return Response(payload)
 
     def get_queryset(self):
         queryset = (

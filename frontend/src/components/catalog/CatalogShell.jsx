@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link } from "react-router-dom";
 import ContactLinks from "./ContactLinks";
-import FaqModal from "./FaqModal";
-import PoliciesModal from "./PoliciesModal";
+
+const FaqModal = lazy(() => import("./FaqModal"));
+const PoliciesModal = lazy(() => import("./PoliciesModal"));
 
 export default function CatalogShell({ children }) {
   const [isPoliciesOpen, setIsPoliciesOpen] = useState(false);
@@ -59,8 +60,10 @@ export default function CatalogShell({ children }) {
           </div>
         </div>
       </footer>
-      <PoliciesModal isOpen={isPoliciesOpen} onClose={() => setIsPoliciesOpen(false)} />
-      <FaqModal isOpen={isFaqOpen} onClose={() => setIsFaqOpen(false)} />
+      <Suspense fallback={null}>
+        {isPoliciesOpen ? <PoliciesModal isOpen={isPoliciesOpen} onClose={() => setIsPoliciesOpen(false)} /> : null}
+        {isFaqOpen ? <FaqModal isOpen={isFaqOpen} onClose={() => setIsFaqOpen(false)} /> : null}
+      </Suspense>
     </div>
   );
 }

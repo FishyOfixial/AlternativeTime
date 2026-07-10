@@ -58,9 +58,27 @@ class TestInventoryApi(TestCase):
         response = APIClient().get("/api/catalog/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual([item["id"] for item in response.data], [published.id])
-        self.assertNotIn("notes", response.data[0])
-        self.assertNotIn("cost_price", response.data[0])
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual([item["id"] for item in response.data["results"]], [published.id])
+        self.assertNotIn("notes", response.data["results"][0])
+        self.assertNotIn("cost_price", response.data["results"][0])
+
+    def test_public_catalog_is_paginated(self):
+        for index in range(13):
+            InventoryItem.objects.create(
+                brand="Seiko",
+                model_name=f"Presage {index}",
+                price="12000.00",
+                purchase_date=timezone.localdate(),
+                is_published=True,
+            )
+
+        response = APIClient().get("/api/catalog/?page_size=12")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 13)
+        self.assertEqual(len(response.data["results"]), 12)
+        self.assertIsNotNone(response.data["next"])
 
     def test_public_catalog_does_not_allow_writes(self):
         response = APIClient().post(

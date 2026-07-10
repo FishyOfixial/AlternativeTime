@@ -5,10 +5,16 @@ from django.dispatch import receiver
 from .models import InventoryItem, InventoryItemImage
 
 
-def clear_public_catalog_cache():
-    # The public catalog is small and read-heavy. Clearing the configured cache is
-    # simpler and safer than trying to target Django's per-view cache keys.
-    cache.clear()
+PUBLIC_CATALOG_VERSION_KEY = "public_catalog:version"
+
+
+def invalidate_public_catalog_cache_version():
+    if cache.add(PUBLIC_CATALOG_VERSION_KEY, 1, None):
+        return
+    try:
+        cache.incr(PUBLIC_CATALOG_VERSION_KEY)
+    except ValueError:
+        cache.set(PUBLIC_CATALOG_VERSION_KEY, 1, None)
 
 
 @receiver(post_save, sender=InventoryItem)
@@ -16,4 +22,4 @@ def clear_public_catalog_cache():
 @receiver(post_save, sender=InventoryItemImage)
 @receiver(post_delete, sender=InventoryItemImage)
 def invalidate_public_catalog_cache(**kwargs):
-    clear_public_catalog_cache()
+    invalidate_public_catalog_cache_version()

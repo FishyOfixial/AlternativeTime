@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import CatalogShell from "../components/catalog/CatalogShell";
 import ContactLinks from "../components/catalog/ContactLinks";
-import { listCatalog } from "../services/catalog";
+import { listCatalog, listCatalogFilters, preloadCatalogItem } from "../services/catalog";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -21,8 +21,7 @@ const initialFilters = {
 };
 
 const loadedCatalogImages = new Set();
-const INITIAL_VISIBLE_ITEMS = 12;
-const VISIBLE_ITEMS_INCREMENT = 12;
+const CATALOG_PAGE_SIZE = 12;
 
 function getItemImages(item) {
   return item.image_urls?.length ? item.image_urls : item.primary_image_url ? [item.primary_image_url] : [];
@@ -32,7 +31,7 @@ function getCardImage(item) {
   const variants = item.primary_image_variants;
   const [fallbackUrl] = getItemImages(item);
   return {
-    src: variants?.card || fallbackUrl || "",
+    src: item.card_image_url || variants?.card || fallbackUrl || "",
     srcSet: variants?.card_srcset || "",
     sizes: "(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 420px"
   };
@@ -70,85 +69,113 @@ function WatchImage({ item, priority = false }) {
   );
 }
 
-function uniqueValues(items, fieldName) {
-  return [...new Set(items.map((item) => item[fieldName]).filter(Boolean))].sort((a, b) =>
-    String(a).localeCompare(String(b), "es")
-  );
-}
-
-function matchesSearch(item, search) {
-  const normalizedSearch = search.trim().toLowerCase();
-  if (!normalizedSearch) {
+function mergeCatalogPage(currentItems, nextItems) {
+  const knownIds = new Set();
+  return [...currentItems, ...nextItems].filter((item) => {
+    if (knownIds.has(item.id)) {
+      return false;
+    }
+    knownIds.add(item.id);
     return true;
-  }
-  return [item.display_name, item.brand, item.model_name, item.year_label, item.description, item.product_id]
-    .filter(Boolean)
-    .some((value) => String(value).toLowerCase().includes(normalizedSearch));
+  });
 }
 
-function sortItems(items, sortBy) {
-  const sorted = [...items];
-  const byPrice = (direction) => (first, second) =>
-    direction * (Number(first.price || 0) - Number(second.price || 0));
-
-  const sorters = {
-    price_asc: byPrice(1),
-    price_desc: byPrice(-1),
-    brand: (first, second) =>
-      `${first.brand} ${first.model_name}`.localeCompare(`${second.brand} ${second.model_name}`, "es"),
-    condition_desc: (first, second) => Number(second.condition_score || 0) - Number(first.condition_score || 0),
-    newest: (first, second) => Number(second.id || 0) - Number(first.id || 0)
+function getCatalogQuery(filters, page) {
+  return {
+    page,
+    page_size: CATALOG_PAGE_SIZE,
+    search: filters.search.trim(),
+    brand: filters.brand,
+    year_label: filters.yearLabel,
+    min_price: filters.minPrice,
+    max_price: filters.maxPrice,
+    condition_min: filters.conditionMin,
+    ordering: filters.sortBy
   };
-
-  return sorted.sort(sorters[sortBy] || sorters.newest);
 }
 
 export default function CatalogPage() {
-  const [state, setState] = useState({ status: "loading", items: [] });
+  const [state, setState] = useState({ status: "loading", items: [], count: 0, next: null });
+  const [filterOptions, setFilterOptions] = useState({ brands: [], year_labels: [] });
   const [filters, setFilters] = useState(initialFilters);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_ITEMS);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    listCatalog()
-      .then((items) => setState({ status: "ready", items }))
-      .catch(() => setState({ status: "error", items: [] }));
+    let active = true;
+    listCatalogFilters({
+      onUpdate: (options) => {
+        if (active) {
+          setFilterOptions(options);
+        }
+      }
+    })
+      .then((options) => {
+        if (active) {
+          setFilterOptions(options);
+        }
+      })
+      .catch(() => null);
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const brands = useMemo(() => uniqueValues(state.items, "brand"), [state.items]);
-  const yearLabels = useMemo(() => uniqueValues(state.items, "year_label"), [state.items]);
-
-  const filteredItems = useMemo(() => {
-    const minPrice = filters.minPrice === "" ? null : Number(filters.minPrice);
-    const maxPrice = filters.maxPrice === "" ? null : Number(filters.maxPrice);
-    const conditionMin = filters.conditionMin === "all" ? null : Number(filters.conditionMin);
-
-    const nextItems = state.items.filter((item) => {
-      const price = Number(item.price || 0);
-      const condition = Number(item.condition_score || 0);
-      return (
-        matchesSearch(item, filters.search) &&
-        (filters.brand === "all" || item.brand === filters.brand) &&
-        (filters.yearLabel === "all" || item.year_label === filters.yearLabel) &&
-        (minPrice === null || price >= minPrice) &&
-        (maxPrice === null || price <= maxPrice) &&
-        (conditionMin === null || condition >= conditionMin)
-      );
-    });
-
-    return sortItems(nextItems, filters.sortBy);
-  }, [filters, state.items]);
-
   useEffect(() => {
-    setVisibleCount(INITIAL_VISIBLE_ITEMS);
-  }, [filters]);
+    let active = true;
+    const requestDelay = window.setTimeout(() => {
+      setState((current) => ({
+        ...(page === 1 ? { items: [], count: 0, next: null } : current),
+        status: page === 1 ? "loading" : "loading_more"
+      }));
+      listCatalog(getCatalogQuery(filters, page), {
+        onUpdate: (payload) => {
+          if (!active) {
+            return;
+          }
+          setState((current) => ({
+            status: "ready",
+            items: page === 1 ? payload.results : mergeCatalogPage(current.items, payload.results),
+            count: payload.count,
+            next: payload.next
+          }));
+        }
+      })
+        .then((payload) => {
+          if (!active) {
+            return;
+          }
+          setState((current) => ({
+            status: "ready",
+            items: page === 1 ? payload.results : mergeCatalogPage(current.items, payload.results),
+            count: payload.count,
+            next: payload.next
+          }));
+        })
+        .catch(() => {
+          if (active) {
+            setState({ status: "error", items: [], count: 0, next: null });
+          }
+        });
+    }, filters.search ? 250 : 0);
+
+    return () => {
+      active = false;
+      window.clearTimeout(requestDelay);
+    };
+  }, [filters, page]);
+
+  const brands = useMemo(() => filterOptions.brands || [], [filterOptions.brands]);
+  const yearLabels = useMemo(() => filterOptions.year_labels || [], [filterOptions.year_labels]);
 
   function updateFilter(name, value) {
     setFilters((current) => ({ ...current, [name]: value }));
+    setPage(1);
   }
 
   function resetFilters() {
     setFilters(initialFilters);
+    setPage(1);
   }
 
   const activeFilterCount = [
@@ -160,8 +187,7 @@ export default function CatalogPage() {
     filters.conditionMin !== "all",
     filters.sortBy !== "newest"
   ].filter(Boolean).length;
-  const visibleItems = filteredItems.slice(0, visibleCount);
-  const hasMoreItems = visibleCount < filteredItems.length;
+  const hasMoreItems = Boolean(state.next);
 
   return (
     <CatalogShell>
@@ -193,7 +219,7 @@ export default function CatalogPage() {
             </div>
             {state.status === "ready" && (
               <p className="text-sm text-[#77766f]">
-                {filteredItems.length} de {state.items.length} piezas
+                {state.items.length} de {state.count} piezas
               </p>
             )}
           </div>
@@ -315,16 +341,15 @@ export default function CatalogPage() {
           {state.status === "loading" && <CatalogGridSkeleton />}
           {state.status === "error" && <p className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-[#c8c1b5]">No pudimos cargar el catálogo. Intenta de nuevo en unos minutos.</p>}
           {state.status === "ready" && !state.items.length && <p className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-[#aaa69d]">Muy pronto habrá nuevas piezas disponibles.</p>}
-          {state.status === "ready" && state.items.length > 0 && filteredItems.length === 0 && (
-            <p className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-[#aaa69d]">
-              No encontramos piezas con esos filtros.
-            </p>
-          )}
-
           <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
-            {visibleItems.map((item, index) => (
+            {state.items.map((item, index) => (
               <article className="catalog-card group" key={item.id}>
-                <Link to={`/catalogo/${item.id}`}>
+                <Link
+                  onFocus={() => preloadCatalogItem(item)}
+                  onMouseEnter={() => preloadCatalogItem(item)}
+                  onTouchStart={() => preloadCatalogItem(item)}
+                  to={`/catalogo/${item.id}`}
+                >
                   <div className="aspect-[3/4] overflow-hidden rounded-[2px] bg-[#181916] sm:aspect-[4/5]">
                     <WatchImage item={item} priority={index < 4} />
                   </div>
@@ -349,11 +374,16 @@ export default function CatalogPage() {
             <div className="mt-12 flex justify-center">
               <button
                 className="rounded-full border border-[#c4a45f]/35 px-6 py-3 text-sm font-semibold text-[#d4b874] transition hover:border-[#d4b874] hover:bg-[#d4b874]/10"
-                onClick={() => setVisibleCount((current) => current + VISIBLE_ITEMS_INCREMENT)}
+                onClick={() => setPage((current) => current + 1)}
                 type="button"
               >
                 Cargar más piezas
               </button>
+            </div>
+          ) : null}
+          {state.status === "loading_more" ? (
+            <div className="mt-8">
+              <CatalogGridSkeleton count={3} />
             </div>
           ) : null}
         </section>
@@ -362,10 +392,10 @@ export default function CatalogPage() {
   );
 }
 
-function CatalogGridSkeleton() {
+function CatalogGridSkeleton({ count = 6 }) {
   return (
     <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, index) => (
+      {Array.from({ length: count }).map((_, index) => (
         <article className="animate-pulse" key={index}>
           <div className="aspect-[3/4] rounded-[2px] bg-white/[0.06] sm:aspect-[4/5]" />
           <div className="border-b border-white/10 py-3 sm:py-5">

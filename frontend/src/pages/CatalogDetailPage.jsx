@@ -16,7 +16,7 @@ function getDetailImage(item, index) {
   const variant = item?.image_variants?.[index] || item?.primary_image_variants;
   const fallback = getItemImages(item)[index] || getItemImages(item)[0] || "";
   return {
-    src: variant?.detail || fallback,
+    src: index === 0 ? item?.detail_image_url || variant?.detail || fallback : variant?.detail || fallback,
     srcSet: variant?.detail_srcset || "",
     sizes: "(max-width: 1024px) 100vw, 680px",
     thumb: variant?.thumb || fallback

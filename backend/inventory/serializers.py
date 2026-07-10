@@ -21,6 +21,7 @@ def build_cloudinary_image_url(public_id, width=None, height=None, crop="fill"):
         "secure": True,
         "fetch_format": "auto",
         "quality": "auto",
+        "dpr": "auto",
     }
     if width:
         options["width"] = width
@@ -42,14 +43,14 @@ def build_image_variants(image_field=None, request=None, fallback_url=""):
         card_400 = build_cloudinary_image_url(public_id, width=400, height=540)
         card_700 = build_cloudinary_image_url(public_id, width=700, height=945)
         detail_900 = build_cloudinary_image_url(public_id, width=900, height=1125)
-        detail_1400 = build_cloudinary_image_url(public_id, width=1400, height=1750)
+        detail_1200 = build_cloudinary_image_url(public_id, width=1200, height=1500)
         thumb = build_cloudinary_image_url(public_id, width=220, height=220)
         return {
             "original": build_cloudinary_image_url(public_id),
             "card": card_700,
             "card_srcset": f"{card_400} 400w, {card_700} 700w",
-            "detail": detail_1400,
-            "detail_srcset": f"{detail_900} 900w, {detail_1400} 1400w",
+            "detail": detail_1200,
+            "detail_srcset": f"{detail_900} 900w, {detail_1200} 1200w",
             "thumb": thumb,
         }
 
@@ -414,6 +415,9 @@ class PublicInventoryItemSerializer(serializers.ModelSerializer):
     image_urls = serializers.SerializerMethodField()
     primary_image_variants = serializers.SerializerMethodField()
     image_variants = serializers.SerializerMethodField()
+    card_image_url = serializers.SerializerMethodField()
+    detail_image_url = serializers.SerializerMethodField()
+    thumbnail_urls = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryItem
@@ -422,6 +426,7 @@ class PublicInventoryItemSerializer(serializers.ModelSerializer):
             "year_label", "condition_score", "description", "price", "status",
             "availability", "stock", "primary_image_url", "image_urls",
             "primary_image_variants", "image_variants",
+            "card_image_url", "detail_image_url", "thumbnail_urls",
         ]
 
     @staticmethod
@@ -446,6 +451,15 @@ class PublicInventoryItemSerializer(serializers.ModelSerializer):
         if primary_image:
             return build_image_variants(primary_image, request)
         return build_image_variants(request=request, fallback_url=obj.image_url)
+
+    def get_card_image_url(self, obj):
+        return self.get_primary_image_variants(obj).get("card", "")
+
+    def get_detail_image_url(self, obj):
+        return self.get_primary_image_variants(obj).get("detail", "")
+
+    def get_thumbnail_urls(self, obj):
+        return [variant.get("thumb", "") for variant in self.get_image_variants(obj) if variant.get("thumb")]
 
     def get_image_variants(self, obj):
         request = self.context.get("request")
