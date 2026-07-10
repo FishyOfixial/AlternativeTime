@@ -11,6 +11,17 @@ function getItemImages(item) {
   return item?.image_urls?.length ? item.image_urls : item?.primary_image_url ? [item.primary_image_url] : [];
 }
 
+function getDetailImage(item, index) {
+  const variant = item?.image_variants?.[index] || item?.primary_image_variants;
+  const fallback = getItemImages(item)[index] || getItemImages(item)[0] || "";
+  return {
+    src: variant?.detail || fallback,
+    srcSet: variant?.detail_srcset || "",
+    sizes: "(max-width: 1024px) 100vw, 680px",
+    thumb: variant?.thumb || fallback
+  };
+}
+
 export default function CatalogDetailPage() {
   const { itemId } = useParams();
   const [state, setState] = useState({ status: "loading", item: null });
@@ -28,7 +39,7 @@ export default function CatalogDetailPage() {
   }, [itemId]);
 
   const images = useMemo(() => getItemImages(state.item), [state.item]);
-  const activeImage = images[activeImageIndex];
+  const activeImage = getDetailImage(state.item, activeImageIndex);
   const hasMultipleImages = images.length > 1;
   const description = state.item?.description || "Solicita más información sobre esta pieza y su historia.";
   const shouldCollapseDescription = description.length > DESCRIPTION_COLLAPSE_LENGTH;
@@ -51,13 +62,15 @@ export default function CatalogDetailPage() {
           <div className="mt-8 grid gap-10 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
             <div>
               <div className="relative aspect-[4/5] overflow-hidden bg-[#181916]">
-                {activeImage ? (
+                {activeImage.src ? (
                   <img
                     alt={state.item.display_name}
                     className="h-full w-full object-cover"
                     decoding="async"
                     fetchPriority="high"
-                    src={activeImage}
+                    sizes={activeImage.sizes}
+                    src={activeImage.src}
+                    srcSet={activeImage.srcSet || undefined}
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center bg-[radial-gradient(circle,#292923,#111210_70%)] text-8xl text-[#b99a59]/40">▷</div>
@@ -88,7 +101,9 @@ export default function CatalogDetailPage() {
               </div>
               {hasMultipleImages ? (
                 <div className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-8 lg:grid-cols-5">
-                  {images.map((imageUrl, index) => (
+                  {images.map((imageUrl, index) => {
+                    const thumbImage = getDetailImage(state.item, index);
+                    return (
                     <button
                       aria-label={`Ver imagen ${index + 1}`}
                       className={`aspect-square overflow-hidden rounded-xl border transition ${
@@ -98,9 +113,10 @@ export default function CatalogDetailPage() {
                       onClick={() => setActiveImageIndex(index)}
                       type="button"
                     >
-                      <img alt="" className="h-full w-full object-cover" decoding="async" loading="lazy" src={imageUrl} />
+                      <img alt="" className="h-full w-full object-cover" decoding="async" loading="lazy" src={thumbImage.thumb || imageUrl} />
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : null}
             </div>

@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+import cloudinary
+from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
 
@@ -12,6 +14,53 @@ def build_image_url(image_field, request=None):
     if not image_field:
         return ""
     return request.build_absolute_uri(image_field.url) if request else image_field.url
+
+
+def build_cloudinary_image_url(public_id, width=None, height=None, crop="fill"):
+    options = {
+        "secure": True,
+        "fetch_format": "auto",
+        "quality": "auto",
+    }
+    if width:
+        options["width"] = width
+    if height:
+        options["height"] = height
+    if width or height:
+        options["crop"] = crop
+        options["gravity"] = "auto"
+    return cloudinary.CloudinaryImage(public_id).build_url(**options)
+
+
+def build_image_variants(image_field=None, request=None, fallback_url=""):
+    base_url = build_image_url(image_field, request) if image_field else fallback_url
+    if not base_url:
+        return {}
+
+    if image_field and settings.CLOUDINARY_URL:
+        public_id = image_field.name
+        card_400 = build_cloudinary_image_url(public_id, width=400, height=540)
+        card_700 = build_cloudinary_image_url(public_id, width=700, height=945)
+        detail_900 = build_cloudinary_image_url(public_id, width=900, height=1125)
+        detail_1400 = build_cloudinary_image_url(public_id, width=1400, height=1750)
+        thumb = build_cloudinary_image_url(public_id, width=220, height=220)
+        return {
+            "original": build_cloudinary_image_url(public_id),
+            "card": card_700,
+            "card_srcset": f"{card_400} 400w, {card_700} 700w",
+            "detail": detail_1400,
+            "detail_srcset": f"{detail_900} 900w, {detail_1400} 1400w",
+            "thumb": thumb,
+        }
+
+    return {
+        "original": base_url,
+        "card": base_url,
+        "card_srcset": "",
+        "detail": base_url,
+        "detail_srcset": "",
+        "thumb": base_url,
+    }
 
 
 class PurchaseCostSerializer(serializers.ModelSerializer):
@@ -363,6 +412,8 @@ class PublicInventoryItemSerializer(serializers.ModelSerializer):
     availability = serializers.CharField(source="get_status_display", read_only=True)
     primary_image_url = serializers.SerializerMethodField()
     image_urls = serializers.SerializerMethodField()
+    primary_image_variants = serializers.SerializerMethodField()
+    image_variants = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryItem
@@ -370,16 +421,45 @@ class PublicInventoryItemSerializer(serializers.ModelSerializer):
             "id", "product_id", "display_name", "brand", "model_name",
             "year_label", "condition_score", "description", "price", "status",
             "availability", "stock", "primary_image_url", "image_urls",
+            "primary_image_variants", "image_variants",
         ]
+
+    @staticmethod
+    def _get_primary_image(obj):
+        first_gallery_image = next(iter(getattr(obj, "catalog_images", []).all()), None)
+        if first_gallery_image:
+            return first_gallery_image.image
+        if obj.primary_image:
+            return obj.primary_image
+        return None
 
     def get_primary_image_url(self, obj):
         request = self.context.get("request")
-        first_gallery_image = next(iter(getattr(obj, "catalog_images", []).all()), None)
-        if first_gallery_image:
-            return build_image_url(first_gallery_image.image, request)
-        if obj.primary_image:
-            return build_image_url(obj.primary_image, request)
+        primary_image = self._get_primary_image(obj)
+        if primary_image:
+            return build_image_url(primary_image, request)
         return obj.image_url or ""
+
+    def get_primary_image_variants(self, obj):
+        request = self.context.get("request")
+        primary_image = self._get_primary_image(obj)
+        if primary_image:
+            return build_image_variants(primary_image, request)
+        return build_image_variants(request=request, fallback_url=obj.image_url)
+
+    def get_image_variants(self, obj):
+        request = self.context.get("request")
+        variants = [
+            build_image_variants(image.image, request)
+            for image in obj.catalog_images.all()
+            if image.image
+        ]
+        if variants:
+            return variants
+        if obj.primary_image:
+            return [build_image_variants(obj.primary_image, request)]
+        fallback = build_image_variants(request=request, fallback_url=obj.image_url)
+        return [fallback] if fallback else []
 
     def get_image_urls(self, obj):
         request = self.context.get("request")

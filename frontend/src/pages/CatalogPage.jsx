@@ -21,14 +21,26 @@ const initialFilters = {
 };
 
 const loadedCatalogImages = new Set();
+const INITIAL_VISIBLE_ITEMS = 12;
+const VISIBLE_ITEMS_INCREMENT = 12;
 
 function getItemImages(item) {
   return item.image_urls?.length ? item.image_urls : item.primary_image_url ? [item.primary_image_url] : [];
 }
 
+function getCardImage(item) {
+  const variants = item.primary_image_variants;
+  const [fallbackUrl] = getItemImages(item);
+  return {
+    src: variants?.card || fallbackUrl || "",
+    srcSet: variants?.card_srcset || "",
+    sizes: "(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 420px"
+  };
+}
+
 function WatchImage({ item, priority = false }) {
   const [, setLoadedVersion] = useState(0);
-  const [imageUrl] = getItemImages(item);
+  const { sizes, src: imageUrl, srcSet } = getCardImage(item);
   const wasAlreadyLoaded = imageUrl ? loadedCatalogImages.has(imageUrl) : false;
 
   if (imageUrl) {
@@ -45,7 +57,9 @@ function WatchImage({ item, priority = false }) {
             setLoadedVersion((current) => current + 1);
           }
         }}
+        sizes={sizes}
         src={imageUrl}
+        srcSet={srcSet || undefined}
       />
     );
   }
@@ -93,6 +107,7 @@ export default function CatalogPage() {
   const [state, setState] = useState({ status: "loading", items: [] });
   const [filters, setFilters] = useState(initialFilters);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_ITEMS);
 
   useEffect(() => {
     listCatalog()
@@ -124,6 +139,10 @@ export default function CatalogPage() {
     return sortItems(nextItems, filters.sortBy);
   }, [filters, state.items]);
 
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE_ITEMS);
+  }, [filters]);
+
   function updateFilter(name, value) {
     setFilters((current) => ({ ...current, [name]: value }));
   }
@@ -141,6 +160,8 @@ export default function CatalogPage() {
     filters.conditionMin !== "all",
     filters.sortBy !== "newest"
   ].filter(Boolean).length;
+  const visibleItems = filteredItems.slice(0, visibleCount);
+  const hasMoreItems = visibleCount < filteredItems.length;
 
   return (
     <CatalogShell>
@@ -291,7 +312,7 @@ export default function CatalogPage() {
             </div>
           </div>
 
-          {state.status === "loading" && <p className="py-24 text-center text-[#aaa69d]">Preparando la colección...</p>}
+          {state.status === "loading" && <CatalogGridSkeleton />}
           {state.status === "error" && <p className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-[#c8c1b5]">No pudimos cargar el catálogo. Intenta de nuevo en unos minutos.</p>}
           {state.status === "ready" && !state.items.length && <p className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-[#aaa69d]">Muy pronto habrá nuevas piezas disponibles.</p>}
           {state.status === "ready" && state.items.length > 0 && filteredItems.length === 0 && (
@@ -301,7 +322,7 @@ export default function CatalogPage() {
           )}
 
           <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
-            {filteredItems.map((item, index) => (
+            {visibleItems.map((item, index) => (
               <article className="catalog-card group" key={item.id}>
                 <Link to={`/catalogo/${item.id}`}>
                   <div className="aspect-[3/4] overflow-hidden rounded-[2px] bg-[#181916] sm:aspect-[4/5]">
@@ -324,8 +345,35 @@ export default function CatalogPage() {
               </article>
             ))}
           </div>
+          {state.status === "ready" && hasMoreItems ? (
+            <div className="mt-12 flex justify-center">
+              <button
+                className="rounded-full border border-[#c4a45f]/35 px-6 py-3 text-sm font-semibold text-[#d4b874] transition hover:border-[#d4b874] hover:bg-[#d4b874]/10"
+                onClick={() => setVisibleCount((current) => current + VISIBLE_ITEMS_INCREMENT)}
+                type="button"
+              >
+                Cargar más piezas
+              </button>
+            </div>
+          ) : null}
         </section>
       </main>
     </CatalogShell>
+  );
+}
+
+function CatalogGridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <article className="animate-pulse" key={index}>
+          <div className="aspect-[3/4] rounded-[2px] bg-white/[0.06] sm:aspect-[4/5]" />
+          <div className="border-b border-white/10 py-3 sm:py-5">
+            <div className="h-4 w-4/5 rounded-full bg-white/[0.08]" />
+            <div className="mt-3 h-4 w-2/3 rounded-full bg-[#c4a45f]/15" />
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }

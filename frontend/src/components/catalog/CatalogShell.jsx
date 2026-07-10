@@ -23,50 +23,40 @@ export default function CatalogShell({ children }) {
             <Link className="text-sm text-[#d7d0c4] transition hover:text-white" to="/catalogo">
               Colección
             </Link>
-            <button
-              className="text-sm text-[#d7d0c4] transition hover:text-white"
-              onClick={() => setIsPoliciesOpen(true)}
-              type="button"
-            >
-              Políticas
-            </button>
-            <button
-              className="text-sm text-[#d7d0c4] transition hover:text-white"
-              onClick={() => setIsFaqOpen(true)}
-              type="button"
-            >
-              FAQ
-            </button>
             <div className="hidden sm:block"><ContactLinks compact /></div>
           </nav>
         </div>
       </header>
       {children}
       <footer className="border-t border-white/10 px-5 py-10">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 sm:flex-row sm:items-end">
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 sm:flex-row sm:items-end">
           <div>
             <p className="font-brand text-2xl leading-tight text-[#d9b35f]">
               Alternative
               <br />
               Time Co.
             </p>
-            <p className="mt-2 max-w-md text-sm text-[#8f8c85]">Relojes seleccionados con carácter, historia y precisión.</p>
+            <p className="mt-2 max-w-md text-sm text-[#8f8c85]">
+              Relojes seleccionados con carácter, historia y precisión.
+            </p>
           </div>
-          <button
-            className="text-left text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
-            onClick={() => setIsPoliciesOpen(true)}
-            type="button"
-          >
-            Políticas de compra
-          </button>
-          <button
-            className="text-left text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
-            onClick={() => setIsFaqOpen(true)}
-            type="button"
-          >
-            Preguntas frecuentes
-          </button>
-          <ContactLinks compact />
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            <button
+              className="text-left text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white sm:text-right"
+              onClick={() => setIsPoliciesOpen(true)}
+              type="button"
+            >
+              Políticas
+            </button>
+            <button
+              className="text-left text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white sm:text-right"
+              onClick={() => setIsFaqOpen(true)}
+              type="button"
+            >
+              FAQ
+            </button>
+            <ContactLinks compact />
+          </div>
         </div>
       </footer>
       <PoliciesModal isOpen={isPoliciesOpen} onClose={() => setIsPoliciesOpen(false)} />

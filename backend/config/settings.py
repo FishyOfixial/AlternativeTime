@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "api",
     "users",
     "clients",
-    "inventory",
+    "inventory.apps.InventoryConfig",
     "sales",
     "layaways",
     "finance",
