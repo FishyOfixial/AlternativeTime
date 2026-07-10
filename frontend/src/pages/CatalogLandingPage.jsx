@@ -11,7 +11,8 @@ export default function CatalogLandingPage() {
           <div>
             <p className="font-brand text-3xl leading-tight text-[#d9b35f] sm:text-4xl">
               Alternative
-              <br />
+              <br className="lg:hidden" />
+              {" "}
               Time Co.
             </p>
             <p className="mt-8 text-xs uppercase tracking-[0.42em] text-[#c4a45f]">

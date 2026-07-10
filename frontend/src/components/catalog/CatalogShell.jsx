@@ -16,7 +16,8 @@ export default function CatalogShell({ children }) {
           <Link className="group" to="/">
             <span className="block font-brand text-2xl leading-tight text-[#d9b35f] transition group-hover:text-[#f0cd84]">
               Alternative
-              <br />
+              <br className="lg:hidden" />
+              {" "}
               Time Co.
             </span>
           </Link>
@@ -34,7 +35,8 @@ export default function CatalogShell({ children }) {
           <div>
             <p className="font-brand text-2xl leading-tight text-[#d9b35f]">
               Alternative
-              <br />
+              <br className="lg:hidden" />
+              {" "}
               Time Co.
             </p>
             <p className="mt-2 max-w-md text-sm text-[#8f8c85]">

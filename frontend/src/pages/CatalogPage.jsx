@@ -341,7 +341,7 @@ export default function CatalogPage() {
           {state.status === "loading" && <CatalogGridSkeleton />}
           {state.status === "error" && <p className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-[#c8c1b5]">No pudimos cargar el catálogo. Intenta de nuevo en unos minutos.</p>}
           {state.status === "ready" && !state.items.length && <p className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-[#aaa69d]">Muy pronto habrá nuevas piezas disponibles.</p>}
-          <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-4">
             {state.items.map((item, index) => (
               <article className="catalog-card group" key={item.id}>
                 <Link
@@ -394,7 +394,7 @@ export default function CatalogPage() {
 
 function CatalogGridSkeleton({ count = 6 }) {
   return (
-    <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-4">
       {Array.from({ length: count }).map((_, index) => (
         <article className="animate-pulse" key={index}>
           <div className="aspect-[3/4] rounded-[2px] bg-white/[0.06] sm:aspect-[4/5]" />
