@@ -115,11 +115,6 @@ img.inventory-image-preview {
   background-color: #f3ecdf;
 }
 
-.inventory-textarea-stable {
-  overflow: hidden;
-  overscroll-behavior: contain;
-}
-
 .font-serif {
   font-family: inherit !important;
   font-weight: 700;

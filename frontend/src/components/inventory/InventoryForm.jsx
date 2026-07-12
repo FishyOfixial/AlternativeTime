@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import { getBusinessTodayIsoDate } from "../../utils/dates";
@@ -170,31 +170,6 @@ function Field({ label, children, className = "" }) {
   );
 }
 
-function AutoGrowTextarea({ className = "", value = "", ...props }) {
-  const textareaRef = useRef(null);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-
-    if (!textarea) {
-      return;
-    }
-
-    textarea.style.height = "auto";
-    textarea.style.height = `${Math.max(textarea.scrollHeight, 64)}px`;
-  }, [value]);
-
-  return (
-    <textarea
-      className={`${className} inventory-textarea-stable`.trim()}
-      ref={textareaRef}
-      rows={2}
-      value={value}
-      {...props}
-    />
-  );
-}
-
 export default function InventoryForm({
   defaultValues = {},
   existingProductIds = [],
@@ -209,10 +184,15 @@ export default function InventoryForm({
   cancelPath = "/inventory"
 }) {
   const [values, setValues] = useState(() => buildFormState(defaultValues));
+  const [showExistingImages, setShowExistingImages] = useState(false);
 
   useEffect(() => {
     setValues(buildFormState(defaultValues));
   }, [defaultValues]);
+
+  useEffect(() => {
+    setShowExistingImages(false);
+  }, [defaultValues.product_id]);
 
   useEffect(() => {
     const keys = Object.keys(fieldErrors || {});
@@ -341,6 +321,18 @@ export default function InventoryForm({
     [defaultValues, existingProductIds, isEdit, values]
   );
 
+  const existingImageUrls = useMemo(() => {
+    if (defaultValues.image_urls?.length) {
+      return defaultValues.image_urls.slice(0, 10);
+    }
+    if (defaultValues.primary_image_url) {
+      return [defaultValues.primary_image_url];
+    }
+    return [];
+  }, [defaultValues.image_urls, defaultValues.primary_image_url]);
+
+  const existingImageCount = existingImageUrls.length;
+
   function handleSubmit(event) {
     event.preventDefault();
 
@@ -426,18 +418,37 @@ export default function InventoryForm({
               <FieldError fieldName="status" />
             </Field>
             <Field className="col-span-2" label="Descripcion">
-              <AutoGrowTextarea
-                className={`${getInputClass("description")} min-h-16 resize-none`}
+              <textarea
+                className={`${getInputClass("description")} min-h-28 resize-none`}
                 name="description"
                 onChange={handleChange}
                 value={values.description}
               />
               <FieldError fieldName="description" />
             </Field>
-            <Field className="col-span-2" label="Galeria del catalogo">
-              {defaultValues.image_urls?.length ? (
+            <div className="col-span-2">
+              <span className={labelClassName}>Galeria del catalogo</span>
+              {existingImageCount ? (
+                <div className="inventory-image-preview mb-3 rounded-xl border border-[#e4d8c4] bg-[#f7f0e4] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[#2a221b]">
+                        {existingImageCount} imagen{existingImageCount === 1 ? "" : "es"} actual{existingImageCount === 1 ? "" : "es"}
+                      </p>
+                    </div>
+                    <button
+                      className="rounded-lg border border-[#b69556] px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#7a5c25] transition hover:bg-[#ead9b4]"
+                      onClick={() => setShowExistingImages((current) => !current)}
+                      type="button"
+                    >
+                      {showExistingImages ? "Ocultar fotos" : "Ver fotos actuales"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              {showExistingImages && existingImageCount ? (
                 <div className="inventory-image-preview mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                  {defaultValues.image_urls.slice(0, 10).map((imageUrl, index) => (
+                  {existingImageUrls.map((imageUrl, index) => (
                     <img
                       alt={`Foto ${index + 1} de ${defaultValues.display_name || "reloj"}`}
                       className="h-28 w-full rounded-xl border border-[#dccfb9] object-cover"
@@ -450,16 +461,6 @@ export default function InventoryForm({
                     />
                   ))}
                 </div>
-              ) : defaultValues.primary_image_url ? (
-                <img
-                  alt={`Foto actual de ${defaultValues.display_name || "reloj"}`}
-                  className="inventory-image-preview mb-3 h-40 w-full rounded-xl border border-[#dccfb9] object-cover"
-                  decoding="async"
-                  height="160"
-                  loading="lazy"
-                  src={defaultValues.primary_image_url}
-                  width="720"
-                />
               ) : null}
               <input
                 accept="image/jpeg,image/png,image/webp"
@@ -478,7 +479,7 @@ export default function InventoryForm({
                 </p>
               ) : null}
               <FieldError fieldName="image_files" />
-            </Field>
+            </div>
             <label className="col-span-2 flex items-start gap-3 rounded-xl border border-[#dccfb9] bg-[#f7f0e4] p-4">
               <input
                 checked={Boolean(values.is_published)}
@@ -495,8 +496,8 @@ export default function InventoryForm({
               </span>
             </label>
             <Field className="col-span-2" label="Notas internas">
-              <AutoGrowTextarea
-                className={`${getInputClass("notes")} min-h-16 resize-none`}
+              <textarea
+                className={`${getInputClass("notes")} min-h-20 resize-none`}
                 name="notes"
                 onChange={handleChange}
                 value={values.notes}
