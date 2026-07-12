@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import CatalogShell from "../components/catalog/CatalogShell";
-import ContactLinks from "../components/catalog/ContactLinks";
 
 export default function CatalogLandingPage() {
   return (
@@ -9,13 +8,7 @@ export default function CatalogLandingPage() {
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_20%,rgba(196,164,95,.18),transparent_26%),radial-gradient(circle_at_82%_62%,rgba(255,255,255,.07),transparent_24%),linear-gradient(135deg,#111210_0%,#070808_58%,#15120b_100%)]" />
         <section className="mx-auto grid min-h-[calc(100vh-82px)] max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1fr_.78fr]">
           <div>
-            <p className="font-brand text-3xl leading-tight text-[#d9b35f] sm:text-4xl">
-              Alternative
-              <br className="lg:hidden" />
-              {" "}
-              Time Co.
-            </p>
-            <p className="mt-8 text-xs uppercase tracking-[0.42em] text-[#c4a45f]">
+            <p className="text-xs uppercase tracking-[0.42em] text-[#c4a45f]">
               Relojes vintage y atemporales
             </p>
             <h1 className="mt-5 max-w-3xl font-brand text-5xl leading-[.92] text-white sm:text-7xl lg:text-8xl">
@@ -31,7 +24,6 @@ export default function CatalogLandingPage() {
               >
                 Ver catálogo
               </Link>
-              <ContactLinks compact />
             </div>
           </div>
 

@@ -16,43 +16,34 @@ export default function CatalogShell({ children }) {
           <Link className="group" to="/">
             <span className="block font-brand text-2xl leading-tight text-[#d9b35f] transition group-hover:text-[#f0cd84]">
               Alternative
-              <br className="lg:hidden" />
-              {" "}
-              Time Co.
+              <br className="lg:hidden" /> Time Co.
             </span>
           </Link>
           <nav className="flex items-center gap-4">
             <Link className="text-sm text-[#d7d0c4] transition hover:text-white" to="/catalogo">
               Colección
             </Link>
-            <div className="hidden sm:block"><ContactLinks compact /></div>
+            <div className="hidden sm:block">
+              <ContactLinks compact />
+            </div>
           </nav>
         </div>
       </header>
+
       {children}
+
       <footer className="border-t border-white/10 px-5 py-10">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 sm:flex-row sm:items-end">
-          <div>
-            <p className="font-brand text-2xl leading-tight text-[#d9b35f]">
-              Alternative
-              <br className="lg:hidden" />
-              {" "}
-              Time Co.
-            </p>
-            <p className="mt-2 max-w-md text-sm text-[#8f8c85]">
-              Relojes seleccionados con carácter, historia y precisión.
-            </p>
-          </div>
-          <div className="flex flex-col items-start gap-3 sm:items-end">
+        <div className="mx-auto flex max-w-7xl justify-center">
+          <div className="flex flex-col items-center gap-3">
             <button
-              className="text-left text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white sm:text-right"
+              className="text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
               onClick={() => setIsPoliciesOpen(true)}
               type="button"
             >
               Políticas
             </button>
             <button
-              className="text-left text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white sm:text-right"
+              className="text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
               onClick={() => setIsFaqOpen(true)}
               type="button"
             >
@@ -62,6 +53,7 @@ export default function CatalogShell({ children }) {
           </div>
         </div>
       </footer>
+
       <Suspense fallback={null}>
         {isPoliciesOpen ? <PoliciesModal isOpen={isPoliciesOpen} onClose={() => setIsPoliciesOpen(false)} /> : null}
         {isFaqOpen ? <FaqModal isOpen={isFaqOpen} onClose={() => setIsFaqOpen(false)} /> : null}

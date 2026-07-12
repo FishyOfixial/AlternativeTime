@@ -192,7 +192,7 @@ export default function CatalogPage() {
   return (
     <CatalogShell>
       <main>
-        <section className="relative overflow-hidden border-b border-white/10">
+        <section className="hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_25%,rgba(187,151,78,.18),transparent_26%),linear-gradient(115deg,#131512,#080909)]" />
           <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 py-10 sm:px-8 sm:py-16 lg:grid-cols-[1.1fr_.9fr]">
             <div>
@@ -214,8 +214,8 @@ export default function CatalogPage() {
         <section className="mx-auto max-w-7xl px-3 py-8 sm:px-8 sm:py-20">
           <div className="mb-6 flex flex-col gap-4 px-1 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.36em] text-[#a7894d]">En inventario</p>
-              <h2 className="mt-3 font-brand text-3xl text-white sm:text-5xl">Relojes disponibles</h2>
+              <p className="text-xs uppercase tracking-[0.36em] text-[#a7894d]">Colección disponible</p>
+              <h2 className="mt-3 font-brand text-3xl text-white sm:text-5xl">Catálogo de relojes</h2>
             </div>
             {state.status === "ready" && (
               <p className="text-sm text-[#77766f]">
@@ -362,7 +362,7 @@ export default function CatalogPage() {
                       <span className={`mt-1 hidden h-2 w-2 shrink-0 rounded-full sm:block ${item.status === "available" ? "bg-[#7da071]" : "bg-[#bf9b50]"}`} />
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-2 sm:mt-4 sm:gap-3">
-                      <p className="text-[15px] tracking-wide text-[#cdb274] sm:text-lg">{money.format(Number(item.price))}</p>
+                      <p className="text-[15px] tracking-wide text-[#cdb274] sm:text-lg">{money.format(Number(item.price))} MXN</p>
                       <p className="hidden text-xs text-[#77766f] sm:block">{item.availability}</p>
                     </div>
                   </div>

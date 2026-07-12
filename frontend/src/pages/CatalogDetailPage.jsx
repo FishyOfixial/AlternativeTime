@@ -209,7 +209,7 @@ export default function CatalogDetailPage() {
                 ) : null}
               </div>
               <div className="mt-9">
-                <ContactLinks productName={state.item.display_name} whatsappLabel="Adquirir por WhatsApp" />
+                <ContactLinks productName={state.item.display_name} showInstagram={false} whatsappLabel="Adquirir por WhatsApp" />
               </div>
             </div>
           </div>

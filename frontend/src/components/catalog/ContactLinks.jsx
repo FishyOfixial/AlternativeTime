@@ -3,7 +3,7 @@ const whatsappUrl =
 const instagramUrl =
   import.meta.env.VITE_INSTAGRAM_URL || "https://www.instagram.com/";
 
-export default function ContactLinks({ productName = "", compact = false, whatsappLabel = "WhatsApp" }) {
+export default function ContactLinks({ productName = "", compact = false, whatsappLabel = "WhatsApp", showInstagram = true }) {
   const whatsappHref = productName
     ? `${whatsappUrl}${whatsappUrl.includes("?") ? "&" : "?"}text=${encodeURIComponent(
         `Hola, me interesa el reloj ${productName}.`
@@ -23,14 +23,16 @@ export default function ContactLinks({ productName = "", compact = false, whatsa
       >
         {whatsappLabel}
       </a>
-      <a
-        className={`${sharedClass} border border-white/25 bg-white/5 text-white transition hover:bg-white/10`}
-        href={instagramUrl}
-        rel="noreferrer"
-        target="_blank"
-      >
-        Instagram
-      </a>
+      {showInstagram ? (
+        <a
+          className={`${sharedClass} border border-white/25 bg-white/5 text-white transition hover:bg-white/10`}
+          href={instagramUrl}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Instagram
+        </a>
+      ) : null}
     </div>
   );
 }
