@@ -8,6 +8,7 @@ const PoliciesModal = lazy(() => import("./PoliciesModal"));
 export default function CatalogShell({ children }) {
   const [isPoliciesOpen, setIsPoliciesOpen] = useState(false);
   const [isFaqOpen, setIsFaqOpen] = useState(false);
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="min-h-screen bg-[#0d0e0e] text-[#f4f0e8]">
@@ -33,24 +34,29 @@ export default function CatalogShell({ children }) {
       {children}
 
       <footer className="border-t border-white/10 px-5 py-10">
-        <div className="mx-auto flex max-w-7xl justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <button
-              className="text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
-              onClick={() => setIsPoliciesOpen(true)}
-              type="button"
-            >
-              Políticas
-            </button>
-            <button
-              className="text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
-              onClick={() => setIsFaqOpen(true)}
-              type="button"
-            >
-              FAQ
-            </button>
-            <ContactLinks compact />
+        <div className="mx-auto flex max-w-7xl flex-col items-center">
+          <div className="grid grid-cols-2 gap-x-12 gap-y-3 sm:gap-x-20">
+            <div className="flex flex-col items-start gap-3">
+              <button
+                className="text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
+                onClick={() => setIsPoliciesOpen(true)}
+                type="button"
+              >
+                Políticas
+              </button>
+              <button
+                className="text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
+                onClick={() => setIsFaqOpen(true)}
+                type="button"
+              >
+                FAQ
+              </button>
+            </div>
+            <ContactLinks compact orientation="column" />
           </div>
+          <p className="mt-8 text-center text-xs text-[#77766f]">
+            © {currentYear} Alternative Time Co. Todos los derechos reservados.
+          </p>
         </div>
       </footer>
 

@@ -3,7 +3,13 @@ const whatsappUrl =
 const instagramUrl =
   import.meta.env.VITE_INSTAGRAM_URL || "https://www.instagram.com/";
 
-export default function ContactLinks({ productName = "", compact = false, whatsappLabel = "WhatsApp", showInstagram = true }) {
+export default function ContactLinks({
+  productName = "",
+  compact = false,
+  whatsappLabel = "WhatsApp",
+  showInstagram = true,
+  orientation = "row"
+}) {
   const whatsappHref = productName
     ? `${whatsappUrl}${whatsappUrl.includes("?") ? "&" : "?"}text=${encodeURIComponent(
         `Hola, me interesa el reloj ${productName}.`
@@ -14,7 +20,7 @@ export default function ContactLinks({ productName = "", compact = false, whatsa
     : "inline-flex min-h-12 items-center justify-center rounded-full px-6 py-3 text-sm font-semibold";
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className={`flex gap-3 ${orientation === "column" ? "flex-col items-start" : "flex-wrap"}`}>
       <a
         className={`${sharedClass} bg-[#c9a85f] text-[#16130f] transition hover:bg-[#dfc075]`}
         href={whatsappHref}

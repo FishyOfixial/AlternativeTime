@@ -22,3 +22,7 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+
+# Local-only development launchers and runtime files
+local-tools/
+.dev-services/

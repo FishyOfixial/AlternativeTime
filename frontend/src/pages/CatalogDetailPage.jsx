@@ -184,7 +184,7 @@ export default function CatalogDetailPage() {
                 {state.item.model_name}
               </h1>
               {state.item.year_label && <p className="mt-3 text-sm text-[#77766f]">{state.item.year_label}</p>}
-              <p className="mt-7 text-2xl text-[#d4b874] sm:text-3xl">{money.format(Number(state.item.price))}</p>
+              <p className="mt-7 text-2xl text-[#d4b874] sm:text-3xl">{money.format(Number(state.item.price))} MXN</p>
               <div className="mt-8 flex flex-wrap gap-8 border-y border-white/10 py-5 text-sm">
                 <div><p className="text-[10px] uppercase tracking-[.25em] text-[#6f6f69]">Estado</p><p className="mt-2 text-[#d9d4ca]">{state.item.availability}</p></div>
                 <div><p className="text-[10px] uppercase tracking-[.25em] text-[#6f6f69]">Existencia</p><p className="mt-2 text-[#d9d4ca]">{state.item.stock} pieza</p></div>
