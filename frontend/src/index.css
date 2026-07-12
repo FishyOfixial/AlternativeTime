@@ -103,6 +103,18 @@ a:focus-visible {
   contain: layout paint style;
 }
 
+.catalog-card,
+.catalog-media-stable,
+.inventory-form-stable,
+.inventory-image-preview {
+  overflow-anchor: none;
+}
+
+.inventory-image-preview img,
+img.inventory-image-preview {
+  background-color: #f3ecdf;
+}
+
 .font-serif {
   font-family: inherit !important;
   font-weight: 700;

@@ -347,7 +347,7 @@ export default function InventoryForm({
   }
 
   return (
-    <form className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]" onSubmit={handleSubmit}>
+    <form className="inventory-form-stable grid gap-5 xl:grid-cols-[1.35fr_0.65fr]" onSubmit={handleSubmit}>
       <div className="space-y-5">
 
         <section className="panel-surface p-5">
@@ -411,21 +411,29 @@ export default function InventoryForm({
             </Field>
             <Field className="col-span-2" label="Galeria del catalogo">
               {defaultValues.image_urls?.length ? (
-                <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <div className="inventory-image-preview mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
                   {defaultValues.image_urls.slice(0, 10).map((imageUrl, index) => (
                     <img
                       alt={`Foto ${index + 1} de ${defaultValues.display_name || "reloj"}`}
                       className="h-28 w-full rounded-xl border border-[#dccfb9] object-cover"
+                      decoding="async"
+                      height="112"
                       key={imageUrl}
+                      loading="lazy"
                       src={imageUrl}
+                      width="180"
                     />
                   ))}
                 </div>
               ) : defaultValues.primary_image_url ? (
                 <img
                   alt={`Foto actual de ${defaultValues.display_name || "reloj"}`}
-                  className="mb-3 h-40 w-full rounded-xl border border-[#dccfb9] object-cover"
+                  className="inventory-image-preview mb-3 h-40 w-full rounded-xl border border-[#dccfb9] object-cover"
+                  decoding="async"
+                  height="160"
+                  loading="lazy"
                   src={defaultValues.primary_image_url}
+                  width="720"
                 />
               ) : null}
               <input
@@ -612,7 +620,7 @@ export default function InventoryForm({
         </section>
       </div>
 
-      <div className="space-y-4 xl:sticky xl:top-6 xl:h-fit">
+      <div className="space-y-4 xl:h-fit">
         <section className="panel-surface p-5">
           <p className="eyebrow">Precio</p>
           <h2 className="mt-1 font-serif text-2xl text-[#2a221b]">Resumen financiero</h2>
