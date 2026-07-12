@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import { getBusinessTodayIsoDate } from "../../utils/dates";
@@ -167,6 +167,31 @@ function Field({ label, children, className = "" }) {
       <span className={labelClassName}>{label}</span>
       {children}
     </label>
+  );
+}
+
+function AutoGrowTextarea({ className = "", value = "", ...props }) {
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.max(textarea.scrollHeight, 64)}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      className={`${className} inventory-textarea-stable`.trim()}
+      ref={textareaRef}
+      rows={2}
+      value={value}
+      {...props}
+    />
   );
 }
 
@@ -401,7 +426,7 @@ export default function InventoryForm({
               <FieldError fieldName="status" />
             </Field>
             <Field className="col-span-2" label="Descripcion">
-              <textarea
+              <AutoGrowTextarea
                 className={`${getInputClass("description")} min-h-16 resize-none`}
                 name="description"
                 onChange={handleChange}
@@ -470,7 +495,7 @@ export default function InventoryForm({
               </span>
             </label>
             <Field className="col-span-2" label="Notas internas">
-              <textarea
+              <AutoGrowTextarea
                 className={`${getInputClass("notes")} min-h-16 resize-none`}
                 name="notes"
                 onChange={handleChange}
