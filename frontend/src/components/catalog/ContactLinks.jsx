@@ -6,14 +6,14 @@ const instagramUrl =
 export default function ContactLinks({
   productName = "",
   compact = false,
+  message = "",
   whatsappLabel = "WhatsApp",
   showInstagram = true,
   orientation = "row"
 }) {
-  const whatsappHref = productName
-    ? `${whatsappUrl}${whatsappUrl.includes("?") ? "&" : "?"}text=${encodeURIComponent(
-        `Hola, me interesa el reloj ${productName}.`
-      )}`
+  const whatsappMessage = message || (productName ? `Hola, me interesa el reloj ${productName}.` : "");
+  const whatsappHref = whatsappMessage
+    ? `${whatsappUrl}${whatsappUrl.includes("?") ? "&" : "?"}text=${encodeURIComponent(whatsappMessage)}`
     : whatsappUrl;
   const sharedClass = compact
     ? "inline-flex items-center justify-center rounded-full px-4 py-2 text-xs font-semibold"

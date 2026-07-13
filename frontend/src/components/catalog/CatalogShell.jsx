@@ -33,10 +33,10 @@ export default function CatalogShell({ children }) {
 
       {children}
 
-      <footer className="border-t border-white/10 px-5 py-10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center">
-          <div className="grid grid-cols-2 gap-x-12 gap-y-3 sm:gap-x-20">
-            <div className="flex flex-col items-start gap-3">
+      <footer className="border-t border-white/10 px-4 py-8 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col">
+          <div className="flex w-full flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
+            <div className="flex flex-row items-start gap-5">
               <button
                 className="text-xs uppercase tracking-[0.2em] text-[#a99a7c] underline decoration-white/20 underline-offset-4 transition hover:text-white"
                 onClick={() => setIsPoliciesOpen(true)}
@@ -52,9 +52,11 @@ export default function CatalogShell({ children }) {
                 FAQ
               </button>
             </div>
-            <ContactLinks compact orientation="column" />
+            <div className="sm:ml-auto">
+              <ContactLinks compact orientation="row" />
+            </div>
           </div>
-          <p className="mt-8 text-center text-xs text-[#77766f]">
+          <p className="mt-4 text-center text-xs text-[#77766f]">
             © {currentYear} Alternative Time Co. Todos los derechos reservados.
           </p>
         </div>

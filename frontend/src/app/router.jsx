@@ -7,6 +7,7 @@ const CatalogDetailPage = lazy(() => import("../pages/CatalogDetailPage"));
 const CatalogLandingPage = lazy(() => import("../pages/CatalogLandingPage"));
 const CatalogPage = lazy(() => import("../pages/CatalogPage"));
 const LoginPage = lazy(() => import("../pages/LoginPage"));
+const SellWatchPage = lazy(() => import("../pages/SellWatchPage"));
 
 function LegacyCatalogDetailRedirect() {
   const { itemId } = useParams();
@@ -21,6 +22,7 @@ export default function AppRouter() {
           <Route path="/" element={<CatalogLandingPage />} />
           <Route path="/catalogo" element={<CatalogPage />} />
           <Route path="/catalogo/:itemId" element={<CatalogDetailPage />} />
+          <Route path="/vender-reloj" element={<SellWatchPage />} />
           <Route path="/catalog" element={<Navigate to="/catalogo" replace />} />
           <Route path="/catalog/:itemId" element={<LegacyCatalogDetailRedirect />} />
 

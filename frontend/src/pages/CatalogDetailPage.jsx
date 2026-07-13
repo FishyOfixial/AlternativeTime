@@ -2,11 +2,32 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import CatalogShell from "../components/catalog/CatalogShell";
 import ContactLinks from "../components/catalog/ContactLinks";
+import apartadoIcon from "../assets/catalog/apartado.webp";
+import autenticidadIcon from "../assets/catalog/autenticidad.webp";
+import envioIcon from "../assets/catalog/envio.webp";
 import { getCatalogItem } from "../services/catalog";
 
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 const DESCRIPTION_COLLAPSE_LENGTH = 360;
 const loadedDetailImages = new Set();
+
+const trustBadges = [
+  {
+    icon: autenticidadIcon,
+    title: "Autenticidad Garantizada",
+    text: "Piezas 100% originales"
+  },
+  {
+    icon: envioIcon,
+    title: "Envío Express Gratis",
+    text: "A todo México por DHL"
+  },
+  {
+    icon: apartadoIcon,
+    title: "Sistema de Apartado",
+    text: "Asegura tu pieza desde el 10%"
+  }
+];
 
 function getItemImages(item) {
   return item?.image_urls?.length ? item.image_urls : item?.primary_image_url ? [item.primary_image_url] : [];
@@ -189,6 +210,22 @@ export default function CatalogDetailPage() {
                 <div><p className="text-[10px] uppercase tracking-[.25em] text-[#6f6f69]">Estado</p><p className="mt-2 text-[#d9d4ca]">{state.item.availability}</p></div>
                 <div><p className="text-[10px] uppercase tracking-[.25em] text-[#6f6f69]">Existencia</p><p className="mt-2 text-[#d9d4ca]">{state.item.stock} pieza</p></div>
                 <div><p className="text-[10px] uppercase tracking-[.25em] text-[#6f6f69]">Condición</p><p className="mt-2 text-[#d9d4ca]">{state.item.condition_score}/10</p></div>
+              </div>
+              <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-1 xl:grid-cols-3">
+                {trustBadges.map((badge) => (
+                  <div
+                    className="flex flex-col items-center gap-2 rounded-2xl border border-[#c4a45f]/15 bg-white/[0.035] px-2 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.04)] sm:flex-row sm:gap-3 sm:px-3.5 sm:text-left"
+                    key={badge.title}
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#c4a45f]/10 sm:h-11 sm:w-11">
+                      <img alt="" className="h-6 w-6 object-contain sm:h-7 sm:w-7" decoding="async" loading="lazy" src={badge.icon} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-semibold leading-tight text-[#f1ede5] sm:text-sm">{badge.title}</span>
+                      <span className="mt-0.5 block text-[10px] leading-snug text-[#8f8c85] sm:text-xs">{badge.text}</span>
+                    </span>
+                  </div>
+                ))}
               </div>
               <div className="relative mt-8 rounded-[1.35rem] border border-[#c4a45f]/15 bg-[linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))] p-[1px] shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
                 <div className={`rounded-[1.25rem] bg-[#10110f]/72 px-5 py-5 ${shouldCollapseDescription && !isDescriptionExpanded ? "max-h-44 overflow-hidden" : ""}`}>

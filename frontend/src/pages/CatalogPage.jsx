@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import CatalogShell from "../components/catalog/CatalogShell";
 import ContactLinks from "../components/catalog/ContactLinks";
-import { listCatalog, listCatalogFilters, preloadCatalogItem } from "../services/catalog";
+import CatalogProductCard from "../components/catalog/CatalogProductCard";
+import { listCatalog, listCatalogFilters } from "../services/catalog";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
@@ -343,31 +343,7 @@ export default function CatalogPage() {
           {state.status === "ready" && !state.items.length && <p className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-[#aaa69d]">Muy pronto habrá nuevas piezas disponibles.</p>}
           <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 sm:gap-y-12 lg:grid-cols-4">
             {state.items.map((item, index) => (
-              <article className="catalog-card group" key={item.id}>
-                <Link
-                  onFocus={() => preloadCatalogItem(item)}
-                  onMouseEnter={() => preloadCatalogItem(item)}
-                  onTouchStart={() => preloadCatalogItem(item)}
-                  to={`/catalogo/${item.id}`}
-                >
-                  <div className="aspect-[3/4] overflow-hidden rounded-[2px] bg-[#181916] sm:aspect-[4/5]">
-                    <WatchImage item={item} priority={index < 4} />
-                  </div>
-                  <div className="border-b border-white/10 py-3 sm:py-5">
-                    <div className="flex items-start justify-between gap-2 sm:gap-4">
-                      <div className="min-w-0">
-                        <p className="hidden text-[10px] uppercase tracking-[0.3em] text-[#9c8148] sm:block">{item.brand}</p>
-                        <h3 className="mt-1 line-clamp-2 text-[15px] leading-snug text-[#f1ede5] sm:mt-2 sm:text-xl">{item.model_name}</h3>
-                      </div>
-                      <span className={`mt-1 hidden h-2 w-2 shrink-0 rounded-full sm:block ${item.status === "available" ? "bg-[#7da071]" : "bg-[#bf9b50]"}`} />
-                    </div>
-                    <div className="mt-2 flex items-center justify-between gap-2 sm:mt-4 sm:gap-3">
-                      <p className="text-[15px] tracking-wide text-[#cdb274] sm:text-lg">{money.format(Number(item.price))} MXN</p>
-                      <p className="hidden text-xs text-[#77766f] sm:block">{item.availability}</p>
-                    </div>
-                  </div>
-                </Link>
-              </article>
+              <CatalogProductCard item={item} key={item.id} priority={index < 4} />
             ))}
           </div>
           {state.status === "ready" && hasMoreItems ? (
