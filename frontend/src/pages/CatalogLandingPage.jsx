@@ -48,6 +48,14 @@ export default function CatalogLandingPage() {
             <p className="mt-7 max-w-2xl text-base leading-8 text-[#aaa69d] sm:text-lg">
               Piezas seleccionadas por su carácter, época y presencia. Cada reloj conserva una historia propia y está listo para acompañar la siguiente.
             </p>
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Link
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#c9a85f] px-7 py-3 text-sm font-semibold text-[#16130f] transition hover:bg-[#dfc075]"
+                to="/catalogo"
+              >
+                Ver catálogo
+              </Link>
+            </div>
           </div>
 
           <div className="relative hidden lg:block">
@@ -68,17 +76,11 @@ export default function CatalogLandingPage() {
         </div>
         </section>
         <section className="mx-auto max-w-7xl px-3 pb-16 pt-2 sm:px-8 sm:pb-24 sm:pt-4">
-          <div className="mb-7 flex flex-col gap-3 px-1 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-7 px-1">
             <div>
               <p className="text-xs uppercase tracking-[0.34em] text-[#a7894d]">Últimas piezas</p>
               <h2 className="mt-3 font-brand text-3xl text-white sm:text-5xl">Recién agregados</h2>
             </div>
-            <Link
-              className="inline-flex w-fit items-center justify-center rounded-full border border-[#c4a45f]/35 px-5 py-2.5 text-sm font-semibold text-[#d4b874] transition hover:border-[#d4b874] hover:bg-[#d4b874]/10"
-              to="/catalogo"
-            >
-              Ver catálogo completo
-            </Link>
           </div>
 
           {latestState.status === "loading" ? (
@@ -96,11 +98,21 @@ export default function CatalogLandingPage() {
           ) : null}
 
           {latestState.status === "ready" && latestState.items.length ? (
-            <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 lg:grid-cols-4">
-              {latestState.items.map((item, index) => (
-                <CatalogProductCard item={item} key={item.id} priority={index < 2} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-x-2 gap-y-7 sm:gap-x-6 lg:grid-cols-4">
+                {latestState.items.map((item, index) => (
+                  <CatalogProductCard item={item} key={item.id} priority={index < 2} />
+                ))}
+              </div>
+              <div className="mt-10 flex justify-center">
+                <Link
+                  className="inline-flex w-fit items-center justify-center rounded-full border border-[#c4a45f]/35 px-6 py-3 text-sm font-semibold text-[#d4b874] transition hover:border-[#d4b874] hover:bg-[#d4b874]/10"
+                  to="/catalogo"
+                >
+                  Ver catálogo completo
+                </Link>
+              </div>
+            </>
           ) : null}
         </section>
 
