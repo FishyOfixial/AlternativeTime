@@ -10,7 +10,7 @@ export default function SalesHeader({ onExport, isExportDisabled = false }) {
         </h1>
       </div>
       <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
-        <NavLink className="gold-button w-full px-4 py-2 text-xs sm:w-auto" to="/sales/new">
+        <NavLink className="gold-button w-full px-4 py-2 text-xs sm:w-auto" to="/pos/sales/new">
           + Registrar venta
         </NavLink>
         <button

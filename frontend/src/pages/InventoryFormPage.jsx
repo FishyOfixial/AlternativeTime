@@ -81,7 +81,7 @@ export default function InventoryFormPage() {
         }
       }
 
-      navigate("/inventory", { replace: true });
+      navigate("/pos/inventory", { replace: true });
     } catch (error) {
       const apiErrors = error?.data || {};
       const hasFieldErrors = Object.keys(apiErrors).length > 0;
@@ -132,7 +132,7 @@ export default function InventoryFormPage() {
 
     try {
       await deleteInventoryItem(accessToken, itemId);
-      navigate("/inventory", { replace: true });
+      navigate("/pos/inventory", { replace: true });
     } catch {
       setSubmitError("No pudimos eliminar el reloj. Intenta de nuevo.");
       setIsDeleting(false);
@@ -159,7 +159,7 @@ export default function InventoryFormPage() {
       onSubmit={handleSubmit}
       submitError={submitError}
       submitLabel={isEdit ? "Guardar reloj" : "Guardar reloj"}
-      cancelPath="/inventory"
+      cancelPath="/pos/inventory"
     />
   );
 }

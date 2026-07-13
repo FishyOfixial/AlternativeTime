@@ -27,10 +27,12 @@ export default function AppRouter() {
           <Route path="/catalog/:itemId" element={<LegacyCatalogDetailRedirect />} />
 
           <Route element={<PublicOnlyRoute />}>
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/pos/atc-admin" element={<LoginPage />} />
           </Route>
 
-          <Route path="*" element={<AuthenticatedAppRoutes />} />
+          <Route path="/pos/*" element={<AuthenticatedAppRoutes />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

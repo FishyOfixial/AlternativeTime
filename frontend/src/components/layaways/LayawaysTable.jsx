@@ -58,7 +58,7 @@ export default function LayawaysTable({ layaways }) {
 
             <NavLink
               className="mt-3 inline-flex rounded-full border border-[#ddcfba] px-3 py-1.5 text-[11px] text-[#7d6751] transition hover:bg-[#f3ecde]"
-              to={`/layaways/${layaway.id}`}
+              to={`/pos/layaways/${layaway.id}`}
             >
               Ver detalle
             </NavLink>
@@ -102,7 +102,7 @@ export default function LayawaysTable({ layaways }) {
                 <td className="px-4 py-4">
                   <NavLink
                     className="rounded-full border border-[#ddcfba] px-3 py-2 text-xs text-[#7d6751] transition hover:bg-[#f3ecde]"
-                    to={`/layaways/${layaway.id}`}
+                    to={`/pos/layaways/${layaway.id}`}
                   >
                     Ver detalle
                   </NavLink>

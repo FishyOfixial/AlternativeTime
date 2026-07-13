@@ -4,21 +4,21 @@ import { USERS_MODULE_ENABLED } from "../../constants/features";
 import { BUSINESS_TIME_ZONE } from "../../utils/dates";
 
 const titles = {
-  "/dashboard": "Dashboard",
-  "/clients": "Clientes",
-  "/inventory": "Inventario",
-  "/sales": "Ventas",
-  "/layaways": "Apartados",
-  "/finance": "Finanzas",
-  "/reports": "Reportes",
-  ...(USERS_MODULE_ENABLED ? { "/users": "Usuarios" } : {})
+  "/pos/dashboard": "Dashboard",
+  "/pos/clients": "Clientes",
+  "/pos/inventory": "Inventario",
+  "/pos/sales": "Ventas",
+  "/pos/layaways": "Apartados",
+  "/pos/finance": "Finanzas",
+  "/pos/reports": "Reportes",
+  ...(USERS_MODULE_ENABLED ? { "/pos/users": "Usuarios" } : {})
 };
 
 export default function HeaderBar({ onMenuClick }) {
   const location = useLocation();
 
   const pageTitle = useMemo(() => {
-    if (location.pathname.startsWith("/layaways/")) {
+    if (location.pathname.startsWith("/pos/layaways/")) {
       return "Detalle de apartado";
     }
     return titles[location.pathname] ?? "Alternative Time";

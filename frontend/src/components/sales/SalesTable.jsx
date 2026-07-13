@@ -29,7 +29,7 @@ function SaleMobileCard({ sale, formatDate, formatCurrency }) {
       </div>
       <NavLink
         className="mt-3 inline-flex rounded-md border border-[#dccfb9] bg-[#fffdf9] px-3 py-2 text-xs font-semibold text-[#7d6751]"
-        to={`/sales/${sale.id}/edit`}
+        to={`/pos/sales/${sale.id}/edit`}
       >
         Editar venta
       </NavLink>
@@ -95,7 +95,7 @@ export default function SalesTable({
                 <td className="px-4 py-4">
                   <NavLink
                     className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-3 py-2 text-xs font-semibold text-[#7d6751]"
-                    to={`/sales/${sale.id}/edit`}
+                    to={`/pos/sales/${sale.id}/edit`}
                   >
                     Editar
                   </NavLink>

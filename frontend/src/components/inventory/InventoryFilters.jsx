@@ -15,7 +15,7 @@ export default function InventoryFilters({
     <section className="panel-soft p-3 sm:p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#eadfcd] pb-3">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8d7964]">Tabla de inventario</p>
-        <NavLink className="gold-button px-4 py-2 text-xs" to="/inventory/new">
+        <NavLink className="gold-button px-4 py-2 text-xs" to="/pos/inventory/new">
           + Nuevo reloj
         </NavLink>
       </div>

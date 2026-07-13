@@ -9,7 +9,7 @@ function InventoryMobileCard({ item, formatCurrency, statusLabels, statusClasses
           <p className="text-xs uppercase tracking-[0.16em] text-[#b4a085]">{item.product_id}</p>
           <p className="truncate font-medium text-[#2a221b]">{item.display_name}</p>
         </div>
-        <NavLink className="text-xs text-[#8f7444]" to={`/inventory/${item.id}`}>
+        <NavLink className="text-xs text-[#8f7444]" to={`/pos/inventory/${item.id}`}>
           Editar
         </NavLink>
       </div>
@@ -99,7 +99,7 @@ export default function InventoryTable({
                   </span>
                 </td>
                 <td className="px-4 py-4">
-                  <NavLink className="text-sm text-[#8f7444]" to={`/inventory/${item.id}`}>
+                  <NavLink className="text-sm text-[#8f7444]" to={`/pos/inventory/${item.id}`}>
                     Editar
                   </NavLink>
                 </td>

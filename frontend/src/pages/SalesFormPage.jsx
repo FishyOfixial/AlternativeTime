@@ -200,7 +200,7 @@ export default function SalesFormPage() {
     if (!formValues.product || !formValues.customer) {
       return;
     }
-    navigate("/layaways", {
+    navigate("/pos/layaways", {
       state: {
         openCreate: true,
         prefillProductId: String(formValues.product),
@@ -306,7 +306,7 @@ export default function SalesFormPage() {
         await createSale(accessToken, payload);
       }
 
-      navigate("/sales", {
+      navigate("/pos/sales", {
         replace: true,
         state: {
           success: isEditMode ? "Venta actualizada correctamente." : "Venta registrada correctamente."

@@ -25,7 +25,7 @@ export default function ClientActionsPanel({ clientId, deactivateError, isDeleti
         </div>
       ) : null}
 
-      <NavLink className="gold-button mt-4 w-full py-2.5" to={`/sales/new?customer=${clientId}`}>
+      <NavLink className="gold-button mt-4 w-full py-2.5" to={`/pos/sales/new?customer=${clientId}`}>
         + Registrar nueva venta
       </NavLink>
 

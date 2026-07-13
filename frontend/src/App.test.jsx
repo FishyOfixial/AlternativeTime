@@ -291,7 +291,7 @@ describe("App auth routing", () => {
   it("renders the standalone healthcheck page", async () => {
     setupHealthFetch();
 
-    window.history.pushState({}, "", "/healthcheck/");
+    window.history.pushState({}, "", "/pos/healthcheck/");
     render(<App />);
 
     expect(await screen.findByText(/estado actual/i)).toBeInTheDocument();
@@ -304,7 +304,7 @@ describe("App auth routing", () => {
   });
 
   it("renders the login form route for guests", async () => {
-    window.history.pushState({}, "", "/login");
+    window.history.pushState({}, "", "/pos/atc-admin");
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: /iniciar sesion/i })).toBeInTheDocument();
@@ -312,7 +312,7 @@ describe("App auth routing", () => {
   });
 
   it("redirects guests away from protected routes", async () => {
-    window.history.pushState({}, "", "/dashboard");
+    window.history.pushState({}, "", "/pos/dashboard");
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: /iniciar sesion/i })).toBeInTheDocument();
@@ -323,7 +323,7 @@ describe("App auth routing", () => {
     enableStoredSession();
     setupAuthenticatedFetch();
 
-    window.history.pushState({}, "", "/dashboard");
+    window.history.pushState({}, "", "/pos/dashboard");
     render(<App />);
 
     expect(await screen.findByText(/dashboard de negocio/i)).toBeInTheDocument();
@@ -337,7 +337,7 @@ describe("App auth routing", () => {
     enableStoredSession();
     setupAuthenticatedFetch();
 
-    window.history.pushState({}, "", "/clients");
+    window.history.pushState({}, "", "/pos/clients");
     render(<App />);
 
     expect(await screen.findByText(/clientes registrados/i)).toBeInTheDocument();
@@ -348,30 +348,30 @@ describe("App auth routing", () => {
     enableStoredSession();
     setupAuthenticatedFetch();
 
-    window.history.pushState({}, "", "/inventory");
+    window.history.pushState({}, "", "/pos/inventory");
     render(<App />);
     expect(await screen.findByText(/importar csv/i)).toBeInTheDocument();
 
     await act(async () => {
-      window.history.pushState({}, "", "/sales");
+      window.history.pushState({}, "", "/pos/sales");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(await screen.findByText(/historial de ventas/i)).toBeInTheDocument();
 
     await act(async () => {
-      window.history.pushState({}, "", "/sales/new");
+      window.history.pushState({}, "", "/pos/sales/new");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(await screen.findByText(/registrar venta/i)).toBeInTheDocument();
 
     await act(async () => {
-      window.history.pushState({}, "", "/layaways");
+      window.history.pushState({}, "", "/pos/layaways");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(await screen.findByText(/\+ nuevo apartado/i)).toBeInTheDocument();
 
     await act(async () => {
-      window.history.pushState({}, "", "/layaways/1");
+      window.history.pushState({}, "", "/pos/layaways/1");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(await screen.findByText(/apartado #1/i)).toBeInTheDocument();
@@ -379,7 +379,7 @@ describe("App auth routing", () => {
     expect(screen.getByText(/15 abr 2026/i)).toBeInTheDocument();
 
     await act(async () => {
-      window.history.pushState({}, "", "/finance");
+      window.history.pushState({}, "", "/pos/finance");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(
@@ -387,7 +387,7 @@ describe("App auth routing", () => {
     ).toBeInTheDocument();
 
     await act(async () => {
-      window.history.pushState({}, "", "/reports");
+      window.history.pushState({}, "", "/pos/reports");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     await waitFor(() => {

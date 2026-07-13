@@ -13,7 +13,7 @@ function ClientMobileCard({ client, formatCurrency, formatLastPurchase }) {
         </div>
         <NavLink
           className="rounded-full border border-[#ddcfba] px-3 py-1.5 text-[11px] text-[#7d6751] transition hover:bg-[#f3ecde]"
-          to={`/clients/${client.id}`}
+          to={`/pos/clients/${client.id}`}
         >
           Ver
         </NavLink>
@@ -120,7 +120,7 @@ export default function ClientsTable({
                 <td className="px-4 py-4">
                   <NavLink
                     className="rounded-full border border-[#ddcfba] px-3 py-2 text-xs text-[#7d6751] transition hover:bg-[#f3ecde]"
-                    to={`/clients/${client.id}`}
+                    to={`/pos/clients/${client.id}`}
                   >
                     Ver perfil
                   </NavLink>

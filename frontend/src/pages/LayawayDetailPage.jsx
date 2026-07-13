@@ -135,7 +135,7 @@ export default function LayawayDetailPage() {
 
     try {
       await deleteLayaway(accessToken, layawayId);
-      navigate("/layaways");
+      navigate("/pos/layaways");
     } catch {
       setUpdateError("No pudimos eliminar el apartado.");
       setIsDeleting(false);
@@ -199,7 +199,7 @@ export default function LayawayDetailPage() {
           </button>
           <NavLink
             className="rounded-full border border-[#ddcfba] bg-[#fcf8f2] px-4 py-2 text-sm text-[#7d6751] transition hover:bg-[#f3ecde]"
-            to="/layaways"
+            to="/pos/layaways"
           >
             Volver
           </NavLink>

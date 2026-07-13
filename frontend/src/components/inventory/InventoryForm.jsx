@@ -181,7 +181,7 @@ export default function InventoryForm({
   onDelete,
   fieldErrors = {},
   submitError = "",
-  cancelPath = "/inventory"
+  cancelPath = "/pos/inventory"
 }) {
   const [values, setValues] = useState(() => buildFormState(defaultValues));
   const [showExistingImages, setShowExistingImages] = useState(false);

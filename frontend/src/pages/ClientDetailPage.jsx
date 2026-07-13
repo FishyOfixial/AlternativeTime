@@ -84,7 +84,7 @@ export default function ClientDetailPage() {
 
     try {
       await deleteClient(accessToken, clientId);
-      navigate("/clients", { replace: true });
+      navigate("/pos/clients", { replace: true });
     } catch {
       setDeactivateError("No pudimos inactivar el cliente. Intenta de nuevo.");
       setIsDeleting(false);

@@ -12,7 +12,7 @@ export default function SalesFormHeader({ title = "Registrar venta" }) {
       <div className="flex flex-wrap gap-3">
         <NavLink
           className="rounded-md border border-[#dccfb9] bg-[#fffdf9] px-4 py-2 text-sm text-[#7d6751]"
-          to="/sales"
+          to="/pos/sales"
         >
           Cancelar
         </NavLink>

@@ -159,7 +159,7 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <NavLink className="gold-button" to="/login">
+                <NavLink className="gold-button" to="/pos/atc-admin">
                   Ir a login
                 </NavLink>
                 <a

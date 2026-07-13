@@ -1,12 +1,12 @@
 import { USERS_MODULE_ENABLED } from "./features";
 
 export const navigationLinks = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/clients", label: "Clientes" },
-  { to: "/inventory", label: "Inventario" },
-  { to: "/sales", label: "Ventas" },
-  { to: "/layaways", label: "Apartados" },
-  { to: "/finance", label: "Finanzas" },
-  { to: "/reports", label: "Reportes" },
-  { to: "/users", label: "Usuarios", enabled: USERS_MODULE_ENABLED }
+  { to: "/pos/dashboard", label: "Dashboard" },
+  { to: "/pos/clients", label: "Clientes" },
+  { to: "/pos/inventory", label: "Inventario" },
+  { to: "/pos/sales", label: "Ventas" },
+  { to: "/pos/layaways", label: "Apartados" },
+  { to: "/pos/finance", label: "Finanzas" },
+  { to: "/pos/reports", label: "Reportes" },
+  { to: "/pos/users", label: "Usuarios", enabled: USERS_MODULE_ENABLED }
 ].filter((link) => link.enabled !== false);

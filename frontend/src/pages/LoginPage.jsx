@@ -17,10 +17,10 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const destination = location.state?.from?.pathname || "/dashboard";
+  const destination = location.state?.from?.pathname || "/pos/dashboard";
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/pos/dashboard" replace />;
   }
 
   async function handleSubmit(event) {

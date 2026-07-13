@@ -28,7 +28,7 @@ export default function InventoryCards({ items, formatCurrency, tagLabels, tagCl
             </p>
             <NavLink
               className="mt-4 flex w-full items-center justify-center rounded-md bg-[#201914] px-4 py-2.5 text-sm font-semibold text-[#ddb65f]"
-              to={`/inventory/${item.id}`}
+              to={`/pos/inventory/${item.id}`}
             >
               Editar reloj
             </NavLink>

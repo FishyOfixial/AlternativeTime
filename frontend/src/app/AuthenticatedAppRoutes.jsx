@@ -19,7 +19,7 @@ import SalesPage from "../pages/SalesPage";
 const modulePages = [
   {
     enabled: USERS_MODULE_ENABLED,
-    path: "/users",
+    path: "users",
     title: "Usuarios",
     eyebrow: "Sprint Frontend 8",
     description:
@@ -30,23 +30,24 @@ const modulePages = [
 export default function AuthenticatedAppRoutes() {
   return (
     <Routes>
-      <Route path="/healthcheck" element={<Navigate to="/healthcheck/" replace />} />
-      <Route path="/healthcheck/" element={<HomePage />} />
+      <Route index element={<Navigate to="dashboard" replace />} />
+      <Route path="healthcheck" element={<Navigate to="/pos/healthcheck/" replace />} />
+      <Route path="healthcheck/" element={<HomePage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AuthenticatedLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/clients/:clientId" element={<ClientDetailPage />} />
-          <Route path="/inventory" element={<InventoryPage />} />
-          <Route path="/inventory/new" element={<InventoryFormPage />} />
-          <Route path="/inventory/:itemId" element={<InventoryFormPage />} />
-          <Route path="/sales" element={<SalesPage />} />
-          <Route path="/sales/new" element={<SalesFormPage />} />
-          <Route path="/sales/:saleId/edit" element={<SalesFormPage />} />
-          <Route path="/layaways" element={<LayawaysPage />} />
-          <Route path="/layaways/:layawayId" element={<LayawayDetailPage />} />
-          <Route path="/finance" element={<FinancePage />} />
-          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="clients" element={<ClientsPage />} />
+          <Route path="clients/:clientId" element={<ClientDetailPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="inventory/new" element={<InventoryFormPage />} />
+          <Route path="inventory/:itemId" element={<InventoryFormPage />} />
+          <Route path="sales" element={<SalesPage />} />
+          <Route path="sales/new" element={<SalesFormPage />} />
+          <Route path="sales/:saleId/edit" element={<SalesFormPage />} />
+          <Route path="layaways" element={<LayawaysPage />} />
+          <Route path="layaways/:layawayId" element={<LayawayDetailPage />} />
+          <Route path="finance" element={<FinancePage />} />
+          <Route path="reports" element={<ReportsPage />} />
           {modulePages.filter((page) => page.enabled).map((page) => (
             <Route
               key={page.path}
@@ -62,7 +63,7 @@ export default function AuthenticatedAppRoutes() {
           ))}
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
