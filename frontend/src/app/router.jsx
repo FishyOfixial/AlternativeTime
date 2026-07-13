@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import PublicOnlyRoute from "../components/auth/PublicOnlyRoute";
 
 const AuthenticatedAppRoutes = lazy(() => import("./AuthenticatedAppRoutes"));
@@ -14,9 +14,28 @@ function LegacyCatalogDetailRedirect() {
   return <Navigate to={`/catalogo/${itemId}`} replace />;
 }
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    if (navigator.userAgent.includes("jsdom")) {
+      return;
+    }
+
+    try {
+      window.scrollTo({ left: 0, top: 0 });
+    } catch {
+      // Test environments such as jsdom may not implement scrollTo.
+    }
+  }, [pathname, search]);
+
+  return null;
+}
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Suspense fallback={<div className="min-h-screen bg-[#0d0e0e]" />}>
         <Routes>
           <Route path="/" element={<CatalogLandingPage />} />

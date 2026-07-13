@@ -296,7 +296,7 @@ describe("App auth routing", () => {
 
     expect(await screen.findByText(/estado actual/i)).toBeInTheDocument();
     expect(screen.getAllByText(/base de datos/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/api disponible/i).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/api disponible/i)).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: /ver health endpoint/i })).toHaveAttribute(
       "href",
       "/api/health/"
